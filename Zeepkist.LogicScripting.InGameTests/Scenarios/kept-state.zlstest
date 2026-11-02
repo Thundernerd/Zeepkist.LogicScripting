@@ -22,7 +22,7 @@ expect-startup-warning off
 set-window-height 500
 expect-window-height 500
 
-# Put back what the next Scenario starts with
+# And back again
 set-window-height 640
 expect-window-height 640
 show-tab scripts

@@ -187,7 +187,8 @@ internal sealed partial class ScriptWindow
     }
 
     /// <summary>
-    /// Gives the window the height the in-game tests asked for, and at least <paramref name="minHeight"/>, before it
+    /// Gives the window the height the in-game tests asked for, no taller than the screen, as a first open is, and at
+    /// least <paramref name="minHeight"/>, before it
     /// begins: Imui lays out its content in the rect it has then, so a rect changed afterwards shows a frame late. A
     /// window Imui hasn't made yet starts at its minimum through <see cref="GetInitialRect"/>, and takes a requested
     /// height the frame after.
@@ -199,7 +200,8 @@ internal sealed partial class ScriptWindow
             return;
 
         ref var window = ref gui.WindowManager.GetWindowState(windowId);
-        var height = Mathf.Max(_requestedHeight ?? window.Rect.H, minHeight);
+        var requested = _requestedHeight == null ? window.Rect.H : Mathf.Min(_requestedHeight.Value, gui.Canvas.SafeScreenRect.H);
+        var height = Mathf.Max(requested, minHeight);
         _requestedHeight = null;
         if (height != window.Rect.H)
             window.Rect = WithHeight(window.Rect, height);
