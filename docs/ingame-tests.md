@@ -77,9 +77,9 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `open-window` | Opens the Script window. |
 | `close-window` | Closes it. |
 | `new-script <name>` | Makes a new Script and selects it, as New Script does. Fails when the name is taken. |
-| `select-script <name>` | Selects a Script, as clicking it in the list does. Fails when there's none by that name. |
+| `select-script <name>` | Selects a Script, as clicking it in the list does: the window selects it as it draws the list, after it worked out that frame's layout. Fails when there's none by that name, or when the Scripts side is collapsed, so the list isn't drawn. |
 | `new-library <name>` | Makes a new Library and selects it, as New Library on the Libraries tab does. Fails when the name is taken. |
-| `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does. Fails when there's none by that name. |
+| `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does, the same way. Fails when there's none by that name. |
 | `show-tab scripts\|libraries` | Shows the Scripts side's Scripts or Libraries tab, as clicking it does. The steps for a list and its footer work on the shown tab. |
 | `open-new` | Opens New's name prompt on the shown tab, as clicking New Script or New Library does. |
 | `open-rename <name>` | Opens the rename prompt for a Script or Library on the shown tab, as Rename in its context menu does. Fails when there's none by that name. |
@@ -95,7 +95,8 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `startup-warning on\|off` | Makes the center show (`on`) or stop showing (`off`) the startup check's warnings, as on a game version the mod doesn't fully support: that Compile places nothing, and a line of blocks turned off for it. Only the window changes: Compile and the checks work as before, so later steps and Scenarios find them working as usual. |
 | `set-text` | Replaces the selected Script's or Library's text with the lines up to `end`, as one edit. `{uid:<name>}` in them is written as the UID of the block `place-block ... as <name>` placed, so a Script can write `placed("{uid:lamp}")`. Fails for a name no block was placed as. |
 | `compile` | Compiles the selected Script, as Ctrl+Enter does. It passes whatever the Compile did: check that with the steps below. |
-| `expect-editor-in-view` | The editor of the selected Script or Library is at least three rows tall, and it and the error panel's header lie inside the center, and the center inside the window. |
+| `expect-editor-in-view` | The editor of the selected Script or Library is at least three rows tall, and it and the error panel's header lie inside the center, and the center inside the window. It waits a few frames first, for the window to settle. |
+| `expect-editor-in-view-each-frame <frames>` | The same, without waiting: in the frame the step before ended on, frame 0, and in each of the next frames the window draws, failing with the first frame that's wrong. Its result says which frames drew the center's storage warning, so a Scenario can check that the frame it first showed was among them. |
 | `expect-text <text>` | The selected Script's or Library's text contains the text, matching case. |
 | `expect-result <text>` | The result line contains the text, matching case. |
 | `expect-no-errors` | The window's check finds no errors in the text. |
@@ -143,15 +144,15 @@ Unity's own `Input` never sees these keys, so whatever reads it doesn't either. 
 2. Add it to `StepList`, by the name it's written with, reading what follows the name with `StepArgument`.
 3. Add it to the table above and to `StepListTests`, which checks that the two lists match.
 
-To do what a button in the Script window does, add a method to `ScriptWindow.Driver` in the mod. It calls the same code the button does, so the step tests the real thing. A button in a list tab's footer is on `ScriptWindow.Driver.ShownList`, the shown tab's list, whose prompts take a button pressed for the player the next time they're drawn.
+To do what a button in the Script window does, add a method to `ScriptWindow.Driver` in the mod. It calls the same code the button does, so the step tests the real thing. A button in a list tab's footer is on `ScriptWindow.Driver.ShownList`, the shown tab's list, whose prompts take a button pressed for the player the next time they're drawn, and whose list takes a click on an entry the same way.
 
 ## What a run changes, and how it puts it back
 
 The script undoes all of this when it ends, also after a failure, a timeout or Ctrl+C:
 
 - **Other copies of the mod** anywhere under `BepInEx/plugins` (mod.io, an old manual install) move to `BepInEx/zls-ingame-test-disabled/`, so the game loads only this build. They move back afterwards. The test plugin fails the run when the game loaded the mod from anywhere else.
-- **This build** goes into `BepInEx/plugins/Sideloaded/Plugins/Zeepkist.LogicScripting/`, and the test plugin, the Scenarios and a `run.json` into `.../Zeepkist.LogicScripting.InGameTests/`. Both are removed afterwards, except the build with `--keep`.
+- **This build** goes into `BepInEx/plugins/Sideloaded/Plugins/Zeepkist.LogicScripting/`, and the test plugin, the Scenarios and a `run.json` into `.../Zeepkist.LogicScripting.InGameTests/`. Both are removed afterwards, except the build with `--keep`. The run records the build's file hashes next to it, and removes only the files that still match them, so a different copy of the mod installed over a kept build is set aside and put back like any other. A file that's the same as the build's is removed with it.
 - **The mod's data** (Drafts, Libraries, the window's layout) and its BepInEx config are copied into `BepInEx/zls-ingame-test-backup/` first, and put back once the game has quit. The backup then moves to the run folder, as `backup/`. The game starts without the mod's data, so a run sees none of the player's Drafts or Libraries and the window opens as it does the first time. Meanwhile the player's data waits in the game's `AppData/Roaming/Zeepkist/zls-ingame-test-mod-data/`.
 - **The game's level saves** in its `Autosaves` and `Backups` folders, which test mode and going back to the main menu add to, are copied the same way and put back.
 
-The test plugin only does anything when the game starts with the script's command-line flag and finds a `run.json` next to it, so a copy left behind by a crash can't take over normal play. If a run was killed outright, the next run first puts back what the last one left. It removes the build, which the killed run marked as its own before installing it, and moves the other copies of the mod back. It puts back the mod's data and config and the level saves from the killed run's backup, which then moves to this run's folder as `earlier-backup/`.
+The test plugin only does anything when the game starts with the script's command-line flag and finds a `run.json` next to it, so a copy left behind by a crash can't take over normal play. If a run was killed outright, the next run first puts back what the last one left. It removes the build, which the killed run marked as its own before installing it. A file that no longer matches the build stays, as the player's. It then moves the other copies of the mod back. It puts back the mod's data and config and the level saves from the killed run's backup, which then moves to this run's folder as `earlier-backup/`.

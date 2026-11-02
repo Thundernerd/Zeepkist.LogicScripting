@@ -21,9 +21,9 @@ internal interface IListPanel
     public ListFooterLayout FooterLayout { get; }
 
     /// <summary>
-    /// Whether a button <see cref="Press"/> pressed still waits for the prompt to be drawn.
+    /// Whether a button <see cref="Press"/> pressed or an entry <see cref="Click"/> clicked still waits to be drawn.
     /// </summary>
-    public bool IsPressPending { get; }
+    public bool IsInputPending { get; }
 
     public void OpenNew();
 
@@ -49,4 +49,15 @@ internal interface IListPanel
     /// Presses one of <see cref="PromptButtons"/> the next time the prompt is drawn, as clicking it does.
     /// </summary>
     public void Press(PromptButton button);
+
+    /// <summary>
+    /// Clicks an entry the next time the list is drawn, as clicking it does, so what selecting it changes lands in the
+    /// middle of that frame's drawing. Returns whether there's an entry by that name.
+    /// </summary>
+    public bool Click(string name);
+
+    /// <summary>
+    /// Drops what <see cref="Press"/> and <see cref="Click"/> left waiting, so it can't land later.
+    /// </summary>
+    public void CancelInput();
 }

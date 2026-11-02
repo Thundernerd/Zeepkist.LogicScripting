@@ -25,6 +25,7 @@ internal abstract class ItemListPanel<T> : IListPanel
     private float _minListHeight;
     private float _rowHeight;
     private PromptButton? _pressed;
+    private T _clicked;
 
     // Measured as the prompts are drawn, as Imui lays out top-down and the list above them needs to know the height first
     private float _promptsHeight;
@@ -51,7 +52,7 @@ internal abstract class ItemListPanel<T> : IListPanel
         : ListPrompt.None;
 
     public ListFooterLayout FooterLayout => new(_tab, _list, _prompts, _newRow, _promptsHeight, _minListHeight, _rowHeight);
-    public bool IsPressPending => _pressed != null;
+    public bool IsInputPending => _pressed != null || _clicked != null;
 
     public IReadOnlyList<PromptButton> PromptButtons => OpenPrompt switch
     {
@@ -79,7 +80,7 @@ internal abstract class ItemListPanel<T> : IListPanel
     {
         _namePrompt.Close();
         _deletePrompt.Close();
-        _pressed = null;
+        CancelInput();
         Message = string.Empty;
     }
 
@@ -144,12 +145,14 @@ internal abstract class ItemListPanel<T> : IListPanel
     public T DrawEntries(ImGui gui, T current)
     {
         T selected = null;
+        var clicked = _clicked;
+        _clicked = null;
         foreach (var entry in Entries)
         {
             gui.AddSpacingIfLayoutFrameNotEmpty();
             var rect = gui.AddSingleRowRect(default);
             ref readonly var style = ref entry == current ? ref gui.Style.List.ItemSelected : ref gui.Style.List.ItemNormal;
-            if (gui.Button(gui.GetNextControlId(), GetLabel(entry), rect, in style, out _) && entry != current)
+            if ((gui.Button(gui.GetNextControlId(), GetLabel(entry), rect, in style, out _) || entry == clicked) && entry != current)
                 selected = entry;
 
             if (GetTooltip(entry) is { } tooltip)
@@ -262,6 +265,18 @@ internal abstract class ItemListPanel<T> : IListPanel
     public void Press(PromptButton button)
     {
         _pressed = button;
+    }
+
+    public bool Click(string name)
+    {
+        _clicked = Find(name);
+        return _clicked != null;
+    }
+
+    public void CancelInput()
+    {
+        _pressed = null;
+        _clicked = null;
     }
 
     /// <summary>

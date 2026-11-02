@@ -252,6 +252,8 @@ public class StepListTests
     [InlineData("startup-warning", "startup-warning takes on or off")]
     [InlineData("startup-warning yes", "startup-warning takes on or off, not 'yes'")]
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
+    [InlineData("expect-editor-in-view-each-frame", "expect-editor-in-view-each-frame takes a whole number of 0 or more")]
+    [InlineData("expect-editor-in-view-each-frame many", "expect-editor-in-view-each-frame takes a whole number of 0 or more, not 'many'")]
     public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
@@ -265,6 +267,14 @@ public class StepListTests
         var step = Assert.IsType<SetWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-height 300", out _).Steps));
 
         Assert.Equal(300, step.Height);
+    }
+
+    [Fact]
+    public void ExpectEditorInViewEachFrame_ReadsTheFrames()
+    {
+        var step = Assert.IsType<ExpectEditorInViewEachFrameStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-editor-in-view-each-frame 5", out _).Steps));
+
+        Assert.Equal(5, step.Frames);
     }
 
     [Theory]
@@ -317,6 +327,7 @@ public class StepListTests
     [InlineData("libraries.zlstest")]
     [InlineData("list-footer.zlstest")]
     [InlineData("startup-warning.zlstest")]
+    [InlineData("select-layout-each-frame.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");
