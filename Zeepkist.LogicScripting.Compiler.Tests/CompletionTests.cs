@@ -210,6 +210,14 @@ public class CompletionTests
     }
 
     [Fact]
+    public void Items_AFunctionDefinedTwice_WithoutInputs_WhenTheCompilerRejectsTheFirstDefinitionsFirstLine()
+    {
+        var f = Completion.GetItems(At("function f(a, a)\nend\nfunction f(b)\nend\nx = |")).First(i => i.Label == "f");
+
+        Assert.Equal(string.Empty, f.Detail);
+    }
+
+    [Fact]
     public void Items_AFunctionDefinedTwice_Once()
     {
         Assert.Single(Labels("function f()\nend\nfunction f(a)\nend\nx = |"), l => l == "f");

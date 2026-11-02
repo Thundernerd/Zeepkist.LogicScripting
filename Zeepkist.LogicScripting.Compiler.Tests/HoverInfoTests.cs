@@ -157,6 +157,7 @@ public class HoverInfoTests
     [Theory]
     [InlineData("x = logic(a, |nope: 1)")]
     [InlineData("x = logic(a, nothing(|op: 1))")]
+    [InlineData("function f(b, b)\nend\nx = f(|b: 1)")]
     public void NamedArgument_TheCallDoesNotTake_IsNull(string marked)
     {
         Assert.Null(At(marked));

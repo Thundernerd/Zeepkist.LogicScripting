@@ -181,6 +181,12 @@ public class CallHelpTests
     }
 
     [Fact]
+    public void None_ForAFunctionDefinedTwice_WhenTheCompilerRejectsTheFirstDefinitionsFirstLine()
+    {
+        Assert.Null(At("function f(a, a)\nend\nfunction f(b)\nend\nx = f(|"));
+    }
+
+    [Fact]
     public void NestedCalls_InACallToAFunctionWhoseFirstLineTheCompilerRejects_TheCallAroundIt()
     {
         Assert.Equal("logic", At("function f(a, a)\nend\nx = logic(1, f(|").Callee);
