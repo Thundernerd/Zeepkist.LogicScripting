@@ -285,12 +285,20 @@ public sealed class CaretContext
         if (name < 1 || tokens[name - 1].Kind != TokenKind.Dot)
             return name;
 
-        // Like the parser, only a name that isn't itself after a dot qualifies a call
-        if (!isCall || name < 2 || tokens[name - 2].Kind != TokenKind.Name || (name >= 3 && tokens[name - 3].Kind == TokenKind.Dot))
+        if (!isCall || !tokens[name].IsDirectlyAfter(tokens[name - 1]) || !IsLibraryName(tokens, name - 2)
+            || !tokens[name - 1].IsDirectlyAfter(tokens[name - 2]))
             return -1;
 
         library = name - 2;
         return name;
+    }
+
+    /// <summary>
+    /// Like the parser, only a name that isn't itself after a dot qualifies a call, with no space around the dot.
+    /// </summary>
+    private static bool IsLibraryName(List<Token> tokens, int index)
+    {
+        return index >= 0 && tokens[index].Kind == TokenKind.Name && (index == 0 || tokens[index - 1].Kind != TokenKind.Dot);
     }
 
     /// <summary>
