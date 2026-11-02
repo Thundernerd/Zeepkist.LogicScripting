@@ -95,13 +95,9 @@ internal sealed partial class ScriptWindow
         public bool ShowsLibraries => _window._state.ShowLibraries;
 
         /// <summary>
-        /// Whether a size or position <see cref="SetWindowHeight"/>, <see cref="SetWindowSize"/> or
-        /// <see cref="CenterWindow"/> asked for waits for the window to be drawn.
+        /// Whether a size or position asked for waits for the window to be drawn.
         /// </summary>
-        public bool IsRectPending => _window._requestedWidth != null
-            || _window._requestedHeight != null
-            || _window._requestedTopLeft != null
-            || _window._requestedCenter;
+        public bool IsRectPending => _window._requestedRect.IsPending;
 
         public void SetOpen(bool open)
         {
@@ -154,7 +150,7 @@ internal sealed partial class ScriptWindow
         /// </summary>
         public void SetWindowHeight(float height)
         {
-            _window._requestedHeight = height;
+            _window._requestedRect.SetHeight(height);
         }
 
         /// <summary>
@@ -162,8 +158,8 @@ internal sealed partial class ScriptWindow
         /// </summary>
         public void SetWindowSize(float width, float height)
         {
-            _window._requestedWidth = width;
-            _window._requestedHeight = height;
+            _window._requestedRect.SetWidth(width);
+            _window._requestedRect.SetHeight(height);
         }
 
         /// <summary>
@@ -171,7 +167,7 @@ internal sealed partial class ScriptWindow
         /// </summary>
         public void CenterWindow()
         {
-            _window._requestedCenter = true;
+            _window._requestedRect.MoveToCenter();
         }
 
         /// <summary>
@@ -275,7 +271,7 @@ internal sealed partial class ScriptWindow
             if (state.WindowRect is { } rect)
             {
                 SetWindowSize(rect.W, rect.H);
-                _window._requestedTopLeft = new Vector2(rect.X, rect.Top);
+                _window._requestedRect.MoveTo(new Vector2(rect.X, rect.Top));
             }
             else
             {

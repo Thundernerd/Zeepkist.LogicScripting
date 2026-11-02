@@ -1,6 +1,6 @@
 # A bigger window, for screenshots: set-window-size makes it wider and taller, keeping its top left corner, and
-# center-window brings it back onto the screen at that size. set-window-height then keeps the width. Run it before
-# kept-state, which checks that the window's size is put back for the next Scenario.
+# center-window brings it back onto the screen at that size. set-window-height then keeps the width. Run it right
+# before kept-state, which checks that the window's size is put back for the next Scenario.
 open-window
 expect-window-size 1120 640
 new-script Lights

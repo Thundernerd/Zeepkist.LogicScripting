@@ -208,19 +208,16 @@ internal sealed partial class ScriptWindow
 
         ref var window = ref gui.WindowManager.GetWindowState(windowId);
         var screen = gui.Canvas.SafeScreenRect;
-        var width = _requestedWidth == null ? window.Rect.W : Mathf.Max(Mathf.Min(_requestedWidth.Value, screen.W), ImWindow.MIN_WIDTH);
-        var height = Mathf.Max(_requestedHeight == null ? window.Rect.H : Mathf.Min(_requestedHeight.Value, screen.H), minHeight);
+        var request = _requestedRect;
+        var width = request.Width is { } requestedWidth ? Mathf.Max(Mathf.Min(requestedWidth, screen.W), ImWindow.MIN_WIDTH) : window.Rect.W;
+        var height = Mathf.Max(request.Height is { } requestedHeight ? Mathf.Min(requestedHeight, screen.H) : window.Rect.H, minHeight);
         var rect = WithSize(window.Rect, width, height);
-        if (_requestedTopLeft is { } topLeft)
+        if (request.TopLeft is { } topLeft)
             rect = ImRectUtility.Clamp(screen, new ImRect(topLeft.x, topLeft.y - rect.H, rect.W, rect.H));
-
-        if (_requestedCenter)
+        else if (request.Center)
             rect = new ImRect(screen.X + ((screen.W - rect.W) / 2), screen.Y + ((screen.H - rect.H) / 2), rect.W, rect.H);
 
-        _requestedWidth = null;
-        _requestedHeight = null;
-        _requestedTopLeft = null;
-        _requestedCenter = false;
+        request.Clear();
         if (rect != window.Rect)
             window.Rect = rect;
     }
