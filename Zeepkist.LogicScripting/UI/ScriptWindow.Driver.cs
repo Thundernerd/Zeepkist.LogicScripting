@@ -95,9 +95,13 @@ internal sealed partial class ScriptWindow
         public bool ShowsLibraries => _window._state.ShowLibraries;
 
         /// <summary>
-        /// Whether a height <see cref="SetWindowHeight"/> asked for waits for the window to be drawn.
+        /// Whether a size or position <see cref="SetWindowHeight"/>, <see cref="SetWindowSize"/> or
+        /// <see cref="CenterWindow"/> asked for waits for the window to be drawn.
         /// </summary>
-        public bool IsHeightPending => _window._requestedHeight != null;
+        public bool IsRectPending => _window._requestedWidth != null
+            || _window._requestedHeight != null
+            || _window._requestedTopLeft != null
+            || _window._requestedCenter;
 
         public void SetOpen(bool open)
         {
@@ -151,6 +155,23 @@ internal sealed partial class ScriptWindow
         public void SetWindowHeight(float height)
         {
             _window._requestedHeight = height;
+        }
+
+        /// <summary>
+        /// Like dragging the window's resize handle until it's this big, which it is from the next frame.
+        /// </summary>
+        public void SetWindowSize(float width, float height)
+        {
+            _window._requestedWidth = width;
+            _window._requestedHeight = height;
+        }
+
+        /// <summary>
+        /// Moves the window to the middle of the screen, at the size it has then, from the next frame.
+        /// </summary>
+        public void CenterWindow()
+        {
+            _window._requestedCenter = true;
         }
 
         /// <summary>
@@ -230,14 +251,14 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// What a Scenario can change that the window keeps into the next one: its height, the shown tab and the
-        /// warnings the tests turn on. A window that was never drawn has the height it first opens at. The styles the
-        /// tests turn off aren't in it, as none are at the start of a run.
+        /// What a Scenario can change that the window keeps into the next one: its size and position, the shown tab and
+        /// the warnings the tests turn on. A window that was never drawn has no rect, for the one it first opens at. The
+        /// styles the tests turn off aren't in it, as none are at the start of a run.
         /// </summary>
         public KeptState RememberKeptState()
         {
             return new KeptState(
-                _window._state.Height > 0 ? _window._state.Height : DefaultHeight,
+                _window._state.Width > 0 && _window._state.Height > 0 ? WindowRect : null,
                 _window._state.ShowLibraries,
                 _window._showLibraryReadFailed,
                 _window._showStartupWarning);
@@ -245,12 +266,23 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// Puts back what <see cref="RememberKeptState"/> remembered, and turns back on the styles
-        /// <see cref="TurnOffStyle"/> turned off. A closed window takes the height when it next opens.
+        /// <see cref="TurnOffStyle"/> turned off. A closed window takes the size and position when it next opens. With no
+        /// rect remembered, it gets the size it first opens at, in the middle of the screen, as it first opens.
         /// </summary>
         public void PutBackKeptState(KeptState state)
         {
             _window._startupCheck.TurnTestStylesBackOn();
-            SetWindowHeight(state.Height);
+            if (state.WindowRect is { } rect)
+            {
+                SetWindowSize(rect.W, rect.H);
+                _window._requestedTopLeft = new Vector2(rect.X, rect.Top);
+            }
+            else
+            {
+                SetWindowSize(DefaultWidth, DefaultHeight);
+                CenterWindow();
+            }
+
             ShowTab(state.ShowLibraries);
             ShowLibraryReadFailed(state.ShowLibraryReadFailed);
             ShowStartupWarning(state.ShowStartupWarning);

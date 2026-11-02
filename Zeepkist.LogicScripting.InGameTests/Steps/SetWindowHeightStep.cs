@@ -5,8 +5,6 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 internal sealed class SetWindowHeightStep : ScenarioStep
 {
-    private const float DrawSeconds = 2;
-
     public SetWindowHeightStep(int height)
     {
         Height = height;
@@ -20,16 +18,9 @@ internal sealed class SetWindowHeightStep : ScenarioStep
             yield break;
 
         context.Window.SetWindowHeight(Height);
-        yield return context.WaitUntil(() => !context.Window.IsHeightPending, DrawSeconds);
-        if (context.Window.IsHeightPending)
-        {
-            context.Fail("the window wasn't drawn to take the height");
+        yield return context.WaitForWindowRect();
+        if (context.Failed)
             yield break;
-        }
-
-        // A frame to lay the window out at its new height, and one for the footer, which sizes itself from the last
-        yield return null;
-        yield return null;
 
         // A height below the window's minimum gives the smallest window
         var actual = context.Window.WindowRect.H.ToString("0", CultureInfo.InvariantCulture);

@@ -1,0 +1,25 @@
+# A bigger window, for screenshots: set-window-size makes it wider and taller, keeping its top left corner, and
+# center-window brings it back onto the screen at that size. set-window-height then keeps the width. Run it before
+# kept-state, which checks that the window's size is put back for the next Scenario.
+open-window
+expect-window-size 1120 640
+new-script Lights
+set-text
+power_display(1 & 1)
+end
+
+set-window-size 1400 800
+expect-window-size 1400 800
+center-window
+expect-window-size 1400 800
+expect-editor-in-view
+screenshot bigger
+
+set-window-height 700
+expect-window-size 1400 700
+
+# Below the minimum height gives the shortest window, which still fits the editor
+set-window-size 900 1
+expect-editor-in-view
+screenshot shortest
+expect-no-exceptions

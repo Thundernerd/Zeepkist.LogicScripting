@@ -171,6 +171,24 @@ internal sealed class StepContext
     }
 
     /// <summary>
+    /// Waits for the window to take the size or position a step asked for, which it does as it's next drawn, and to lay
+    /// itself out in it. Fails the step when it isn't drawn in time.
+    /// </summary>
+    public IEnumerator WaitForWindowRect()
+    {
+        yield return WaitUntil(() => !Window.IsRectPending, WindowDrawSeconds);
+        if (Window.IsRectPending)
+        {
+            Fail("the window wasn't drawn to take the size or position");
+            yield break;
+        }
+
+        // A frame to lay the window out in its new rect, and one for the footer, which sizes itself from the last
+        yield return null;
+        yield return null;
+    }
+
+    /// <summary>
     /// The level editor, or null after failing the step when the game isn't in it.
     /// </summary>
     public LEV_LevelEditorCentral RequireEditor()

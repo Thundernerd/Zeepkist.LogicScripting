@@ -57,8 +57,12 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
     private bool _blockingKeyboard;
     private bool _failed;
 
-    // Set by the in-game tests, as Imui keeps the window's rect itself
+    // Set by the in-game tests, as Imui keeps the window's rect itself: a size, then where its top left corner goes,
+    // then whether it moves to the middle of the screen
+    private float? _requestedWidth;
     private float? _requestedHeight;
+    private Vector2? _requestedTopLeft;
+    private bool _requestedCenter;
 
     // Set by the in-game tests to show the libraries.json warning without a file that failed to read
     private bool _showLibraryReadFailed;

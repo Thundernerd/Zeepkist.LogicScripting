@@ -34,7 +34,15 @@ internal static class RectCheck
 
     public static string Describe(ImRect rect)
     {
-        return $"x {Pixels(rect.X)}, y {Pixels(rect.Y)}, {Pixels(rect.W)} by {Pixels(rect.H)} px";
+        return $"x {Pixels(rect.X)}, y {Pixels(rect.Y)}, {Size(rect.W, rect.H)} px";
+    }
+
+    /// <summary>
+    /// Such as <c>1600 by 900</c>.
+    /// </summary>
+    public static string Size(float width, float height)
+    {
+        return $"{Pixels(width)} by {Pixels(height)}";
     }
 
     public static string Pixels(float pixels)
