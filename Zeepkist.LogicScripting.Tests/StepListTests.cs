@@ -50,6 +50,7 @@ public class StepListTests
     [InlineData("caret-at-end", typeof(PlaceCaretStep))]
     [InlineData("complete", typeof(CompleteStep))]
     [InlineData("expect-completion t", typeof(ExpectCompletionStep))]
+    [InlineData("expect-completion-no-detail function", typeof(ExpectCompletionStep))]
     [InlineData("expect-call-help logic(", typeof(ExpectCallHelpStep))]
     [InlineData("expect-call-help-active op:", typeof(ExpectCallHelpActiveStep))]
     [InlineData("expect-call-help-no-active", typeof(ExpectCallHelpActiveStep))]
@@ -100,6 +101,26 @@ public class StepListTests
 
         Assert.Equal(label, step.Label);
         Assert.Equal(detail, step.Detail);
+    }
+
+    [Fact]
+    public void ExpectCompletionNoDetail_ALabel_AndAnEmptyDetail()
+    {
+        var step = Assert.IsType<ExpectCompletionStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-completion-no-detail f", out _).Steps));
+
+        Assert.Equal("f", step.Label);
+        Assert.Equal(string.Empty, step.Detail);
+    }
+
+    [Theory]
+    [InlineData("expect-completion-no-detail", "takes a row's label")]
+    [InlineData("expect-completion-no-detail f (a, a)", "with no spaces")]
+    public void ExpectCompletionNoDetail_TakesOneLabel(string line, string message)
+    {
+        var scenario = ScenarioParser.Parse("steps", line, out var error);
+
+        Assert.Null(scenario);
+        Assert.Contains(message, error);
     }
 
     [Theory]
