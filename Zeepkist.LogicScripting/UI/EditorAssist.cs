@@ -20,7 +20,8 @@ internal sealed class EditorAssist
     }
 
     /// <summary>
-    /// The Libraries on this machine, whose Functions the editor colors.
+    /// The Libraries on this machine, whose Functions the editor colors, and whose outputs completion lists after a
+    /// call's dot.
     /// </summary>
     public LibraryList Libraries { get; }
 

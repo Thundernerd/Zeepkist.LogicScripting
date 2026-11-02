@@ -93,6 +93,30 @@ public class CompletionSessionTests
     }
 
     [Fact]
+    public void TypingADotAfterAPlacedCall_OpensWithTheOutputsOfTheBlockInTheLevel()
+    {
+        var session = new CompletionSession(uid => uid == "D" ? new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId) : null);
+        const string Text = "x = placed(\"D\").";
+
+        session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
+
+        Assert.True(session.IsOpen);
+        Assert.Equal(["distance", "x", "y", "z"], session.Items.Select(i => i.Label));
+    }
+
+    [Fact]
+    public void TypingADotAfterALibraryFunctionsCall_OpensWithItsOutputs()
+    {
+        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null);
+        const string Text = "x = timing.edge(1).";
+
+        session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
+
+        Assert.True(session.IsOpen);
+        Assert.Equal(["lo", "hi"], session.Items.Select(i => i.Label));
+    }
+
+    [Fact]
     public void TypingADotAfterACall_OpensWithItsOutputs()
     {
         var session = new CompletionSession();
