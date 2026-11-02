@@ -41,6 +41,20 @@ public class CompletionSessionTests
         Assert.True(session.IsOpen);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Request_IsPending_UntilTheNextUpdate(bool focused)
+    {
+        var session = new CompletionSession();
+
+        session.Request();
+        Assert.True(session.IsRequestPending);
+
+        session.Update(new TextSnapshot("x = ", 4), typedName: false, whileTyping: false, focused: focused);
+        Assert.False(session.IsRequestPending);
+    }
+
     [Fact]
     public void AnEmptyPrefix_Closes_UnlessRequested()
     {

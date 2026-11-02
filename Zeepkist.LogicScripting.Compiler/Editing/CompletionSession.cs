@@ -35,6 +35,12 @@ public sealed class CompletionSession
     }
 
     public bool IsOpen { get; private set; }
+
+    /// <summary>
+    /// Whether a <see cref="Request"/> waits for the next <see cref="Update"/>, which opens the list and reads its items.
+    /// </summary>
+    public bool IsRequestPending => _openRequested;
+
     public IReadOnlyList<CompletionItem> Items { get; private set; } = [];
     public int Selected { get; private set; }
 

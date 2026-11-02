@@ -323,6 +323,9 @@ internal sealed partial class ScriptWindow
             _window._edited.Editor.RequestCompletion();
         }
 
+        /// <inheritdoc cref="ScriptEditor.IsCompletionRequestPending"/>
+        public bool IsCompletionRequestPending => _window._edited?.Editor.IsCompletionRequestPending ?? false;
+
         /// <inheritdoc cref="ScriptEditor.HoldSentEscape"/>
         public void HoldSentEscape()
         {
