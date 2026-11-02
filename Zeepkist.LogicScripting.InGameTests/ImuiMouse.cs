@@ -33,7 +33,7 @@ internal static class ImuiMouse
     /// </summary>
     public static bool Press()
     {
-        return Queue(new ImMouseEvent(ImMouseEventType.Down, 0, EventModifiers.None, Vector2.zero, ImMouseDevice.Mouse));
+        return Button(ImMouseEventType.Down);
     }
 
     /// <summary>
@@ -47,7 +47,12 @@ internal static class ImuiMouse
 
     public static bool Release()
     {
-        return Queue(new ImMouseEvent(ImMouseEventType.Up, 0, EventModifiers.None, Vector2.zero, ImMouseDevice.Mouse));
+        return Button(ImMouseEventType.Up);
+    }
+
+    private static bool Button(ImMouseEventType type)
+    {
+        return Queue(new ImMouseEvent(type, 0, EventModifiers.None, Vector2.zero, ImMouseDevice.Mouse));
     }
 
     private static bool Queue(ImMouseEvent mouseEvent)

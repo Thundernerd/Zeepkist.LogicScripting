@@ -169,16 +169,10 @@ internal static class StepList
     {
         var what = "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'";
         var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
-        if (!int.TryParse(words[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) || pixels == 0)
-            throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
-
-        if (words.Length == 1)
-            return new DragWindowEdgeStep(pixels, 1);
-
-        if (words.Length != 3 || words[1] != "over" || !StepArgument.TryPositive(words[2], out var frames))
-            throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
-
-        return new DragWindowEdgeStep(pixels, frames);
+        var frames = 1;
+        var read = int.TryParse(words[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) && pixels != 0
+            && (words.Length == 1 || (words.Length == 3 && words[1] == "over" && StepArgument.TryPositive(words[2], out frames)));
+        return read ? new DragWindowEdgeStep(pixels, frames) : throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
     }
 
     private static ScenarioStep None(string step, string argument, ScenarioStep created)

@@ -69,7 +69,12 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                 }
 
                 // Imui counts pixels up the screen, as Unity does
-                ImuiMouse.Drag(new Vector2(0, -GetMove(frame + 1)));
+                if (!ImuiMouse.Drag(new Vector2(0, -GetMove(frame + 1))))
+                {
+                    context.Fail($"frame {frame}: Imui has no backend to send the mouse to");
+                    yield break;
+                }
+
                 yield return null;
             }
         }
@@ -82,7 +87,12 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
             ImuiMouse.GiveBack();
         }
 
+        // A frame for Imui to take the release, drawn so the window says whether the handle let go
         yield return null;
+        yield return context.WaitForWindowDrawn();
+        if (context.Failed)
+            yield break;
+
         if (window.WindowLayout.IsResizing)
         {
             context.Fail("the resize handle kept the mouse after letting go");

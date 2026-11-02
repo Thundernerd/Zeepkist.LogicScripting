@@ -1,6 +1,4 @@
 using System.Collections;
-using Imui.Core;
-using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -27,17 +25,10 @@ internal sealed class ExpectWindowRectStep : ScenarioStep
         var rect = context.Window.WindowRect;
         var expected = RectCheck.Describe(remembered);
         var actual = RectCheck.Describe(rect);
-        if (IsSame(remembered, rect))
+        if (RectCheck.Matches(remembered, rect))
             context.Pass("the window is where it was", expected, actual);
         else
             context.Fail("the window's size or position changed", expected, actual);
     }
 
-    private static bool IsSame(ImRect a, ImRect b)
-    {
-        return Mathf.Abs(a.X - b.X) <= RectCheck.Tolerance
-            && Mathf.Abs(a.Y - b.Y) <= RectCheck.Tolerance
-            && Mathf.Abs(a.W - b.W) <= RectCheck.Tolerance
-            && Mathf.Abs(a.H - b.H) <= RectCheck.Tolerance;
-    }
 }
