@@ -41,10 +41,8 @@ internal static class PlacedBlocks
         if (block == null)
             return null;
 
-        var isInBlockGroup = BlockGroups.IsInAnyGroup(block);
-        return BlockManifest.TryGetBlock(block.blockID, out var type, out _)
-            ? new PlacedBlock(block.blockID, GetSettings(block, type), isInBlockGroup: isInBlockGroup)
-            : new PlacedBlock(block.blockID, isInBlockGroup: isInBlockGroup);
+        var settings = BlockManifest.TryGetBlock(block.blockID, out var type, out _) ? GetSettings(block, type) : null;
+        return new PlacedBlock(block.blockID, settings, isInBlockGroup: BlockGroups.IsInAnyGroup(block));
     }
 
     private static List<Setting> GetSettings(BlockProperties block, BlockType type)

@@ -26,7 +26,7 @@ All notable changes to Logic Scripting are listed here.
   A Function whose first line has an error, like `-> hi, hi`, lists no outputs and no inputs by name, since a call to it doesn't compile,
   and its row in the list shows no inputs.
   Nor does a `placed(...)` that doesn't compile: one with more than its UID in quotes, like `placed("AbC12", 1)`,
-  or for a block in a Script's Block Group, or one whose style is turned off for this game version.
+  one to a block in a Script's Block Group, or one to a block whose style is turned off for this game version.
 - Inside a call, a box above the line shows its inputs and settings, highlighting the one you're writing.
   It doesn't show for a call to a Function whose first line has an error, or to a name set to a `placed(...)` that doesn't compile.
 - Resting the mouse on the Script editor's text tells you about what's under it:

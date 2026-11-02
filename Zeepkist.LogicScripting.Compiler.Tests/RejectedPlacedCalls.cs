@@ -7,7 +7,7 @@ namespace TNRD.Zeepkist.LogicScripting.Compiler.Tests;
 /// <summary>
 /// <c>placed(...)</c> calls the compiler rejects, so the reference stands for nothing, though <see cref="Level"/> has
 /// a block with the UID they're written with. <c>{0}</c> is that UID: <c>T</c>, a Simple Telemetry, for its outputs,
-/// or <c>L</c>, a Lamp, for its inputs.
+/// or <c>L</c>, a Lamp, for its inputs. <c>G</c> before it names the same block in a Block Group.
 /// </summary>
 internal static class RejectedPlacedCalls
 {

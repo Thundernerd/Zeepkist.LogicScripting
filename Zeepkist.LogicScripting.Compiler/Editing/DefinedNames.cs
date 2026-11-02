@@ -294,8 +294,8 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes; null unless that's its one
-    /// argument, the only kind the compiler accepts.
+    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes; null when it takes anything
+    /// else, which the compiler rejects.
     /// </summary>
     internal static string FindPlacedUid(List<Token> tokens, int start)
     {
