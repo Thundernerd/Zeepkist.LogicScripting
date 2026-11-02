@@ -100,7 +100,10 @@ internal sealed class SetBlockSettingStep : ScenarioStep
         var setting = type.FindSetting(Setting);
         if (setting == null)
         {
-            var names = type.Settings.Select(s => s.Name).Append(BlockSetting.Hide.Name);
+            var names = type.Settings.Select(s => s.Name);
+            if (!type.IsPlacedOnly)
+                names = names.Append(BlockSetting.Hide.Name);
+
             context.Fail($"{type.Function} has no Setting called '{Setting}'", string.Join(", ", names), Setting);
             yield break;
         }
