@@ -18,17 +18,6 @@ internal sealed class ExpectWindowRectStep : ScenarioStep
             yield break;
         }
 
-        yield return context.WaitForWindowDrawn();
-        if (context.Failed)
-            yield break;
-
-        var rect = context.Window.WindowRect;
-        var expected = RectCheck.Describe(remembered);
-        var actual = RectCheck.Describe(rect);
-        if (RectCheck.Matches(remembered, rect))
-            context.Pass("the window is where it was", expected, actual);
-        else
-            context.Fail("the window's size or position changed", expected, actual);
+        yield return context.ExpectWindowRect(remembered, "the window is where it was", "the window's size or position changed");
     }
-
 }

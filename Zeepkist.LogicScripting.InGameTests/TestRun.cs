@@ -106,7 +106,9 @@ internal sealed class TestRun : IDisposable
     /// <summary>
     /// A failed step stops its scenario with a screenshot, and the run goes on with the next, on a new level and without
     /// the Libraries the last one made. It puts back what the window kept from the last one too, which a failed step
-    /// stopped short of doing. The walk already brought the first one to a new level.
+    /// stopped short of doing. A run starts with a window that was never drawn, so it remembers the window's rect after
+    /// the first step that draws it, before a later step can change it: the one the window first opens at. The walk
+    /// already brought the first one to a new level.
     /// </summary>
     private IEnumerator RunScenarios(List<Scenario> scenarios)
     {
@@ -128,7 +130,7 @@ internal sealed class TestRun : IDisposable
                     yield break;
             }
 
-            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, Screenshot);
+            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, Screenshot, () => startState.WindowRect);
             foreach (var step in scenario.Steps)
             {
                 context.Reset();
@@ -138,6 +140,12 @@ internal sealed class TestRun : IDisposable
                     _logger.LogError(exception);
                     context.Fail($"{exception.GetType().Name}: {exception.Message}");
                 });
+
+                if (startState.WindowRect == null && driver.DrawnWindowRect is { } rect)
+                {
+                    startState = startState.WithWindowRect(rect);
+                    _logger.LogInfo($"{Marker} start window rect {RectCheck.Describe(rect)}");
+                }
 
                 Step(new RunStep
                 {
