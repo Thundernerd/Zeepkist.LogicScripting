@@ -294,16 +294,29 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes; null when it takes anything
-    /// else, which the compiler rejects.
+    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes, in any parentheses, since the
+    /// compiler drops them; null when it takes anything else, which the compiler rejects.
     /// </summary>
     internal static string FindPlacedUid(List<Token> tokens, int start)
     {
-        if (start + 3 >= tokens.Count)
+        var uid = start + 2;
+        while (uid < tokens.Count && tokens[uid].Kind == TokenKind.OpenParen)
+        {
+            uid++;
+        }
+
+        if (uid >= tokens.Count || tokens[uid].Kind != TokenKind.String)
             return null;
 
-        var uid = tokens[start + 2];
-        return uid.Kind == TokenKind.String && tokens[start + 3].Kind == TokenKind.CloseParen ? uid.Text : null;
+        // The call's own ( and each one around the UID
+        var opened = uid - (start + 1);
+        for (var i = 1; i <= opened; i++)
+        {
+            if (uid + i >= tokens.Count || tokens[uid + i].Kind != TokenKind.CloseParen)
+                return null;
+        }
+
+        return tokens[uid].Text;
     }
 
     /// <summary>

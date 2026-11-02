@@ -803,6 +803,7 @@ public class CompletionTests
         Assert.Equal(expected, Labels("x = placed(\"T\").|", findPlacedBlock));
         Assert.Equal(["distance", "x", "y", "z"], Labels("x = logic(placed(\"D\").|", findPlacedBlock));
         Assert.Equal(["y"], Labels("x = placed(\"D\").y|", findPlacedBlock));
+        Assert.Equal(["distance", "x", "y", "z"], Labels("x = placed(((\"D\"))).|", findPlacedBlock));
     }
 
     [Theory]

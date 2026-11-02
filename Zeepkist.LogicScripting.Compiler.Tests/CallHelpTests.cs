@@ -44,10 +44,12 @@ public class CallHelpTests
         Assert.Equal(At("x = multiplexer(|").Items.Select(i => i.Label), help.Items.Select(i => i.Label));
     }
 
-    [Fact]
-    public void Items_ForAPlacedBlockReference_OnlyItsInputs()
+    [Theory]
+    [InlineData("lamp_1 = placed(\"L\")\nlamp_1(|")]
+    [InlineData("lamp_1 = placed((\"L\"))\nlamp_1(|")]
+    public void Items_ForAPlacedBlockReference_OnlyItsInputs(string text)
     {
-        var help = At("lamp_1 = placed(\"L\")\nlamp_1(|", uid => _level.GetValueOrDefault(uid));
+        var help = At(text, uid => _level.GetValueOrDefault(uid));
 
         Assert.Equal(["intensity", "red", "green", "blue", "range", "angle"], help.Items.Select(i => i.Label));
     }
