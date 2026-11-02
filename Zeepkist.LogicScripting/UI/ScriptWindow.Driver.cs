@@ -212,7 +212,7 @@ internal sealed partial class ScriptWindow
         /// <summary>
         /// Puts back what <see cref="RememberKeptState"/> remembered. A closed window takes the height when it next opens.
         /// </summary>
-        public void PutBack(KeptState state)
+        public void PutBackKeptState(KeptState state)
         {
             SetWindowHeight(state.Height);
             ShowTab(state.ShowLibraries);
