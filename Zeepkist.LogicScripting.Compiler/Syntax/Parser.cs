@@ -83,52 +83,68 @@ internal sealed partial class Parser
 
     /// <summary>
     /// A Function's first line, its body and its <c>end</c>; null when the first line has no name to call it by.
-    /// Indentation is only style, so the body ends at the first <c>end</c> line. A Function can't be defined inside
-    /// another, so a <c>function</c> line before it ends this one, to be read as the next Function.
     /// </summary>
     private FunctionDefinition ParseFunction()
     {
         var keyword = Current;
+        var bodyEnd = FindBodyEnd(_tokens, _index);
         var firstLine = ParseFirstLine();
         var name = firstLine.Name;
         var isComplete = firstLine.Error == null;
         if (!isComplete)
             _diagnostics.Add(firstLine.Error);
 
-        var shownName = name == null ? "This function" : $"Function '{name.Name}'";
+        // A line never runs past a line break, and a skipped continuation line is never a function or end line, so this
+        // stops right at the body's end
         List<Statement> body = [];
-        while (true)
+        while (_index < bodyEnd)
         {
-            if (Current.Kind == TokenKind.End)
-            {
-                _diagnostics.Add(new Diagnostic(keyword.Position, $"{shownName} has no {FunctionDefinition.EndKeyword}"));
-                isComplete = false;
-                break;
-            }
-
             if (Current.Kind == TokenKind.NewLine)
-            {
                 _index++;
-            }
-            else if (IsFunctionStart())
-            {
-                var message = $"{shownName} has no {FunctionDefinition.EndKeyword} before this one. Functions can't be defined inside each other";
-                _diagnostics.Add(new Diagnostic(Current.Position, message));
-                isComplete = false;
-                break;
-            }
-            else if (IsEndLine())
-            {
-                _index++;
-                break;
-            }
             else
-            {
                 ParseLine(body);
-            }
+        }
+
+        var shownName = name == null ? "This function" : $"Function '{name.Name}'";
+        if (Current.Kind == TokenKind.End)
+        {
+            _diagnostics.Add(new Diagnostic(keyword.Position, $"{shownName} has no {FunctionDefinition.EndKeyword}"));
+            isComplete = false;
+        }
+        else if (IsFunctionStart())
+        {
+            var message = $"{shownName} has no {FunctionDefinition.EndKeyword} before this one. Functions can't be defined inside each other";
+            _diagnostics.Add(new Diagnostic(Current.Position, message));
+            isComplete = false;
+        }
+        else
+        {
+            _index++;
         }
 
         return name == null ? null : new FunctionDefinition(keyword.Position, name, firstLine.Inputs, firstLine.Outputs, body, isComplete);
+    }
+
+    /// <summary>
+    /// The token the body of the Function at <paramref name="keyword"/> ends at: its <c>end</c>, the next Function's
+    /// keyword, or the end of the Script. Indentation is only style, so the body ends at the first <c>end</c> line. A
+    /// Function can't be defined inside another, so a <c>function</c> line before it ends this one, to be read as the
+    /// next Function. It parses nothing, so the editor can find bodies with it on each key press.
+    /// </summary>
+    public static int FindBodyEnd(List<Token> tokens, int keyword)
+    {
+        var index = FindLineEnd(tokens, keyword);
+        while (tokens[index].Kind != TokenKind.End)
+        {
+            if (tokens[index].Kind == TokenKind.NewLine)
+                index++;
+            else if (IsFunctionStart(tokens, index) || IsEndLine(tokens, index))
+                return index;
+            else
+                index = FindLineEnd(tokens, index);
+        }
+
+        return index;
     }
 
     /// <summary>
@@ -447,19 +463,31 @@ internal sealed partial class Parser
         return Current.Kind == TokenKind.Name && Peek(1).Kind == TokenKind.Equals;
     }
 
+    private bool IsFunctionStart()
+    {
+        return IsFunctionStart(_tokens, _index);
+    }
+
     /// <summary>
     /// <c>function = ...</c> is a definition, so it gets the reserved-word error instead.
     /// </summary>
-    private bool IsFunctionStart()
+    public static bool IsFunctionStart(List<Token> tokens, int index)
     {
-        return Current.Kind == TokenKind.Name && Current.Text == FunctionDefinition.Keyword && Peek(1).Kind != TokenKind.Equals;
+        return tokens[index].Kind == TokenKind.Name
+            && tokens[index].Text == FunctionDefinition.Keyword
+            && tokens[index + 1].Kind != TokenKind.Equals;
     }
 
     private bool IsEndLine()
     {
-        return Current.Kind == TokenKind.Name
-            && Current.Text == FunctionDefinition.EndKeyword
-            && Peek(1).Kind is TokenKind.NewLine or TokenKind.End;
+        return IsEndLine(_tokens, _index);
+    }
+
+    private static bool IsEndLine(List<Token> tokens, int index)
+    {
+        return tokens[index].Kind == TokenKind.Name
+            && tokens[index].Text == FunctionDefinition.EndKeyword
+            && tokens[index + 1].Kind is TokenKind.NewLine or TokenKind.End;
     }
 
     private bool IsNamedArgument(int offset)
@@ -499,10 +527,17 @@ internal sealed partial class Parser
 
     private void SkipLine()
     {
-        while (Current.Kind != TokenKind.NewLine && Current.Kind != TokenKind.End)
+        _index = FindLineEnd(_tokens, _index);
+    }
+
+    private static int FindLineEnd(List<Token> tokens, int index)
+    {
+        while (tokens[index].Kind != TokenKind.NewLine && tokens[index].Kind != TokenKind.End)
         {
-            _index++;
+            index++;
         }
+
+        return index;
     }
 
     /// <summary>
