@@ -125,9 +125,13 @@ disabled="$bepinex/zls-ingame-test-disabled"
 deploy="$plugins/Sideloaded/Plugins/$mod_guid"
 test_deploy="$plugins/Sideloaded/Plugins/$test_guid"
 build_files=("$mod_guid.dll" "$mod_guid.pdb" "$mod_guid.Compiler.dll" "$mod_guid.Compiler.pdb")
-# Marks the build a run installed, so the next run removes it instead of taking it for the player's own copy: one
-# --keep left, or one a run killed outright couldn't remove
+# Marks the build a run installed, with its files' hashes, so the next run removes it instead of taking it for the
+# player's own copy: one --keep left, or one a run killed outright couldn't remove. A file that no longer matches its
+# hash is a copy the player installed over it, which is set aside and put back like any other.
 build_marker="$deploy/.zls-ingame-test-build"
+# A build file is copied in under this prefix and then renamed, so a run killed while it copies can't leave a cut-off
+# file that doesn't match its hash
+part_prefix=".zls-ingame-test-part-"
 # Where the run backs up the mod's data and config and the game's level saves until it has put them back, so a run
 # killed outright leaves them for the next one to put back. Afterwards they move to the run folder.
 backup="$bepinex/zls-ingame-test-backup"
@@ -178,11 +182,18 @@ move_tree_back() {
 }
 
 remove_build() {
-    local file
-    for file in "${build_files[@]}"; do
-        rm -f "$deploy/$file"
-    done
-    rm -f "$build_marker"
+    local hash file
+    if [[ -f "$build_marker" ]]; then
+        while read -r hash file; do
+            [[ -f "$deploy/$file" ]] || continue
+            if [[ "$(sha256sum <"$deploy/$file")" == "$hash  -" ]]; then
+                rm -f "$deploy/$file"
+            else
+                log "Keeping $file: it isn't the build a run installed"
+            fi
+        done <"$build_marker"
+    fi
+    rm -f "$deploy/$part_prefix"* "$build_marker"
     [[ -d "$deploy" ]] && rmdir --ignore-fail-on-non-empty "$deploy"
     return 0
 }
@@ -441,13 +452,16 @@ while IFS= read -r -d '' file; do
 done < <(find "$plugins" -type f \( -iname "$mod_guid*" -o -iname 'net.tnrd.zeepkist.logicscripting*' \) -print0)
 
 mkdir -p "$deploy" "$test_deploy"
-# Before the build, so a run killed while it copies doesn't leave files the next run takes for the player's
-touch "$build_marker"
-deployed=1
+installed=()
 for file in "${build_files[@]}"; do
-    if [[ -f "$mod_build/$file" ]]; then
-        cp "$mod_build/$file" "$deploy/"
-    fi
+    [[ -f "$mod_build/$file" ]] && installed+=("$file")
+done
+# Before the build, so a run killed while it copies doesn't leave files the next run takes for the player's
+(cd "$mod_build" && sha256sum -- "${installed[@]}") >"$build_marker"
+deployed=1
+for file in "${installed[@]}"; do
+    cp "$mod_build/$file" "$deploy/$part_prefix$file"
+    mv "$deploy/$part_prefix$file" "$deploy/$file"
 done
 cp "$test_build/$test_guid.dll" "$test_build/$test_guid.pdb" "$test_deploy/"
 mkdir -p "$test_deploy/scenarios"
