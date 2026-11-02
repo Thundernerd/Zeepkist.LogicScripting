@@ -102,15 +102,16 @@ internal sealed partial class ScriptWindow
         RefreshScripts();
         _storageWarning = _edited?.StorageWarning;
         _storageWarningOf = _edited;
+        var minWidth = GetMinWidth(gui);
         var minHeight = GetMinHeight(gui);
-        ApplyRequestedRect(gui, minHeight);
+        ApplyRequestedRect(gui, minWidth, minHeight);
         var resizeHandleId = GetResizeHandleId(gui);
-        HoldResizeAt(gui, resizeHandleId, minHeight);
+        HoldResizeAt(gui, resizeHandleId, minWidth, minHeight);
         if (gui.BeginWindow(
                 Title,
                 ref open,
                 ref _mouseOver,
-                GetInitialRect(gui, minHeight),
+                GetInitialRect(gui, minWidth, minHeight),
                 mouseEntered: () => SetMouseBlocked(true),
                 mouseExited: () => SetMouseBlocked(false)))
         {
@@ -136,13 +137,13 @@ internal sealed partial class ScriptWindow
     /// Imui only takes this rect when it first makes the window and keeps its own rect after that, through test mode
     /// too. So it's where the window was in an earlier session, kept on screen in case the resolution changed since.
     /// </summary>
-    private ImRect GetInitialRect(ImGui gui, float minHeight)
+    private ImRect GetInitialRect(ImGui gui, float minWidth, float minHeight)
     {
         var screen = gui.Canvas.SafeScreenRect;
         if (_state.Width > 0 && _state.Height > 0)
         {
             var stored = new ImRect(_state.X, _state.Y, _state.Width, _state.Height);
-            return ImRectUtility.Clamp(screen, WithHeight(stored, Mathf.Max(stored.H, minHeight)));
+            return ImRectUtility.Clamp(screen, WithSize(stored, Mathf.Max(stored.W, minWidth), Mathf.Max(stored.H, minHeight)));
         }
 
         var width = Mathf.Min(DefaultWidth, screen.W);
@@ -164,6 +165,14 @@ internal sealed partial class ScriptWindow
     private static ImRect WithSize(ImRect rect, float width, float height)
     {
         return new ImRect(rect.X, rect.Top - height, width, height);
+    }
+
+    /// <summary>
+    /// The window is no narrower than the center's minimum with both sides collapsed to their strip.
+    /// </summary>
+    private static float GetMinWidth(ImGui gui)
+    {
+        return gui.Style.Window.ContentPadding.Horizontal + MinCenterWidth + (GetPanelHeaderHeight(gui) * 2);
     }
 
     /// <summary>
@@ -201,11 +210,11 @@ internal sealed partial class ScriptWindow
     /// <summary>
     /// Gives the window the size and position the in-game tests asked for before it begins: Imui lays out its content in
     /// the rect it has then, so a rect changed afterwards shows a frame late. The size is no bigger than the screen, as a
-    /// first open is, at least Imui's minimum width and at least <paramref name="minHeight"/> tall, keeping the top left
-    /// corner as dragging the resize handle does. A window Imui hasn't made yet starts through
+    /// first open is, at least <paramref name="minWidth"/> wide and <paramref name="minHeight"/> tall, keeping the top
+    /// left corner as dragging the resize handle does. A window Imui hasn't made yet starts through
     /// <see cref="GetInitialRect"/>, and takes the requests the frame after.
     /// </summary>
-    private void ApplyRequestedRect(ImGui gui, float minHeight)
+    private void ApplyRequestedRect(ImGui gui, float minWidth, float minHeight)
     {
         var windowId = gui.GetControlId(Title);
         if (gui.WindowManager.TryFindWindow(windowId) < 0)
@@ -214,7 +223,7 @@ internal sealed partial class ScriptWindow
         ref var window = ref gui.WindowManager.GetWindowState(windowId);
         var screen = gui.Canvas.SafeScreenRect;
         var request = _requestedRect;
-        var width = request.Width is { } requestedWidth ? Mathf.Max(Mathf.Min(requestedWidth, screen.W), ImWindow.MIN_WIDTH) : window.Rect.W;
+        var width = Mathf.Max(request.Width is { } requestedWidth ? Mathf.Min(requestedWidth, screen.W) : window.Rect.W, minWidth);
         var height = Mathf.Max(request.Height is { } requestedHeight ? Mathf.Min(requestedHeight, screen.H) : window.Rect.H, minHeight);
         var rect = WithSize(window.Rect, width, height);
         if (request.TopLeft is { } topLeft)
@@ -228,17 +237,21 @@ internal sealed partial class ScriptWindow
     }
 
     /// <summary>
-    /// Imui's resize handle takes a drag off the window's height as the window begins, down to Imui's own 64 px, so
-    /// clamping afterwards would draw the window too short for that frame. A drag that would take it below
-    /// <paramref name="minHeight"/> first makes the window as much taller as the drag takes off it past that.
+    /// Imui's resize handle takes a drag off the window's width and height as the window begins, down to Imui's own
+    /// 64 px, so clamping afterwards would draw the window too small for that frame. A drag that would take it below
+    /// <paramref name="minWidth"/> or <paramref name="minHeight"/> first makes the window as much wider or taller as the
+    /// drag takes off it past that.
     /// </summary>
-    private static void HoldResizeAt(ImGui gui, uint resizeHandleId, float minHeight)
+    private static void HoldResizeAt(ImGui gui, uint resizeHandleId, float minWidth, float minHeight)
     {
         ref readonly var evt = ref gui.Input.MouseEvent;
         if (evt.Type != ImMouseEventType.Drag || gui.GetActiveControl() != resizeHandleId)
             return;
 
         ref var window = ref gui.WindowManager.GetWindowState(gui.GetControlId(Title));
+        if (window.Rect.W + evt.Delta.x < minWidth)
+            window.Rect = WithSize(window.Rect, minWidth - evt.Delta.x, window.Rect.H);
+
         if (window.Rect.H - evt.Delta.y < minHeight)
             window.Rect = WithHeight(window.Rect, minHeight + evt.Delta.y);
     }
