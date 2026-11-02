@@ -183,10 +183,15 @@ move_tree_back() {
 
 remove_build() {
     local hash file
-    if [[ -f "$build_marker" ]]; then
+    if [[ -f "$build_marker" && ! -s "$build_marker" ]]; then
+        # Written by a version of this script that didn't record hashes, so all of the build is taken for the run's own
+        for file in "${build_files[@]}"; do
+            rm -f "$deploy/$file"
+        done
+    elif [[ -f "$build_marker" ]]; then
         while read -r hash file; do
             [[ -f "$deploy/$file" ]] || continue
-            if [[ "$(sha256sum <"$deploy/$file")" == "$hash  -" ]]; then
+            if (cd "$deploy" && sha256sum -c --status <<<"$hash  $file"); then
                 rm -f "$deploy/$file"
             else
                 log "Keeping $file: it isn't the build a run installed"
@@ -452,14 +457,14 @@ while IFS= read -r -d '' file; do
 done < <(find "$plugins" -type f \( -iname "$mod_guid*" -o -iname 'net.tnrd.zeepkist.logicscripting*' \) -print0)
 
 mkdir -p "$deploy" "$test_deploy"
-installed=()
+to_install=()
 for file in "${build_files[@]}"; do
-    [[ -f "$mod_build/$file" ]] && installed+=("$file")
+    [[ -f "$mod_build/$file" ]] && to_install+=("$file")
 done
-# Before the build, so a run killed while it copies doesn't leave files the next run takes for the player's
-(cd "$mod_build" && sha256sum -- "${installed[@]}") >"$build_marker"
+# Before copying the build, so a run killed while it copies doesn't leave files the next run takes for the player's
+(cd "$mod_build" && sha256sum -- "${to_install[@]}") >"$build_marker"
 deployed=1
-for file in "${installed[@]}"; do
+for file in "${to_install[@]}"; do
     cp "$mod_build/$file" "$deploy/$part_prefix$file"
     mv "$deploy/$part_prefix$file" "$deploy/$file"
 done
