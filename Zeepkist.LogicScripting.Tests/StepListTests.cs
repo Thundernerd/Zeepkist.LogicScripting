@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using TNRD.Zeepkist.LogicScripting.Compiler;
+using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.InGameTests;
 using TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 using TNRD.Zeepkist.LogicScripting.UI;
@@ -28,6 +30,9 @@ public class StepListTests
     [InlineData("expect-prompt none", typeof(ExpectPromptStep))]
     [InlineData("expect-footer-in-view", typeof(ExpectFooterInViewStep))]
     [InlineData("set-window-height 300", typeof(SetWindowHeightStep))]
+    [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
+    [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
+    [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
     [InlineData("library-read-failed on", typeof(LibraryReadFailedStep))]
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
     [InlineData("startup-warning on", typeof(StartupWarningStep))]
@@ -54,6 +59,7 @@ public class StepListTests
     [InlineData("type b = a", typeof(TypeStep))]
     [InlineData("place-block lamp", typeof(PlaceBlockStep))]
     [InlineData("place-block lamp as lamp", typeof(PlaceBlockStep))]
+    [InlineData("set-block-setting t mode global_velocity", typeof(SetBlockSettingStep))]
     [InlineData("insert-selected", typeof(InsertSelectedStep))]
     [InlineData("undo", typeof(UndoStep))]
     [InlineData("redo", typeof(RedoStep))]
@@ -254,6 +260,14 @@ public class StepListTests
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
     [InlineData("expect-editor-in-view-each-frame", "expect-editor-in-view-each-frame takes a whole number of 0 or more")]
     [InlineData("expect-editor-in-view-each-frame many", "expect-editor-in-view-each-frame takes a whole number of 0 or more, not 'many'")]
+    [InlineData("drag-window-edge", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'")]
+    [InlineData("drag-window-edge 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '0'")]
+    [InlineData("drag-window-edge up", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not 'up'")]
+    [InlineData("drag-window-edge -400 over 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over 0'")]
+    [InlineData("drag-window-edge -400 in 8", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 in 8'")]
+    [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
+    [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
+    [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
     public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
@@ -267,6 +281,17 @@ public class StepListTests
         var step = Assert.IsType<SetWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-height 300", out _).Steps));
 
         Assert.Equal(300, step.Height);
+    }
+
+    [Theory]
+    [InlineData("drag-window-edge 300", 300, 1)]
+    [InlineData("drag-window-edge -1000 over 10", -1000, 10)]
+    [InlineData("drag-window-edge +50  over  2", 50, 2)]
+    public void DragWindowEdge_ReadsThePixels_AndTheFrames(string line, int pixels, int frames)
+    {
+        var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal((pixels, frames), (step.Pixels, step.Frames));
     }
 
     [Fact]
@@ -302,6 +327,109 @@ public class StepListTests
     }
 
     [Fact]
+    public void SetBlockSetting_AName_ASetting_ThenAValue()
+    {
+        var step = Assert.IsType<SetBlockSettingStep>(Assert.Single(ScenarioParser.Parse("steps", "set-block-setting speed-gauge  mode global_velocity", out _).Steps));
+
+        Assert.Equal("speed-gauge", step.Name);
+        Assert.Equal("mode", step.Setting);
+        Assert.Equal("global_velocity", step.Value);
+    }
+
+    [Theory]
+    [InlineData("set-block-setting")]
+    [InlineData("set-block-setting t")]
+    [InlineData("set-block-setting t mode")]
+    [InlineData("set-block-setting t mode basic now")]
+    public void SetBlockSetting_TakesThreeWords(string line)
+    {
+        ScenarioParser.Parse("steps", line, out var error);
+
+        Assert.Contains("set-block-setting takes a placed block's name, a Setting's name and its value", error);
+    }
+
+    [Fact]
+    public void SetBlockSetting_TakesANameOfLettersDigitsDashesAndUnderscores()
+    {
+        ScenarioParser.Parse("steps", "set-block-setting a}b mode basic", out var error);
+
+        Assert.Contains("takes a name of letters", error);
+    }
+
+    [Theory]
+    [InlineData("basic", 0)]
+    [InlineData("global_velocity", 2)]
+    public void SetBlockSetting_AnOption_IsStoredAsItsIndex(string value, int index)
+    {
+        var setting = SetBlockSettingStep.ToSetting(BlockManifest.SimpleTelemetryMode, value, out var error);
+
+        Assert.Null(error);
+        Assert.Equal(("xbs", SettingKind.Int, index), (setting.Key, setting.Kind, setting.IntValue));
+    }
+
+    [Theory]
+    [InlineData("true", 1)]
+    [InlineData("false", 0)]
+    public void SetBlockSetting_ABool_IsStoredAsOneOrZero(string value, int stored)
+    {
+        var setting = SetBlockSettingStep.ToSetting(BlockManifest.DigitizerInvert, value, out var error);
+
+        Assert.Null(error);
+        Assert.Equal(("xt1", SettingKind.Int, stored), (setting.Key, setting.Kind, setting.IntValue));
+    }
+
+    [Fact]
+    public void SetBlockSetting_APlayer_IsStoredAsItsIndex()
+    {
+        var setting = SetBlockSettingStep.ToSetting(BlockManifest.PlayerOrEveryone, "2", out var error);
+
+        Assert.Null(error);
+        Assert.Equal(("xpr", SettingKind.Int, 2), (setting.Key, setting.Kind, setting.IntValue));
+    }
+
+    [Theory]
+    [InlineData("5", "5")]
+    [InlineData("-12", "-12")]
+    public void SetBlockSetting_ANumber_IsStoredAsText(string value, string stored)
+    {
+        var setting = SetBlockSettingStep.ToSetting(BlockManifest.RandomMinimum, value, out var error);
+
+        Assert.Null(error);
+        Assert.Equal(("xv1", SettingKind.Text, stored), (setting.Key, setting.Kind, setting.TextValue));
+    }
+
+    [Theory]
+    [InlineData("mode", "fast", "'fast' isn't an option of mode. Use basic, local_velocity, global_velocity")]
+    [InlineData("invert", "yes", "invert takes true or false, not 'yes'")]
+    [InlineData("player", "5", "player takes all, 1, 2, 3 or 4, not '5'")]
+    [InlineData("min", "1.5", "min takes a whole number, not '1.5'")]
+    [InlineData("ticks", "0", "ticks must be at least 1, not '0'")]
+    [InlineData("ticks", "99999999999", "ticks must be at most 2147483647, not '99999999999'")]
+    public void SetBlockSetting_AValueTheSettingDoesNotTake_SaysWhatItTakes(string name, string value, string error)
+    {
+        var setting = new[]
+        {
+            BlockManifest.SimpleTelemetryMode,
+            BlockManifest.DigitizerInvert,
+            BlockManifest.PlayerOrEveryone,
+            BlockManifest.RandomMinimum,
+            BlockManifest.Delay.FindSetting("ticks"),
+        }.Single(s => s.Name == name);
+
+        Assert.Null(SetBlockSettingStep.ToSetting(setting, value, out var actual));
+        Assert.Equal(error, actual);
+    }
+
+    [Fact]
+    public void SetBlockSetting_ATogglersTargets_CantBeSet()
+    {
+        var targets = BlockManifest.All.SelectMany(t => t.Settings).First(s => s.Type == SettingType.Targets);
+
+        Assert.Null(SetBlockSettingStep.ToSetting(targets, "a", out var error));
+        Assert.Equal($"set-block-setting can't set {targets.Name}, a list of blocks", error);
+    }
+
+    [Fact]
     public void TheStepList_HoldsExactlyTheStepsTheDocsList()
     {
         var documented = DocsTable("### Steps").Select(step => step.Split(' ')[0]);
@@ -328,6 +456,7 @@ public class StepListTests
     [InlineData("list-footer.zlstest")]
     [InlineData("startup-warning.zlstest")]
     [InlineData("select-layout-each-frame.zlstest")]
+    [InlineData("set-block-setting.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");

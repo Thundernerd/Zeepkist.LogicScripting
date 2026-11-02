@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Editing;
@@ -533,6 +534,31 @@ public class CompletionTests
         Assert.Equal(callee, context.DottedCallee);
         Assert.Equal(mode, context.DottedMode);
         Assert.Null(context.DottedName);
+        Assert.Null(context.DottedLibrary);
+    }
+
+    [Theory]
+    [InlineData("x = timing.edge(1).|")]
+    [InlineData("x = timing.edge(g(1), [a]).ho|")]
+    [InlineData("x = logic(timing.edge(1).|")]
+    public void Output_AfterALibraryFunctionsCallAndADot(string text)
+    {
+        var context = At(text);
+
+        Assert.Equal(CaretContextKind.Output, context.Kind);
+        Assert.Equal("timing", context.DottedLibrary);
+        Assert.Equal("edge", context.DottedCallee);
+        Assert.Null(context.DottedName);
+    }
+
+    [Theory]
+    [InlineData("x = placed(\"T\").|", "T")]
+    [InlineData("x = placed(T).|", null)]
+    [InlineData("x = placed().|", null)]
+    [InlineData("x = f(\"T\").|", null)]
+    public void DottedUid_IsTheUidOfAPlacedCallBeforeTheDot(string text, string uid)
+    {
+        Assert.Equal(uid, At(text).DottedUid);
     }
 
     [Theory]
@@ -542,7 +568,9 @@ public class CompletionTests
     [InlineData("x = f() .|")]
     [InlineData("x = (a).|")]
     [InlineData("x = f()(1).|")]
-    [InlineData("x = t.f().|")]
+    [InlineData("x = a.t.f().|")]
+    [InlineData("x = t .f().|")]
+    [InlineData("x = t. f().|")]
     [InlineData("x = [a].|")]
     public void None_AfterADotThatDoesntFollowANameOrACall(string text)
     {
@@ -720,6 +748,83 @@ public class CompletionTests
     }
 
     [Theory]
+    [InlineData(0, new[] { "speed", "yaw", "up", "state" })]
+    [InlineData(2, new[] { "x", "y", "z", "heading" })]
+    public void Items_AfterAPlacedCallsDot_TheOutputsOfTheBlockWithThatUidInTheLevel(int mode, string[] expected)
+    {
+        var level = new Dictionary<string, PlacedBlock>
+        {
+            ["T"] = new PlacedBlock(
+                BlockManifest.SimpleTelemetry.DefaultStyle.BlockId,
+                [Setting.Int(BlockManifest.SimpleTelemetryMode.Key, mode)]),
+            ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
+        };
+        Func<string, PlacedBlock> findPlacedBlock = level.GetValueOrDefault;
+
+        Assert.Equal(expected, Labels("x = placed(\"T\").|", findPlacedBlock));
+        Assert.Equal(["distance", "x", "y", "z"], Labels("x = logic(placed(\"D\").|", findPlacedBlock));
+        Assert.Equal(["y"], Labels("x = placed(\"D\").y|", findPlacedBlock));
+    }
+
+    [Theory]
+    [InlineData("x = placed(\"UNKNOWN\").|")]
+    [InlineData("x = placed(\"L\").|")]
+    [InlineData("x = placed(D).|")]
+    public void Items_AfterAPlacedCallsDot_NothingWhenNoBlockInTheLevelHasThatUidOrItHasOneOutput(string text)
+    {
+        var level = new Dictionary<string, PlacedBlock>
+        {
+            ["L"] = new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId),
+            ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
+        };
+
+        Assert.Empty(Labels(text, level.GetValueOrDefault));
+    }
+
+    [Theory]
+    [InlineData("x = timing.edge(1).|")]
+    [InlineData("x = logic(timing.edge(1, b: 2).|")]
+    [InlineData("function edge(a) -> x, y, z\nend\nx = timing.edge(1).|")]
+    [InlineData("timing = simple_telemetry()\nx = timing.edge(1).|")]
+    [InlineData("function g()\n  x = timing.edge(1).|\nend")]
+    public void Items_AfterALibraryFunctionCallsDot_ItsOutputs_InTheOrderItWritesThem(string text)
+    {
+        Assert.Equal(["lo", "hi"], NameLabels(text, Library(EdgeLibrary)));
+    }
+
+    [Theory]
+    [InlineData("x = timing.edge(1).|", "function edge(a) -> hi\n  hi = a\nend")]
+    [InlineData("x = timing.other(1).|", EdgeLibrary)]
+    [InlineData("x = nothing.edge(1).|", EdgeLibrary)]
+    [InlineData("x = timing.logic(1).|", EdgeLibrary)]
+    public void Items_AfterALibraryFunctionCallsDot_NothingWhenItsNotToALibraryFunctionWithSeveralOutputs(string text, string libraryText)
+    {
+        Assert.Empty(NameLabels(text, Library(libraryText)));
+    }
+
+    [Theory]
+    [InlineData(EdgeLibrary + "\nx = 1")]
+    [InlineData(EdgeLibrary + "\nfunction other(a) -> b\n  b = (a\nend")]
+    [InlineData(EdgeLibrary + "\nfunction edge(a) -> x, y\n  x = a\n  y = a\nend")]
+    public void Items_AfterALibraryFunctionCallsDot_NothingFromALibraryWithAnError(string libraryText)
+    {
+        Assert.Empty(NameLabels("x = timing.edge(1).|", Library(libraryText)));
+    }
+
+    [Fact]
+    public void Items_AfterALibraryFunctionCallsDot_NothingWithoutTheLibraries()
+    {
+        Assert.Empty(NameLabels("x = timing.edge(1).|"));
+    }
+
+    [Theory]
+    [MemberData(nameof(RejectedFirstLines))]
+    public void Items_AfterALibraryFunctionCallsDot_NothingFromAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
+    {
+        Assert.Empty(NameLabels("x = timing.f(1).|", Library($"{firstLine}\nend\nfunction g()\nend")));
+    }
+
+    [Theory]
     [MemberData(nameof(RejectedFirstLines))]
     public void Items_AfterADot_NothingFromAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
     {
@@ -884,20 +989,33 @@ public class CompletionTests
     /// <summary>
     /// With the names the text itself defines.
     /// </summary>
-    private static IReadOnlyList<CompletionItem> Names(string text)
+    private static IReadOnlyList<CompletionItem> Names(string text, Func<string, string> findLibrary = null)
     {
         var context = At(text);
-        return Completion.GetItems(context, DefinedNames.Read(context.Text));
+        return Completion.GetItems(context, DefinedNames.Read(context.Text), findLibrary: findLibrary);
     }
 
-    private static List<string> NameLabels(string text)
+    private static List<string> NameLabels(string text, Func<string, string> findLibrary = null)
     {
-        return Names(text).Select(i => i.Label).ToList();
+        return Names(text, findLibrary).Select(i => i.Label).ToList();
     }
 
-    private static List<string> Labels(string text)
+    private static List<string> Labels(string text, Func<string, PlacedBlock> findPlacedBlock = null)
     {
-        return Completion.GetItems(At(text)).Select(i => i.Label).ToList();
+        return Completion.GetItems(At(text), findPlacedBlock: findPlacedBlock).Select(i => i.Label).ToList();
+    }
+
+    /// <summary>
+    /// A Library with a Function of two outputs.
+    /// </summary>
+    private const string EdgeLibrary = "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend";
+
+    /// <summary>
+    /// A lookup with one Library, <c>timing</c>.
+    /// </summary>
+    private static Func<string, string> Library(string text)
+    {
+        return name => name == "timing" ? text : null;
     }
 
     private static CaretContext At(string marked)

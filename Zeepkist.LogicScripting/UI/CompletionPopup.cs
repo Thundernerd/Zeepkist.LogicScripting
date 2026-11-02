@@ -42,7 +42,7 @@ internal sealed class CompletionPopup
     public CompletionPopup(EditorAssist assist)
     {
         _assist = assist;
-        _session = new CompletionSession(assist.FindPlacedBlock);
+        _session = new CompletionSession(assist.FindPlacedBlock, assist.Libraries.FindText);
     }
 
     public bool IsOpen => _session.IsOpen;
@@ -114,7 +114,8 @@ internal sealed class CompletionPopup
 
             var item = _session.Items[i];
             var text = row.WithPadding(left: spacing, right: spacing);
-            var labelRoom = item.Detail.Length > 0 ? text.W - (spacing * DetailGap) - MinDetailWidth : text.W;
+            // Never more room than the widest detail takes, or a list of short details, such as outputs, cuts its labels
+            var labelRoom = item.Detail.Length > 0 ? text.W - (spacing * DetailGap) - Mathf.Min(MinDetailWidth, _detailWidth) : text.W;
             var label = text.TakeLeft(Mathf.Clamp(_labelWidth, 0, Mathf.Max(labelRoom, text.W / 2)), out var detail);
 
             // The highlighted row's background can be the accent color, which the syntax colors aren't made for

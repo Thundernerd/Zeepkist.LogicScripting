@@ -277,25 +277,40 @@ public static class DefinedNames
         end = start;
 
         var function = tokens[start].Text;
-        BlockType type;
-        PlacedBlock block = null;
         if (function == GraphBuilder.PlacedFunction)
         {
-            var uid = tokens[start + 2];
-            block = uid.Kind == TokenKind.String ? findPlacedBlock?.Invoke(uid.Text) : null;
-            type = block == null ? null : BlockManifest.GetPlacedType(block.BlockId);
-            if (type == null)
-                return null;
-        }
-        else if (!BlockManifest.TryGetFunction(function, out type))
-        {
-            return null;
+            var placed = FindPlaced(FindPlacedUid(tokens, start), findPlacedBlock);
+            if (placed != null)
+                end = FindCallEnd(tokens, start + 1, placed.Type, out _);
+
+            return placed;
         }
 
+        if (!BlockManifest.TryGetFunction(function, out var type))
+            return null;
+
         end = FindCallEnd(tokens, start + 1, type, out var mode);
-        return block == null
-            ? DefinedValue.BlockFunctionCall(type, mode)
-            : DefinedValue.PlacedBlockReference(type, GetPlacedMode(type, block));
+        return DefinedValue.BlockFunctionCall(type, mode);
+    }
+
+    /// <summary>
+    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> starts with; null when there's none.
+    /// </summary>
+    internal static string FindPlacedUid(List<Token> tokens, int start)
+    {
+        var uid = tokens[start + 2];
+        return uid.Kind == TokenKind.String ? uid.Text : null;
+    }
+
+    /// <summary>
+    /// The Placed Block Reference to the block in the level with <paramref name="uid"/>, in its mode there; null when
+    /// there's no such block, or no UID.
+    /// </summary>
+    internal static DefinedValue FindPlaced(string uid, Func<string, PlacedBlock> findPlacedBlock)
+    {
+        var block = uid == null ? null : findPlacedBlock?.Invoke(uid);
+        var type = block == null ? null : BlockManifest.GetPlacedType(block.BlockId);
+        return type == null ? null : DefinedValue.PlacedBlockReference(type, GetPlacedMode(type, block));
     }
 
     /// <summary>

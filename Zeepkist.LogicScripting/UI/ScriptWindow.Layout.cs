@@ -104,7 +104,8 @@ internal sealed partial class ScriptWindow
         _storageWarningOf = _edited;
         var minHeight = GetMinHeight(gui);
         ApplyHeight(gui, minHeight);
-        HoldResizeAt(gui, minHeight);
+        var resizeHandleId = GetResizeHandleId(gui);
+        HoldResizeAt(gui, resizeHandleId, minHeight);
         if (gui.BeginWindow(
                 Title,
                 ref open,
@@ -113,7 +114,9 @@ internal sealed partial class ScriptWindow
                 mouseEntered: () => SetMouseBlocked(true),
                 mouseExited: () => SetMouseBlocked(false)))
         {
-            StoreRect(gui.WindowManager.GetWindowState(gui.PeekId()).Rect);
+            ref var window = ref gui.WindowManager.GetWindowState(gui.PeekId());
+            StoreRect(window.Rect);
+            _windowLayout = new WindowLayout(Time.frameCount, minHeight, ImWindow.GetResizeHandleRect(gui, window.Rect), gui.IsControlActive(resizeHandleId));
             hovered = DrawRegions(gui);
         }
 
@@ -207,21 +210,25 @@ internal sealed partial class ScriptWindow
     /// clamping afterwards would draw the window too short for that frame. A drag that would take it below
     /// <paramref name="minHeight"/> first makes the window as much taller as the drag takes off it past that.
     /// </summary>
-    private static void HoldResizeAt(ImGui gui, float minHeight)
+    private static void HoldResizeAt(ImGui gui, uint resizeHandleId, float minHeight)
     {
         ref readonly var evt = ref gui.Input.MouseEvent;
-        if (evt.Type != ImMouseEventType.Drag)
+        if (evt.Type != ImMouseEventType.Drag || gui.GetActiveControl() != resizeHandleId)
             return;
 
-        // The ids Imui gives the window and, in its own scope, the title bar and then the resize handle
-        var windowId = gui.GetControlId(Title);
-        var resizeHandleId = gui.GetControlId(2u, gui.GetControlId("win_ctrl", windowId));
-        if (gui.GetActiveControl() != resizeHandleId)
-            return;
-
-        ref var window = ref gui.WindowManager.GetWindowState(windowId);
+        ref var window = ref gui.WindowManager.GetWindowState(gui.GetControlId(Title));
         if (window.Rect.H - evt.Delta.y < minHeight)
             window.Rect = WithHeight(window.Rect, minHeight + evt.Delta.y);
+    }
+
+    /// <summary>
+    /// The id Imui gives the window's resize handle, before the window begins.
+    /// </summary>
+    private static uint GetResizeHandleId(ImGui gui)
+    {
+        // The ids Imui gives the window and, in its own scope, the title bar and then the resize handle
+        var windowId = gui.GetControlId(Title);
+        return gui.GetControlId(2u, gui.GetControlId("win_ctrl", windowId));
     }
 
     private void StoreRect(ImRect rect)
