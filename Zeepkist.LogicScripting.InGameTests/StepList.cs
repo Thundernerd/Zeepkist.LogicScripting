@@ -51,6 +51,7 @@ internal static class StepList
         ["library-read-failed"] = (step, argument) => new LibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
         ["startup-warning"] = (step, argument) => new StartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
         ["expect-editor-in-view"] = (step, argument) => None(step, argument, new ExpectEditorInViewStep()),
+        ["expect-editor-in-view-each-frame"] = (step, argument) => new ExpectEditorInViewEachFrameStep(StepArgument.Count(step, argument)),
         ["compile"] = (step, argument) => None(step, argument, new CompileStep()),
         ["expect-text"] = (step, argument) => new ExpectTextStep(StepArgument.Text(step, argument, "the text to look for")),
         ["expect-result"] = (step, argument) => new ExpectResultStep(StepArgument.Text(step, argument, "the text to look for")),
