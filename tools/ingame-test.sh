@@ -131,6 +131,9 @@ build_marker="$deploy/.zls-ingame-test-build"
 # Where the run backs up the mod's data and config and the game's level saves until it has put them back, so a run
 # killed outright leaves them for the next one to put back. Afterwards they move to the run folder.
 backup="$bepinex/zls-ingame-test-backup"
+# A backup that was put back waits here while it moves to the run folder, so a move cut off can't leave the next run a
+# backup with some of its files gone
+done_backup="$backup.done"
 
 run_id="$(date +%Y%m%d-%H%M%S)"
 run_dir="$repo/.ingame-test/$run_id"
@@ -139,7 +142,7 @@ log "Run $run_id, game in $game"
 
 launched=0
 restored=0
-backing_up=0
+owns_backup=0
 deployed=0
 timed_out=0
 interrupted=0
@@ -309,31 +312,40 @@ collect() {
     } >"$run_dir/results.md"
 }
 
-# Puts the mod's data and config, the test plugin's config and the game's level saves back as a backup in $1 found
-# them. What a backup that was cut off didn't get to stays as it is.
+# Puts the mod's data and config, the test plugin's config and the game's level saves back as they were when the backup
+# in $1 was made. What a backup that was cut off didn't get to stays as it is. Fails when something couldn't be put
+# back, so the backup can stay for the next run to try again.
 put_back() {
-    local from="$1" folder
-    [[ -f "$from/had-test-cfg" ]] || rm -f "$test_cfg"
-    if [[ -f "$from/had-mod-data" ]]; then
-        rm -rf "$mod_data"
-        cp -a "$from/mod-data" "$mod_data"
-    elif [[ -f "$from/backed-up" ]]; then
-        rm -rf "$mod_data"
+    local from="$1" folder failed=0
+    if [[ ! -f "$from/had-test-cfg" && -f "$from/backed-up" ]]; then
+        rm -f "$test_cfg" || failed=1
     fi
-    [[ -f "$from/backed-up" ]] && rm -rf "$set_aside_data"
+    if [[ -f "$from/had-mod-data" ]]; then
+        rm -rf "$mod_data" && cp -a "$from/mod-data" "$mod_data" || failed=1
+    elif [[ -f "$from/backed-up" ]]; then
+        rm -rf "$mod_data" || failed=1
+    fi
+    if ((!failed)) && [[ -f "$from/backed-up" ]]; then
+        rm -rf "$set_aside_data" || failed=1
+    fi
     for folder in "${level_saves[@]}"; do
         if [[ -f "$from/had-$folder" ]]; then
-            rm -rf "${game_data:?}/$folder"
-            cp -a "$from/$folder" "$game_data/$folder"
+            rm -rf "${game_data:?}/$folder" && cp -a "$from/$folder" "$game_data/$folder" || failed=1
         elif [[ -f "$from/backed-up" ]]; then
-            rm -rf "${game_data:?}/$folder"
+            rm -rf "${game_data:?}/$folder" || failed=1
         fi
     done
     if [[ -f "$from/had-mod-cfg" ]]; then
-        cp -a "$from/$mod_guid.cfg" "$mod_cfg"
+        cp -a "$from/$mod_guid.cfg" "$mod_cfg" || failed=1
     elif [[ -f "$from/backed-up" ]]; then
-        rm -f "$mod_cfg"
+        rm -f "$mod_cfg" || failed=1
     fi
+    return "$failed"
+}
+
+# Moves the backup, once it's been put back, to $1
+move_backup() {
+    mv "$backup" "$done_backup" && mv "$done_backup" "$1"
 }
 
 # Runs once, from the end of a run or the EXIT trap. It mustn't stop halfway, so a second Ctrl+C is ignored and a
@@ -348,9 +360,12 @@ restore() {
 
     rm -rf "$test_deploy"
     # The mod saves its data when the game quits, so this has to wait until the game is gone
-    if ((backing_up)); then
-        put_back "$backup"
-        mv "$backup" "$run_dir/backup"
+    if ((owns_backup)); then
+        if put_back "$backup"; then
+            move_backup "$run_dir/backup"
+        else
+            log "Couldn't put back all of the backup in $backup, the next run tries again"
+        fi
     fi
 
     if ((keep && deployed)); then
@@ -385,10 +400,11 @@ if [[ -d "$disabled" ]]; then
     move_tree_back "$disabled" "$plugins"
 fi
 rm -rf "$test_deploy"
+rm -rf "$done_backup"
 if [[ -d "$backup" ]]; then
     log "Putting back the mod's data and config and the game's level saves as an earlier run found them"
-    put_back "$backup"
-    mv "$backup" "$run_dir/earlier-backup"
+    put_back "$backup" || fail "Couldn't put back all of the backup in $backup. Check it and run again."
+    move_backup "$run_dir/earlier-backup"
 fi
 if [[ -d "$set_aside_data" ]]; then
     log "Putting back the mod's data an earlier run set aside"
@@ -396,7 +412,7 @@ if [[ -d "$set_aside_data" ]]; then
     mv "$set_aside_data" "$mod_data"
 fi
 
-backing_up=1
+owns_backup=1
 mkdir -p "$backup"
 if [[ -d "$mod_data" ]]; then
     cp -a "$mod_data" "$backup/mod-data"
