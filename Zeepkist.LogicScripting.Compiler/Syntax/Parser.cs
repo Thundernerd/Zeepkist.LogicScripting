@@ -89,36 +89,11 @@ internal sealed partial class Parser
     private FunctionDefinition ParseFunction()
     {
         var keyword = Current;
-        _index++;
-        FunctionParameter name = null;
-        List<FunctionParameter> inputs = [];
-        List<FunctionParameter> outputs = [];
-        var isComplete = true;
-        try
-        {
-            name = ParseParameter("the function's name");
-            ExpectOpenParen();
-            if (Current.Kind == TokenKind.CloseParen)
-                _index++;
-            else
-                ParseParameters(inputs, "an input name", TokenKind.CloseParen, "',' or ')'");
-
-            if (Current.Kind == TokenKind.Arrow)
-            {
-                _index++;
-                ParseParameters(outputs, "an output name", null, "',' or the end of the line");
-            }
-            else if (Current.Kind != TokenKind.NewLine && Current.Kind != TokenKind.End)
-            {
-                throw Error(Current, $"Expected '->' or the end of the line, found {Describe(Current)}");
-            }
-        }
-        catch (SyntaxError error)
-        {
-            _diagnostics.Add(error.Diagnostic);
-            SkipLine();
-            isComplete = false;
-        }
+        var firstLine = ParseFirstLine();
+        var name = firstLine.Name;
+        var isComplete = firstLine.Error == null;
+        if (!isComplete)
+            _diagnostics.Add(firstLine.Error);
 
         var shownName = name == null ? "This function" : $"Function '{name.Name}'";
         List<Statement> body = [];
@@ -153,7 +128,53 @@ internal sealed partial class Parser
             }
         }
 
-        return name == null ? null : new FunctionDefinition(keyword.Position, name, inputs, outputs, body, isComplete);
+        return name == null ? null : new FunctionDefinition(keyword.Position, name, firstLine.Inputs, firstLine.Outputs, body, isComplete);
+    }
+
+    /// <summary>
+    /// The first line from the <c>function</c> keyword at <paramref name="keyword"/>, read the way
+    /// <see cref="Parse"/> reads it.
+    /// </summary>
+    public static FunctionFirstLine ParseFunctionFirstLine(List<Token> tokens, int keyword)
+    {
+        return new Parser(tokens, []) { _index = keyword }.ParseFirstLine();
+    }
+
+    /// <summary>
+    /// Reads from the keyword to the end of the line, even past a syntax error.
+    /// </summary>
+    private FunctionFirstLine ParseFirstLine()
+    {
+        _index++;
+        FunctionParameter name = null;
+        List<FunctionParameter> inputs = [];
+        List<FunctionParameter> outputs = [];
+        try
+        {
+            name = ParseParameter("the function's name");
+            ExpectOpenParen();
+            if (Current.Kind == TokenKind.CloseParen)
+                _index++;
+            else
+                ParseParameters(inputs, "an input name", TokenKind.CloseParen, "',' or ')'");
+
+            if (Current.Kind == TokenKind.Arrow)
+            {
+                _index++;
+                ParseParameters(outputs, "an output name", null, "',' or the end of the line");
+            }
+            else if (Current.Kind != TokenKind.NewLine && Current.Kind != TokenKind.End)
+            {
+                throw Error(Current, $"Expected '->' or the end of the line, found {Describe(Current)}");
+            }
+
+            return new FunctionFirstLine(name, inputs, outputs, null);
+        }
+        catch (SyntaxError error)
+        {
+            SkipLine();
+            return new FunctionFirstLine(name, inputs, outputs, error.Diagnostic);
+        }
     }
 
     /// <summary>

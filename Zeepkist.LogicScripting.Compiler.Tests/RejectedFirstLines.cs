@@ -23,6 +23,9 @@ internal static class RejectedFirstLines
         "function f(a, true) -> hi, lo",
         "function f(a) -> hi, g",
         "function f(a, f) -> hi, lo",
+        "function f(a) ->",
+        "function f a -> hi, lo",
+        "function f(",
     ];
 
     public static TheoryData<string> All => new(Lines);

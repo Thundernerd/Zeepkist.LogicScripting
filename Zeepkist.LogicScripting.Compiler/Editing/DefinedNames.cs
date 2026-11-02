@@ -124,7 +124,9 @@ public static class DefinedNames
 
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
             var inputNames = inputs.Select(t => t.Text).ToList();
-            var isRejected = !IsWellFormed(tokens, i) || !HasUsableNames(inputNames, outputs, functionNames);
+            var firstLine = Parser.ParseFunctionFirstLine(tokens, i);
+            var isRejected = firstLine.Error != null
+                || GraphBuilder.GetFirstLineNameErrors(firstLine.Inputs, firstLine.Outputs, functionNames.Contains).Count > 0;
             var function = new DefinedFunction(name?.Text, name?.Span ?? tokens[i].Span, inputNames, outputs, body, isRejected);
             functions.Add((function, inputs));
             i = j - 1;
@@ -139,65 +141,9 @@ public static class DefinedNames
     private static HashSet<string> ReadFunctionNames(List<Token> tokens)
     {
         return new HashSet<string>(Enumerable.Range(0, tokens.Count - 1)
-            .Where(i => IsFunctionStart(tokens, i) && tokens[i + 1].Kind == TokenKind.Name)
-            .Select(i => tokens[i + 1].Text)
-            .Where(n => !GraphBuilder.IsReserved(n)));
-    }
-
-    /// <summary>
-    /// Whether the first line from the keyword at <paramref name="keyword"/> reads the way the parser needs it: a name,
-    /// its inputs in parentheses and, after <c>-&gt;</c>, its outputs, each separated by a comma, and nothing after.
-    /// </summary>
-    private static bool IsWellFormed(List<Token> tokens, int keyword)
-    {
-        var i = keyword + 1;
-        if (tokens[i].Kind != TokenKind.Name || tokens[i + 1].Kind != TokenKind.OpenParen)
-            return false;
-
-        i += 2;
-        if (tokens[i].Kind != TokenKind.CloseParen && !SkipNames(tokens, ref i))
-            return false;
-
-        if (tokens[i].Kind != TokenKind.CloseParen)
-            return false;
-
-        i++;
-        if (tokens[i].Kind == TokenKind.Arrow)
-        {
-            i++;
-            if (!SkipNames(tokens, ref i))
-                return false;
-        }
-
-        return tokens[i].Kind is TokenKind.NewLine or TokenKind.End;
-    }
-
-    /// <summary>
-    /// False when a name is missing, at the start or after a comma.
-    /// </summary>
-    private static bool SkipNames(List<Token> tokens, ref int index)
-    {
-        while (true)
-        {
-            if (tokens[index].Kind != TokenKind.Name)
-                return false;
-
-            index++;
-            if (tokens[index].Kind != TokenKind.Comma)
-                return true;
-
-            index++;
-        }
-    }
-
-    /// <summary>
-    /// The compiler's checks of a first line's names: none is reserved or a Function's, no input or output is written
-    /// twice, and no output has an input's name.
-    /// </summary>
-    private static bool HasUsableNames(List<string> inputs, List<string> outputs, HashSet<string> functionNames)
-    {
-        var names = inputs.Concat(outputs).ToList();
-        return names.All(n => !GraphBuilder.IsReserved(n) && !functionNames.Contains(n)) && names.Distinct().Count() == names.Count;
+            .Where(i => IsFunctionStart(tokens, i))
+            .Select(i => Parser.ParseFunctionFirstLine(tokens, i).Name?.Name)
+            .Where(n => n != null && !GraphBuilder.IsReserved(n)));
     }
 
     /// <summary>

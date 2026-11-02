@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Compiler.Syntax;
@@ -62,8 +63,13 @@ internal sealed partial class GraphBuilder
     /// </summary>
     private string GetNameError(string name)
     {
+        return GetNameError(name, Functions.ContainsKey);
+    }
+
+    private static string GetNameError(string name, Func<string, bool> isFunction)
+    {
         return GetReservedNameError(name)
-            ?? (Functions.ContainsKey(name) ? $"'{name}' is a function and can't be used as a name" : null);
+            ?? (isFunction(name) ? $"'{name}' is a function and can't be used as a name" : null);
     }
 
     private static string GetReservedNameError(string name)
