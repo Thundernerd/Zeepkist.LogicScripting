@@ -13,7 +13,7 @@ public sealed class DefinedFunction
         IReadOnlyList<string> inputs,
         IReadOnlyList<string> outputs,
         TextSpan body,
-        bool isRejected = false)
+        bool isRejected)
     {
         Name = name;
         Span = span;
@@ -42,8 +42,7 @@ public sealed class DefinedFunction
     public IReadOnlyList<string> Outputs { get; }
 
     /// <summary>
-    /// Whether the compiler rejects the first line, so a call to the Function stands for nothing: it has no outputs to
-    /// pick and no inputs to name.
+    /// Whether the compiler rejects the first line, so a call to the Function stands for nothing.
     /// </summary>
     public bool IsRejected { get; }
 

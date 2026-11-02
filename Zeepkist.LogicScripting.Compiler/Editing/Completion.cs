@@ -177,7 +177,7 @@ public static class Completion
         if (value?.Type != null)
             return GetOutputNames(value.Type, value.Mode);
 
-        return GetOutputs(value?.Callee);
+        return GetUsableOutputs(value?.Callee);
     }
 
     /// <summary>
@@ -188,10 +188,10 @@ public static class Completion
         if (BlockManifest.TryGetFunction(context.DottedCallee, out var type))
             return GetOutputNames(type, context.DottedMode);
 
-        return GetOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
+        return GetUsableOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
     }
 
-    private static IReadOnlyList<string> GetOutputs(DefinedFunction function)
+    private static IReadOnlyList<string> GetUsableOutputs(DefinedFunction function)
     {
         return function is { IsRejected: false } ? function.Outputs : [];
     }

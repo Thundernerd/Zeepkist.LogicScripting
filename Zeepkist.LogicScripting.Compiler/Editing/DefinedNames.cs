@@ -65,7 +65,8 @@ public static class DefinedNames
     /// </summary>
     internal static List<(DefinedFunction Function, List<Token> Inputs)> ReadFunctions(List<Token> tokens)
     {
-        List<(string Name, TextSpan Span, List<Token> Inputs, List<string> Outputs, TextSpan Body, bool IsWellFormed)> read = [];
+        var functionNames = ReadFunctionNames(tokens);
+        List<(DefinedFunction, List<Token>)> functions = [];
         for (var i = 0; i + 1 < tokens.Count; i++)
         {
             if (!IsFunctionStart(tokens, i))
@@ -122,18 +123,25 @@ public static class DefinedNames
             }
 
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
-            read.Add((name?.Text, name?.Span ?? tokens[i].Span, inputs, outputs, body, IsWellFormed(tokens, i)));
+            var inputNames = inputs.Select(t => t.Text).ToList();
+            var isRejected = !IsWellFormed(tokens, i) || !HasUsableNames(inputNames, outputs, functionNames);
+            var function = new DefinedFunction(name?.Text, name?.Span ?? tokens[i].Span, inputNames, outputs, body, isRejected);
+            functions.Add((function, inputs));
             i = j - 1;
         }
 
-        // Like the compiler, any Function's name counts, even a later one's, and one defined twice counts once
-        var functionNames = new HashSet<string>(read.Select(f => f.Name).Where(n => n != null && !GraphBuilder.IsReserved(n)));
-        return read.Select(f =>
-        {
-            var inputs = f.Inputs.Select(t => t.Text).ToList();
-            var isRejected = !f.IsWellFormed || !HasUsableNames(inputs, f.Outputs, functionNames);
-            return (new DefinedFunction(f.Name, f.Span, inputs, f.Outputs, f.Body, isRejected), f.Inputs);
-        }).ToList();
+        return functions;
+    }
+
+    /// <summary>
+    /// Like the compiler, every Function's name counts against a first line's names, even a later one's.
+    /// </summary>
+    private static HashSet<string> ReadFunctionNames(List<Token> tokens)
+    {
+        return new HashSet<string>(Enumerable.Range(0, tokens.Count - 1)
+            .Where(i => IsFunctionStart(tokens, i) && tokens[i + 1].Kind == TokenKind.Name)
+            .Select(i => tokens[i + 1].Text)
+            .Where(n => !GraphBuilder.IsReserved(n)));
     }
 
     /// <summary>
@@ -165,7 +173,7 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// Moves past names separated by commas; false when there's no name, or none after a comma.
+    /// False when a name is missing, at the start or after a comma.
     /// </summary>
     private static bool SkipNames(List<Token> tokens, ref int index)
     {
