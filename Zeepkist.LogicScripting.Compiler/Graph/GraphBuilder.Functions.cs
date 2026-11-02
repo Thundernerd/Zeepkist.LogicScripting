@@ -85,54 +85,57 @@ internal sealed partial class GraphBuilder
     /// </summary>
     private bool CheckHeader(FunctionDefinition function)
     {
-        var isValid = function.IsComplete;
-        HashSet<string> inputs = [];
-        foreach (var input in function.Inputs)
+        var nameErrors = GetFirstLineNameErrors(function.Inputs, function.Outputs, Functions.ContainsKey);
+        foreach (var (parameter, message) in nameErrors)
         {
-            if (!CheckParameterName(input))
+            Error(parameter, message);
+        }
+
+        if (function.IsComplete)
+        {
+            foreach (var output in function.Outputs.Where(o => nameErrors.All(e => e.Parameter != o)))
             {
-                isValid = false;
-            }
-            else if (!inputs.Add(input.Name))
-            {
-                Error(input, $"'{input.Name}' is already an input");
-                isValid = false;
+                if (!function.Body.OfType<Definition>().Any(d => d.Name == output.Name))
+                    Error(output, $"'{function.Name.Name}' never defines its output '{output.Name}'");
             }
         }
 
-        HashSet<string> outputs = [];
-        foreach (var output in function.Outputs)
-        {
-            if (!CheckParameterName(output))
-            {
-                isValid = false;
-            }
-            else if (inputs.Contains(output.Name))
-            {
-                Error(output, $"'{output.Name}' is an input. Give the output a name of its own");
-                isValid = false;
-            }
-            else if (!outputs.Add(output.Name))
-            {
-                Error(output, $"'{output.Name}' is already an output");
-                isValid = false;
-            }
-            else if (function.IsComplete && !function.Body.OfType<Definition>().Any(d => d.Name == output.Name))
-            {
-                Error(output, $"'{function.Name.Name}' never defines its output '{output.Name}'");
-            }
-        }
-
-        return isValid;
+        return function.IsComplete && nameErrors.Count == 0;
     }
 
-    private bool CheckParameterName(FunctionParameter parameter)
+    /// <summary>
+    /// Why each input and output that can't have its name can't: it's reserved or a Function's, written twice, or an
+    /// output with an input's name. The editor checks a first line with these too.
+    /// </summary>
+    /// <param name="inputs"></param>
+    /// <param name="outputs"></param>
+    /// <param name="isFunction">Whether the scope has a Function by the name.</param>
+    internal static List<(FunctionParameter Parameter, string Message)> GetFirstLineNameErrors(
+        List<FunctionParameter> inputs,
+        List<FunctionParameter> outputs,
+        Func<string, bool> isFunction)
     {
-        var message = GetNameError(parameter.Name);
-        if (message != null)
-            Error(parameter, message);
+        List<(FunctionParameter, string)> errors = [];
+        HashSet<string> inputNames = [];
+        foreach (var input in inputs)
+        {
+            var message = GetNameError(input.Name, isFunction)
+                ?? (inputNames.Add(input.Name) ? null : $"'{input.Name}' is already an input");
+            if (message != null)
+                errors.Add((input, message));
+        }
 
-        return message == null;
+        HashSet<string> outputNames = [];
+        foreach (var output in outputs)
+        {
+            var message = GetNameError(output.Name, isFunction)
+                ?? (inputNames.Contains(output.Name) ? $"'{output.Name}' is an input. Give the output a name of its own" : null)
+                ?? (outputNames.Add(output.Name) ? null : $"'{output.Name}' is already an output");
+            if (message != null)
+                errors.Add((output, message));
+        }
+
+        return errors;
     }
 
     /// <summary>
