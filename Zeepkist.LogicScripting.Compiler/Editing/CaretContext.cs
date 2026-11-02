@@ -113,7 +113,7 @@ public sealed class CaretContext
     public string DottedMode { get; }
 
     /// <summary>
-    /// The UID in quotes the <c>placed(...)</c> call before the dot starts with; null when there's none, or the
+    /// The UID in quotes the <c>placed(...)</c> call before the dot takes; null when it takes anything else, or the
     /// <see cref="DottedCallee"/> isn't <c>placed</c>.
     /// </summary>
     public string DottedUid { get; }

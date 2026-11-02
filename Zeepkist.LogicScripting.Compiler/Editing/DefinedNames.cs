@@ -294,21 +294,41 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> starts with; null when there's none.
+    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes, in any parentheses, since the
+    /// compiler drops them; null when it takes anything else, which the compiler rejects.
     /// </summary>
     internal static string FindPlacedUid(List<Token> tokens, int start)
     {
-        var uid = tokens[start + 2];
-        return uid.Kind == TokenKind.String ? uid.Text : null;
+        var uid = start + 2;
+        while (uid < tokens.Count && tokens[uid].Kind == TokenKind.OpenParen)
+        {
+            uid++;
+        }
+
+        if (uid >= tokens.Count || tokens[uid].Kind != TokenKind.String)
+            return null;
+
+        // The call's own ( and each one around the UID
+        var opened = uid - (start + 1);
+        for (var i = 1; i <= opened; i++)
+        {
+            if (uid + i >= tokens.Count || tokens[uid + i].Kind != TokenKind.CloseParen)
+                return null;
+        }
+
+        return tokens[uid].Text;
     }
 
     /// <summary>
     /// The Placed Block Reference to the block in the level with <paramref name="uid"/>, in its mode there; null when
-    /// there's no such block, or no UID.
+    /// there's no such block, no UID, or the block is in a Block Group, which the compiler rejects.
     /// </summary>
     internal static DefinedValue FindPlaced(string uid, Func<string, PlacedBlock> findPlacedBlock)
     {
         var block = uid == null ? null : findPlacedBlock?.Invoke(uid);
+        if (block is { IsInBlockGroup: true })
+            return null;
+
         var type = block == null ? null : BlockManifest.GetPlacedType(block.BlockId);
         return type == null ? null : DefinedValue.PlacedBlockReference(type, GetPlacedMode(type, block));
     }

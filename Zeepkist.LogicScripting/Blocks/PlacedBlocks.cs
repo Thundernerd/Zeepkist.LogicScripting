@@ -32,8 +32,8 @@ internal static class PlacedBlocks
     }
 
     /// <summary>
-    /// The block's ID and Settings only, for the editor's help, which looks up every reference on each edit and has no
-    /// use for the Wires <see cref="Find"/> follows.
+    /// The block's ID, Settings and Block Group only, for the editor's help, which looks up every reference on each
+    /// edit and has no use for the Wires <see cref="Find"/> follows.
     /// </summary>
     public static PlacedBlock FindWithoutWires(LEV_LevelEditorCentral central, string uid)
     {
@@ -41,9 +41,8 @@ internal static class PlacedBlocks
         if (block == null)
             return null;
 
-        return BlockManifest.TryGetBlock(block.blockID, out var type, out _)
-            ? new PlacedBlock(block.blockID, GetSettings(block, type))
-            : new PlacedBlock(block.blockID);
+        var settings = BlockManifest.TryGetBlock(block.blockID, out var type, out _) ? GetSettings(block, type) : null;
+        return new PlacedBlock(block.blockID, settings, isInBlockGroup: BlockGroups.IsInAnyGroup(block));
     }
 
     private static List<Setting> GetSettings(BlockProperties block, BlockType type)
