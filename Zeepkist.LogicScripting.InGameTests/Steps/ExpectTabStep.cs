@@ -23,7 +23,7 @@ internal sealed class ExpectTabStep : ScenarioStep
             if (context.Window.ShowsLibraries == Libraries)
                 context.Pass($"the {actual} tab shows", expected, actual);
             else
-                context.Fail($"the {actual} tab shows", expected, actual);
+                context.Fail($"the {actual} tab shows instead", expected, actual);
         }
 
         yield return null;

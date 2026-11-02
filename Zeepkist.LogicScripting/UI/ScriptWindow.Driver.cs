@@ -89,7 +89,7 @@ internal sealed partial class ScriptWindow
         public WarningLayout LibraryReadFailedLayout => _window._libraryReadFailedLayout;
 
         /// <summary>
-        /// Whether the Scripts side shows the Libraries tab rather than the Scripts tab.
+        /// Kept while the Scripts side is collapsed, for when it's shown again.
         /// </summary>
         public bool ShowsLibraries => _window._state.ShowLibraries;
 

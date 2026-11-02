@@ -27,10 +27,10 @@ internal sealed class ExpectWindowHeightStep : ScenarioStep
 
         var height = context.Window.WindowRect.H;
         var expected = Height.ToString(CultureInfo.InvariantCulture);
-        var actual = height.ToString("0.#", CultureInfo.InvariantCulture);
+        var actual = RectCheck.Pixels(height);
         if (Mathf.Abs(height - Height) <= RectCheck.Tolerance)
             context.Pass($"{actual} px tall", expected, actual);
         else
-            context.Fail($"the window is {actual} px tall", expected, actual);
+            context.Fail($"{actual} px tall", expected, actual);
     }
 }

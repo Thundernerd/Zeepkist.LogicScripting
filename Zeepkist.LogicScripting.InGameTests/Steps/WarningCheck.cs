@@ -11,10 +11,10 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 internal static class WarningCheck
 {
     /// <summary>
-    /// Reads whether the window drew the warning from <paramref name="layout"/>, failing with
+    /// Reads whether the window drew the warning with <paramref name="readLayout"/>, failing with
     /// <paramref name="notDrawn"/> when the part of the window it goes in wasn't drawn that frame.
     /// </summary>
-    public static IEnumerator Run(StepContext context, bool shown, string warning, Func<ScriptWindow.Driver, WarningLayout> layout, string notDrawn)
+    public static IEnumerator Run(StepContext context, bool shown, string warning, Func<ScriptWindow.Driver, WarningLayout> readLayout, string notDrawn)
     {
         if (!context.RequireOpenWindow())
             yield break;
@@ -23,7 +23,7 @@ internal static class WarningCheck
         if (context.Failed)
             yield break;
 
-        var drawn = layout(context.Window);
+        var drawn = readLayout(context.Window);
         if (drawn.Frame != Time.frameCount)
         {
             context.Fail(notDrawn, $"Unity frame {Time.frameCount}", $"Unity frame {drawn.Frame}");
@@ -33,9 +33,9 @@ internal static class WarningCheck
         var expected = Describe(shown);
         var actual = Describe(drawn.Shown);
         if (drawn.Shown == shown)
-            context.Pass($"{warning}: {Shown(shown)}", expected, actual);
+            context.Pass($"{warning}: {DescribeDrawn(shown)}", expected, actual);
         else
-            context.Fail($"{warning}: {Shown(drawn.Shown)}", expected, actual);
+            context.Fail($"{warning}: {DescribeDrawn(drawn.Shown)}", expected, actual);
     }
 
     private static string Describe(bool shown)
@@ -43,7 +43,7 @@ internal static class WarningCheck
         return shown ? "on" : "off";
     }
 
-    private static string Shown(bool shown)
+    private static string DescribeDrawn(bool shown)
     {
         return shown ? "shown" : "not shown";
     }
