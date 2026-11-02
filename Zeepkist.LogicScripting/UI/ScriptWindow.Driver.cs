@@ -75,6 +75,9 @@ internal sealed partial class ScriptWindow
         /// <inheritdoc cref="UI.EditorLayout"/>
         public EditorLayout EditorLayout => _window._editorLayout;
 
+        /// <inheritdoc cref="UI.WindowLayout"/>
+        public WindowLayout WindowLayout => _window._windowLayout;
+
         /// <summary>
         /// Whether a height <see cref="SetWindowHeight"/> asked for waits for the window to be drawn.
         /// </summary>

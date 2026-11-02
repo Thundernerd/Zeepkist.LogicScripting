@@ -30,6 +30,9 @@ public class StepListTests
     [InlineData("expect-prompt none", typeof(ExpectPromptStep))]
     [InlineData("expect-footer-in-view", typeof(ExpectFooterInViewStep))]
     [InlineData("set-window-height 300", typeof(SetWindowHeightStep))]
+    [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
+    [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
+    [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
     [InlineData("library-read-failed on", typeof(LibraryReadFailedStep))]
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
     [InlineData("startup-warning on", typeof(StartupWarningStep))]
@@ -257,6 +260,14 @@ public class StepListTests
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
     [InlineData("expect-editor-in-view-each-frame", "expect-editor-in-view-each-frame takes a whole number of 0 or more")]
     [InlineData("expect-editor-in-view-each-frame many", "expect-editor-in-view-each-frame takes a whole number of 0 or more, not 'many'")]
+    [InlineData("drag-window-edge", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'")]
+    [InlineData("drag-window-edge 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '0'")]
+    [InlineData("drag-window-edge up", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not 'up'")]
+    [InlineData("drag-window-edge -400 over 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over 0'")]
+    [InlineData("drag-window-edge -400 in 8", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 in 8'")]
+    [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
+    [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
+    [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
     public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
@@ -270,6 +281,17 @@ public class StepListTests
         var step = Assert.IsType<SetWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-height 300", out _).Steps));
 
         Assert.Equal(300, step.Height);
+    }
+
+    [Theory]
+    [InlineData("drag-window-edge 300", 300, 1)]
+    [InlineData("drag-window-edge -1000 over 10", -1000, 10)]
+    [InlineData("drag-window-edge +50  over  2", 50, 2)]
+    public void DragWindowEdge_ReadsThePixels_AndTheFrames(string line, int pixels, int frames)
+    {
+        var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal((pixels, frames), (step.Pixels, step.Frames));
     }
 
     [Fact]
