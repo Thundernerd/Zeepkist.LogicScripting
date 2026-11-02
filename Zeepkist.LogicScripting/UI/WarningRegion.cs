@@ -5,8 +5,8 @@ using Imui.Core;
 namespace TNRD.Zeepkist.LogicScripting.UI;
 
 /// <summary>
-/// Warnings pinned above what they're about, in a region of their own. Where there isn't room for all of them the
-/// region keeps a row, which the window's minimum height makes room for, and the rest scrolls.
+/// Warnings pinned in place, in a region of their own. Where there isn't room for all of them the region keeps a row,
+/// which the window's minimum height makes room for, and the rest scrolls.
 /// </summary>
 internal static class WarningRegion
 {

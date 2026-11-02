@@ -28,6 +28,7 @@ internal sealed partial class ScriptWindow
     private const string ReferenceTab = "Reference";
     private const string ScriptsTab = "Scripts";
     private const string LibrariesTab = "Libraries";
+    private const string NoScriptText = "No Script selected. Make one with New Script.";
 
     /// <summary>
     /// Narrower than this, the sides draw collapsed whatever the state says, so the editor stays usable.
@@ -154,16 +155,21 @@ internal sealed partial class ScriptWindow
         var minTabHeight = Mathf.Max(ScriptListPanel.GetMinHeight(gui), LibraryListPanel.GetMinHeightWithWarning(gui, ShowsLibraryReadFailed));
         var minScriptsHeight = GetPanelHeaderHeight(gui) + ImTabsPane.GetTabBarHeight(gui) + (spacing * 2) + minTabHeight;
 
-        // The center's padding, and each warning's spacing under what's above it
-        var warningCount = (GetStartupWarnings().Count > 0 ? 1 : 0) + (_edited?.StorageWarning != null ? 1 : 0);
-        var minWarningsHeight = (WindowRegion.GetRowHeight(gui) + spacing) * warningCount;
-        var minCenterHeight = gui.GetRowHeight() + GetMinEditorHeight(gui) + minWarningsHeight + (spacing * 2);
+        // The center's padding, and a row of the startup check's warnings with the spacing under it
+        var minStartupHeight = GetStartupWarnings().Count > 0 ? WindowRegion.GetRowHeight(gui) + spacing : 0;
+        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _edited?.StorageWarning != null);
         return ImWindow.GetTitleBarHeight(gui) + gui.Style.Window.ContentPadding.Vertical + Mathf.Max(minScriptsHeight, minCenterHeight);
     }
 
     /// <summary>
-    /// The editor's rows and the error panel's header, with the spacing above each.
+    /// The name row, a row of the storage warning while it shows, and the editor's minimum.
     /// </summary>
+    private static float GetMinScriptHeight(ImGui gui, bool hasStorageWarning)
+    {
+        var minStorageHeight = hasStorageWarning ? gui.Style.Layout.Spacing + WindowRegion.GetRowHeight(gui) : 0;
+        return gui.GetRowHeight() + minStorageHeight + GetMinEditorHeight(gui);
+    }
+
     private static float GetMinEditorHeight(ImGui gui)
     {
         return gui.GetRowsHeightWithSpacing(MinFieldRows) + GetPanelHeaderHeight(gui) + (gui.Style.Layout.Spacing * 2);
@@ -366,14 +372,14 @@ internal sealed partial class ScriptWindow
         gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(spacing));
         var storageWarning = _edited?.StorageWarning;
 
-        // Under the startup check's warnings, the name row or the line in its place, then the storage warning's row
-        var minUnderStartupHeight = spacing + gui.GetRowHeight()
-            + (_edited == null ? 0 : GetMinEditorHeight(gui))
-            + (storageWarning == null ? 0 : spacing + WindowRegion.GetRowHeight(gui));
+        var settings = WrappedText.GetSettings(gui);
+        var minUnderStartupHeight = spacing + (_edited == null
+            ? WrappedText.GetHeight(gui, NoScriptText, in settings, gui.GetLayoutWidth(), minHeight: 0)
+            : GetMinScriptHeight(gui, storageWarning != null));
         DrawWarnings(gui, GetStartupWarnings(), minUnderStartupHeight, "startup check");
         if (_edited == null)
         {
-            gui.Text("No Script selected. Make one with New Script.", wrap: true);
+            gui.Text(NoScriptText, in settings);
             gui.Layout.Pop();
             return;
         }
@@ -471,7 +477,7 @@ internal sealed partial class ScriptWindow
         return (_edited.IsChecked ? "No errors found" : "Checking...", WindowColors.Muted);
     }
 
-    private List<string> GetStartupWarnings()
+    private IReadOnlyList<string> GetStartupWarnings()
     {
         var warnings = new List<string>();
         if (!_startupCheck.CanPlace)
