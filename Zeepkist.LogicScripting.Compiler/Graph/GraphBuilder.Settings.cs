@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Compiler.Syntax;
 
@@ -15,70 +14,33 @@ internal sealed partial class GraphBuilder
     {
         switch (setting.Type)
         {
-            case SettingType.Number:
-                if (argument.Value is not IntegerLiteral literal)
-                {
-                    ValueError(argument, $"{setting.Name} takes a whole number, like {setting.Name}: 5");
-                    return null;
-                }
-
-                if (literal.Value < setting.Minimum)
-                {
-                    ValueError(argument, $"{setting.Name} must be at least {setting.Minimum}");
-                    return null;
-                }
-
-                if (literal.Value > setting.Maximum)
-                {
-                    ValueError(argument, $"{setting.Name} must be at most {setting.Maximum}");
-                    return null;
-                }
-
-                return [Setting.Text(setting.Key, literal.Value.ToString(CultureInfo.InvariantCulture))];
-
-            case SettingType.Bool:
-                if (argument.Value is NameExpression { Name: "true" or "false" } word)
-                    return [Setting.Int(setting.Key, word.Name == "true" ? 1 : 0)];
-
-                ValueError(argument, $"{setting.Name} takes true or false");
-                return null;
-
-            case SettingType.Player:
-                var player = argument.Value switch
-                {
-                    IntegerLiteral number => number.Value.ToString(CultureInfo.InvariantCulture),
-                    NameExpression everyone => everyone.Name,
-                    _ => null
-                };
-
-                if (player == null || setting.IndexOf(player) < 0)
-                {
-                    var players = string.Join(", ", setting.Options.Take(setting.Options.Count - 1));
-                    ValueError(argument, $"{setting.Name} takes {players} or {setting.Options[setting.Options.Count - 1]}");
-                    return null;
-                }
-
-                return [setting.Choose(player)];
-
             case SettingType.Targets:
                 return GetTargets(setting, argument);
 
-            default:
-                var options = string.Join(", ", setting.Options);
-                if (argument.Value is not NameExpression option)
-                {
-                    ValueError(argument, $"{setting.Name} takes a word: {options}");
-                    return null;
-                }
+            case SettingType.Number when argument.Value is not IntegerLiteral:
+                ValueError(argument, $"{setting.Name} takes a whole number, like {setting.Name}: 5");
+                return null;
 
-                if (setting.IndexOf(option.Name) < 0)
-                {
-                    ValueError(argument, $"'{option.Name}' isn't an option of {setting.Name}. Use {options}");
-                    return null;
-                }
-
-                return [setting.Choose(option.Name)];
+            case SettingType.Option when argument.Value is not NameExpression:
+                ValueError(argument, $"{setting.Name} takes a word: {string.Join(", ", setting.Options)}");
+                return null;
         }
+
+        var value = argument.Value switch
+        {
+            IntegerLiteral number => number.Value.ToString(CultureInfo.InvariantCulture),
+            NameExpression name => name.Name,
+            _ => null
+        };
+
+        var stored = setting.ToSetting(value, out var error);
+        if (stored == null)
+        {
+            ValueError(argument, error);
+            return null;
+        }
+
+        return [stored];
     }
 
     /// <summary>

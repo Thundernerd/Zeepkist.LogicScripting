@@ -79,6 +79,21 @@ internal sealed partial class ScriptWindow
         public WindowLayout WindowLayout => _window._windowLayout;
 
         /// <summary>
+        /// Whether the center drew the startup check's warnings.
+        /// </summary>
+        public WarningLayout StartupWarningLayout => _window._startupWarningLayout;
+
+        /// <summary>
+        /// Whether the Libraries tab drew its libraries.json warning, the last frame it was shown.
+        /// </summary>
+        public WarningLayout LibraryReadFailedLayout => _window._libraryReadFailedLayout;
+
+        /// <summary>
+        /// Kept while the Scripts side is collapsed, for when it's shown again.
+        /// </summary>
+        public bool ShowsLibraries => _window._state.ShowLibraries;
+
+        /// <summary>
         /// Whether a height <see cref="SetWindowHeight"/> asked for waits for the window to be drawn.
         /// </summary>
         public bool IsHeightPending => _window._requestedHeight != null;
@@ -194,6 +209,30 @@ internal sealed partial class ScriptWindow
                 _window.Libraries.Remove(library.Id);
                 _window.OnLibraryDeleted(library);
             }
+        }
+
+        /// <summary>
+        /// What a Scenario can change that the window keeps into the next one: its height, the shown tab and the
+        /// warnings the tests turn on. A window that was never drawn has the height it first opens at.
+        /// </summary>
+        public KeptState RememberKeptState()
+        {
+            return new KeptState(
+                _window._state.Height > 0 ? _window._state.Height : DefaultHeight,
+                _window._state.ShowLibraries,
+                _window._showLibraryReadFailed,
+                _window._showStartupWarning);
+        }
+
+        /// <summary>
+        /// Puts back what <see cref="RememberKeptState"/> remembered. A closed window takes the height when it next opens.
+        /// </summary>
+        public void PutBackKeptState(KeptState state)
+        {
+            SetWindowHeight(state.Height);
+            ShowTab(state.ShowLibraries);
+            ShowLibraryReadFailed(state.ShowLibraryReadFailed);
+            ShowStartupWarning(state.ShowStartupWarning);
         }
 
         /// <summary>

@@ -79,8 +79,4 @@ open-delete laps
 press-prompt delete
 expect-list-result Deleted "laps"
 screenshot libraries
-
-# Put back what the next Scenario starts with
-show-tab scripts
-set-window-height 640
 expect-no-exceptions

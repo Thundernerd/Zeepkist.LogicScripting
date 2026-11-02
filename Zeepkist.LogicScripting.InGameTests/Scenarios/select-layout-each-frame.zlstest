@@ -21,8 +21,4 @@ expect-editor-in-view
 select-script Horn booster
 expect-editor-in-view-each-frame 5
 screenshot selected-smallest
-
-# Put back what the next Scenario starts with
-startup-warning off
-set-window-height 640
 expect-no-exceptions

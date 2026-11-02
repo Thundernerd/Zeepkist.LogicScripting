@@ -40,6 +40,7 @@ internal static class StepList
         ["select-library"] = (step, argument) => new SelectLibraryStep(StepArgument.Text(step, argument, "a name")),
         ["open-delete"] = (step, argument) => new OpenDeleteStep(StepArgument.Text(step, argument, "a name")),
         ["show-tab"] = (step, argument) => new ShowTabStep(StepArgument.Choice(step, argument, _tabs)),
+        ["expect-tab"] = (step, argument) => new ExpectTabStep(StepArgument.Choice(step, argument, _tabs)),
         ["open-new"] = (step, argument) => None(step, argument, new OpenNewStep()),
         ["open-rename"] = (step, argument) => new OpenRenameStep(StepArgument.Text(step, argument, "a name")),
         ["type-name"] = (step, argument) => new TypeNameStep(StepArgument.Text(step, argument, "the name to type")),
@@ -49,11 +50,14 @@ internal static class StepList
         ["expect-prompt"] = (step, argument) => new ExpectPromptStep(StepArgument.Choice(step, argument, PromptNames.Prompts)),
         ["expect-footer-in-view"] = (step, argument) => None(step, argument, new ExpectFooterInViewStep()),
         ["set-window-height"] = (step, argument) => new SetWindowHeightStep(StepArgument.Pixels(step, argument)),
+        ["expect-window-height"] = (step, argument) => new ExpectWindowHeightStep(StepArgument.Pixels(step, argument)),
         ["drag-window-edge"] = DragWindowEdge,
         ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
         ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
         ["library-read-failed"] = (step, argument) => new LibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
         ["startup-warning"] = (step, argument) => new StartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
+        ["expect-library-read-failed"] = (step, argument) => new ExpectLibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
+        ["expect-startup-warning"] = (step, argument) => new ExpectStartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
         ["expect-editor-in-view"] = (step, argument) => None(step, argument, new ExpectEditorInViewStep()),
         ["expect-editor-in-view-each-frame"] = (step, argument) => new ExpectEditorInViewEachFrameStep(StepArgument.Count(step, argument)),
         ["compile"] = (step, argument) => None(step, argument, new CompileStep()),
@@ -67,6 +71,7 @@ internal static class StepList
         ["caret-at-end"] = (step, argument) => None(step, argument, new PlaceCaretStep(atEnd: true)),
         ["complete"] = (step, argument) => None(step, argument, new CompleteStep()),
         ["expect-completion"] = (step, argument) => ExpectCompletion(StepArgument.Text(step, argument, "a row's label, and optionally its detail")),
+        ["expect-completion-no-detail"] = ExpectCompletionNoDetail,
         ["expect-call-help"] = (step, argument) => new ExpectCallHelpStep(StepArgument.Text(step, argument, "the text to look for")),
         ["expect-call-help-active"] = (step, argument) => new ExpectCallHelpActiveStep(StepArgument.Text(step, argument, "the highlighted input's or Setting's label")),
         ["expect-call-help-no-active"] = (step, argument) => None(step, argument, new ExpectCallHelpActiveStep(null)),
@@ -110,6 +115,19 @@ internal static class StepList
         return space < 0
             ? new ExpectCompletionStep(argument, null)
             : new ExpectCompletionStep(argument.Substring(0, space), argument.Substring(space + 1).Trim());
+    }
+
+    /// <summary>
+    /// A label, which has no spaces. The detail can't be left empty on <c>expect-completion</c>'s line, as the line's
+    /// trailing spaces are taken off.
+    /// </summary>
+    private static ScenarioStep ExpectCompletionNoDetail(string step, string argument)
+    {
+        var what = "a row's label";
+        var label = StepArgument.Text(step, argument, what);
+        return label.IndexOf(' ') < 0
+            ? new ExpectCompletionStep(label, string.Empty)
+            : throw new ScenarioFormatException($"{step} takes {what}, with no spaces, not '{argument}'");
     }
 
     /// <summary>

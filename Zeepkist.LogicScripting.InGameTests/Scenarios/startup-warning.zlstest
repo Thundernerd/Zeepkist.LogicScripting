@@ -15,7 +15,7 @@ compile
 expect-result Placed 3 blocks
 expect-blocks 3
 
-# Put back what the next Scenario starts with
+# And without it again
 startup-warning off
 expect-editor-in-view
 screenshot no-warning

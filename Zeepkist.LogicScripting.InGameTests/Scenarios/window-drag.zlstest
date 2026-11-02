@@ -27,7 +27,4 @@ back-to-editor
 open-window
 expect-window-rect
 expect-editor-in-view-each-frame 3
-
-# Put back what the next Scenario starts with
-set-window-height 640
 expect-no-exceptions

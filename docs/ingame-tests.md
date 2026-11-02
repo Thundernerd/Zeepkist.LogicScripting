@@ -81,6 +81,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `new-library <name>` | Makes a new Library and selects it, as New Library on the Libraries tab does. Fails when the name is taken. |
 | `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does, the same way. Fails when there's none by that name. |
 | `show-tab scripts\|libraries` | Shows the Scripts side's Scripts or Libraries tab, as clicking it does. The steps for a list and its footer work on the shown tab. |
+| `expect-tab scripts\|libraries` | Which tab the Scripts side shows. |
 | `open-new` | Opens New's name prompt on the shown tab, as clicking New Script or New Library does. |
 | `open-rename <name>` | Opens the rename prompt for a Script or Library on the shown tab, as Rename in its context menu does. Fails when there's none by that name. |
 | `open-delete <name>` | Opens the delete prompt for a Script or Library on the shown tab, as Delete in its context menu does, leaving it open. Fails when there's none by that name. |
@@ -90,12 +91,15 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `expect-list-result <text>` | The shown tab's result line, in its footer, contains the text, matching case. |
 | `expect-prompt none\|new\|rename\|delete` | Which prompt the shown tab's footer has open. |
 | `expect-footer-in-view` | The open prompt, the result line and New all lie inside the shown tab, and the tab inside the window, with the list at least two rows tall. The prompts may scroll when there isn't room for all of them, but get at least a row. |
-| `set-window-height <px>` | Sets the window's height, as dragging its edge does, keeping its top edge. The window stays no shorter than its minimum, so a small enough height gives the smallest window. It sets the height before the window draws, without Imui's resize handle: `drag-window-edge` drags that. |
+| `set-window-height <px>` | Sets the window's height, as dragging its edge does, keeping its top edge. The window stays no shorter than its minimum, so a small enough height gives the smallest window, and no taller than the screen. It sets the height before the window draws, without Imui's resize handle: `drag-window-edge` drags that. |
+| `expect-window-height <px>` | The window is drawn this tall, to within half a pixel. Its result says how tall it is. |
 | `drag-window-edge <px> [over <frames>]` | Drags the window's resize handle, in its bottom right corner, with the mouse the way a player does: the mouse moves onto the handle, presses, moves `<px>` down, or up for a number below 0, in even steps over the frames (1 when left out), and lets go. It checks every frame from the press to the last move as `expect-editor-in-view` does, and that the window is no shorter than its minimum, failing with the first frame that's wrong: frame 0 is the press. Its result says how tall the window was before, after and at the shortest. The mouse is let go also when the step fails. See [Mouse](#mouse). |
 | `remember-window-rect` | Remembers where the window is drawn and how big it is, for `expect-window-rect`, for the rest of the Scenario. |
 | `expect-window-rect` | The window is drawn at the size and position `remember-window-rect` remembered, to within half a pixel, both in its result. |
 | `library-read-failed on\|off` | Makes the Libraries tab show (`on`) or stop showing (`off`) its warning that libraries.json couldn't be read, as when the file fails to load at startup. The step doesn't touch the file, and Libraries still save, so later steps and Scenarios find them working as usual. |
 | `startup-warning on\|off` | Makes the center show (`on`) or stop showing (`off`) the startup check's warnings, as on a game version the mod doesn't fully support: that Compile places nothing, and a line of blocks turned off for it. Only the window changes: Compile and the checks work as before, so later steps and Scenarios find them working as usual. |
+| `expect-library-read-failed on\|off` | Whether the Libraries tab draws its warning that libraries.json couldn't be read, as `library-read-failed` makes it or a file that failed to load at startup does. Fails when the tab isn't drawn, with the Scripts tab shown or the Scripts side collapsed: add `show-tab libraries` first. |
+| `expect-startup-warning on\|off` | Whether the center draws the startup check's warnings, as `startup-warning` makes it or a game version the mod doesn't fully support does. |
 | `set-text` | Replaces the selected Script's or Library's text with the lines up to `end`, as one edit. `{uid:<name>}` in them is written as the UID of the block `place-block ... as <name>` placed, so a Script can write `placed("{uid:lamp}")`. Fails for a name no block was placed as. |
 | `compile` | Compiles the selected Script, as Ctrl+Enter does. It passes whatever the Compile did: check that with the steps below. |
 | `expect-editor-in-view` | The editor of the selected Script or Library is at least three rows tall, and it and the error panel's header lie inside the center, and the center inside the window. It waits a few frames first, for the window to settle. |
@@ -110,6 +114,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `caret-at-end` | Puts the caret after its last character, the same way. The call help shows for the call the caret is then in. |
 | `complete` | Opens the completion list at the caret, as Ctrl+Space does. |
 | `expect-completion <label> [<detail>]` | The open completion list has a row with the label, matching case, and with exactly the detail when one is given, such as `t logic` or `a input`. |
+| `expect-completion-no-detail <label>` | The open completion list has a row with the label, matching case, and no detail, such as the `function` keyword. `expect-completion` can't say that, as a line's trailing spaces are taken off. |
 | `expect-call-help <text>` | The call help shows, and its call, written as `logic(a, b, op_in, op:, hide:)`, contains the text, matching case. |
 | `expect-call-help-active <label>` | The call help shows, and the input or Setting it highlights has the label, written as the call help writes it, such as `b`, `op_in` or `op:`. |
 | `expect-call-help-no-active` | The call help shows, and highlights none of its inputs and Settings, such as for an argument past the last input, or after a named argument the call doesn't have. |
@@ -132,7 +137,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 
 A run starts without the player's Libraries and Drafts, and deletes the Libraries before each Scenario after the first, so a Scenario sees only the Libraries it makes itself.
 
-The window keeps its height and shown tab from one Scenario to the next, the way it does for a player, and so do the libraries.json warning `library-read-failed` turns on and the warnings `startup-warning` turns on: a Scenario that changes them puts them back at its end.
+Before each Scenario after the first, the run also puts back the window's height and shown tab, the libraries.json warning `library-read-failed` turns on and the warnings `startup-warning` turns on, as they were when the run started, also after a Scenario that failed partway. So a Scenario that changes them doesn't need to put them back. The window takes the height when it next opens. Everything else about the window, such as whether it's open, where it is and its panels, stays from one Scenario to the next, the way it does for a player. `expect-window-height`, `expect-tab`, `expect-library-read-failed` and `expect-startup-warning` check what they are.
 
 The window steps need the window open, and the steps for the editor's text need a Script or a Library selected: they fail and say which step to add first. `compile` and `insert-selected` need a Script. `press` and `type` need a field focused, such as by `caret-at-end`.
 
