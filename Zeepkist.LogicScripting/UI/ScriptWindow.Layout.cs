@@ -47,10 +47,13 @@ internal sealed partial class ScriptWindow
     private bool _showReference;
 
     /// <summary>
-    /// The storage warning as the frame began, which its minimum height counts and the center shows. One that comes up
-    /// while drawing, such as by clicking a Script in the list, shows from the next frame, at any height.
+    /// The storage warning as the frame began, which its minimum height counts, and the Script or Library it's for. The
+    /// center shows it while that's still the one selected: one selected while drawing, such as by clicking it in the
+    /// list, shows its warning from the next frame, at any height.
     /// </summary>
     private string _storageWarning;
+
+    private EditedItem _storageWarningOf;
 
     /// <summary>
     /// Opening tries again after a failure, and logs the next one. A failure in the work before the toggle key is
@@ -98,8 +101,9 @@ internal sealed partial class ScriptWindow
         // First, so the minimum height counts the warnings of Scripts that a Compile or a change to the level marked
         RefreshScripts();
         _storageWarning = _edited?.StorageWarning;
+        _storageWarningOf = _edited;
         var minHeight = GetMinHeight(gui);
-        TakeHeight(gui, minHeight);
+        ApplyHeight(gui, minHeight);
         HoldResizeAt(gui, minHeight);
         if (gui.BeginWindow(
                 Title,
@@ -185,7 +189,7 @@ internal sealed partial class ScriptWindow
     /// window Imui hasn't made yet starts at its minimum through <see cref="GetInitialRect"/>, and takes a requested
     /// height the frame after.
     /// </summary>
-    private void TakeHeight(ImGui gui, float minHeight)
+    private void ApplyHeight(ImGui gui, float minHeight)
     {
         var windowId = gui.GetControlId(Title);
         if (gui.WindowManager.TryFindWindow(windowId) < 0)
@@ -393,11 +397,12 @@ internal sealed partial class ScriptWindow
     {
         var spacing = gui.Style.Layout.Spacing;
         gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(spacing));
+        var storageWarning = _edited == _storageWarningOf ? _storageWarning : null;
 
         var settings = WrappedText.GetSettings(gui);
         var minUnderStartupHeight = spacing + (_edited == null
             ? WrappedText.GetHeight(gui, NoScriptText, in settings, gui.GetLayoutWidth(), minHeight: 0)
-            : GetMinScriptHeight(gui, _storageWarning != null));
+            : GetMinScriptHeight(gui, storageWarning != null));
         DrawWarnings(gui, GetStartupWarnings(), minUnderStartupHeight, "startup check");
         if (_edited == null)
         {
@@ -407,8 +412,8 @@ internal sealed partial class ScriptWindow
         }
 
         var compileClicked = _edited.DrawHeader(gui);
-        if (_storageWarning != null)
-            DrawWarnings(gui, [_storageWarning], GetMinEditorHeight(gui), "storage warning");
+        if (storageWarning != null)
+            DrawWarnings(gui, [storageWarning], GetMinEditorHeight(gui), "storage warning");
 
         _edited.RefreshCheck();
 
@@ -436,7 +441,7 @@ internal sealed partial class ScriptWindow
 
         gui.Box(errors, in gui.Style.List.Box);
         var header = errors.TakeTop(headerHeight, out var body);
-        _editorLayout = new EditorLayout(Time.frameCount, rect, field, header, minFieldHeight, _storageWarning != null);
+        _editorLayout = new EditorLayout(Time.frameCount, rect, field, header, minFieldHeight, storageWarning != null);
         if (DrawErrorsHeader(gui, header))
             _state.Errors.ToggleCollapsed();
 
