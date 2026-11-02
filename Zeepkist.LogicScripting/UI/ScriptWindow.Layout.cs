@@ -47,6 +47,15 @@ internal sealed partial class ScriptWindow
     private bool _showReference;
 
     /// <summary>
+    /// The storage warning as the frame began, which its minimum height counts, and the Script or Library it's for. The
+    /// center shows it while that's still the one selected: one selected while drawing, such as by clicking it in the
+    /// list, shows its warning from the next frame, at any height.
+    /// </summary>
+    private string _storageWarning;
+
+    private EditedItem _storageWarningOf;
+
+    /// <summary>
     /// Opening tries again after a failure, and logs the next one. A failure in the work before the toggle key is
     /// read, such as saving Drafts, leaves only ZeepSDK's menu bar to reopen the window.
     /// </summary>
@@ -88,7 +97,13 @@ internal sealed partial class ScriptWindow
 
         // A field sets whether it has focus as it's drawn, so one in a hidden tab or a collapsed side has none
         ReleasePanelFocus();
+
+        // First, so the minimum height counts the warnings of Scripts that a Compile or a change to the level marked
+        RefreshScripts();
+        _storageWarning = _edited?.StorageWarning;
+        _storageWarningOf = _edited;
         var minHeight = GetMinHeight(gui);
+        ApplyHeight(gui, minHeight);
         var resizeHandleId = GetResizeHandleId(gui);
         HoldResizeAt(gui, resizeHandleId, minHeight);
         if (gui.BeginWindow(
@@ -100,14 +115,8 @@ internal sealed partial class ScriptWindow
                 mouseExited: () => SetMouseBlocked(false)))
         {
             ref var window = ref gui.WindowManager.GetWindowState(gui.PeekId());
-            var height = Mathf.Max(_requestedHeight ?? window.Rect.H, minHeight);
-            _requestedHeight = null;
-            if (height != window.Rect.H)
-                window.Rect = WithHeight(window.Rect, height);
-
             StoreRect(window.Rect);
             _windowLayout = new WindowLayout(Time.frameCount, minHeight, ImWindow.GetResizeHandleRect(gui, window.Rect), gui.IsControlActive(resizeHandleId));
-            RefreshScripts();
             hovered = DrawRegions(gui);
         }
 
@@ -159,7 +168,7 @@ internal sealed partial class ScriptWindow
 
         // The center's padding, and a row of the startup check's warnings with the spacing under it
         var minStartupHeight = GetStartupWarnings().Count > 0 ? WindowRegion.GetRowHeight(gui) + spacing : 0;
-        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _edited?.StorageWarning != null);
+        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _storageWarning != null);
         return ImWindow.GetTitleBarHeight(gui) + gui.Style.Window.ContentPadding.Vertical + Mathf.Max(minScriptsHeight, minCenterHeight);
     }
 
@@ -175,6 +184,25 @@ internal sealed partial class ScriptWindow
     private static float GetMinEditorHeight(ImGui gui)
     {
         return gui.GetRowsHeightWithSpacing(MinFieldRows) + GetPanelHeaderHeight(gui) + (gui.Style.Layout.Spacing * 2);
+    }
+
+    /// <summary>
+    /// Gives the window the height the in-game tests asked for, and at least <paramref name="minHeight"/>, before it
+    /// begins: Imui lays out its content in the rect it has then, so a rect changed afterwards shows a frame late. A
+    /// window Imui hasn't made yet starts at its minimum through <see cref="GetInitialRect"/>, and takes a requested
+    /// height the frame after.
+    /// </summary>
+    private void ApplyHeight(ImGui gui, float minHeight)
+    {
+        var windowId = gui.GetControlId(Title);
+        if (gui.WindowManager.TryFindWindow(windowId) < 0)
+            return;
+
+        ref var window = ref gui.WindowManager.GetWindowState(windowId);
+        var height = Mathf.Max(_requestedHeight ?? window.Rect.H, minHeight);
+        _requestedHeight = null;
+        if (height != window.Rect.H)
+            window.Rect = WithHeight(window.Rect, height);
     }
 
     /// <summary>
@@ -376,7 +404,7 @@ internal sealed partial class ScriptWindow
     {
         var spacing = gui.Style.Layout.Spacing;
         gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(spacing));
-        var storageWarning = _edited?.StorageWarning;
+        var storageWarning = _edited == _storageWarningOf ? _storageWarning : null;
 
         var settings = WrappedText.GetSettings(gui);
         var minUnderStartupHeight = spacing + (_edited == null
