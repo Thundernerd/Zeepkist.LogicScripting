@@ -7,13 +7,20 @@ namespace TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 /// </summary>
 public sealed class DefinedFunction
 {
-    public DefinedFunction(string name, TextSpan span, IReadOnlyList<string> inputs, IReadOnlyList<string> outputs, TextSpan body)
+    public DefinedFunction(
+        string name,
+        TextSpan span,
+        IReadOnlyList<string> inputs,
+        IReadOnlyList<string> outputs,
+        TextSpan body,
+        bool isRejected)
     {
         Name = name;
         Span = span;
         Inputs = inputs;
         Outputs = outputs;
         Body = body;
+        IsRejected = isRejected;
     }
 
     /// <summary>
@@ -26,8 +33,18 @@ public sealed class DefinedFunction
     /// </summary>
     public TextSpan Span { get; }
 
+    /// <summary>
+    /// Read loosely, so they're there even when <see cref="IsRejected"/>.
+    /// </summary>
     public IReadOnlyList<string> Inputs { get; }
+
+    /// <inheritdoc cref="Inputs"/>
     public IReadOnlyList<string> Outputs { get; }
+
+    /// <summary>
+    /// Whether the compiler rejects the first line, so a call to the Function stands for nothing.
+    /// </summary>
+    public bool IsRejected { get; }
 
     /// <summary>
     /// From the line after the first line to the end of its <c>end</c>; while it has none, to the next Function or the
