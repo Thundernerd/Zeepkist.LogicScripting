@@ -202,6 +202,23 @@ public class CallHelpTests
     }
 
     [Fact]
+    public void Items_ForAFunctionWithOutputs_ItsInputs()
+    {
+        var help = At("function f(a, b) -> c\nend\nx = f(1, |");
+
+        Assert.Equal(["a", "b"], help.Items.Select(i => i.Label));
+        Assert.Equal("b", help.Items[help.Active].Label);
+    }
+
+    [Theory]
+    [InlineData("function f(a, b) -> c\nend\nx = timing.f(|")]
+    [InlineData("function f(a, b) -> c\nend\nx = logic(timing.f(|")]
+    public void QualifiedCalls_NotTheScriptsFunction(string text)
+    {
+        Assert.NotEqual("f", At(text)?.Callee);
+    }
+
+    [Fact]
     public void OpenParen_IsTheCallsParenthesis()
     {
         Assert.Equal(9, At("x = logic(a, |").OpenParen);

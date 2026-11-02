@@ -23,6 +23,12 @@ internal sealed class OpenCall
     public string Callee => _tokens[_paren - 1].Text;
 
     /// <summary>
+    /// Whether a dot comes before the <see cref="Callee"/>: a Library's Function, <c>timing.edge(x)</c>, or a call the
+    /// parser rejects, and never a Block Function, one of the Script's own Functions or a Placed Block Reference.
+    /// </summary>
+    public bool IsQualified => _paren >= 2 && _tokens[_paren - 2].Kind == TokenKind.Dot;
+
+    /// <summary>
     /// Where its opening parenthesis is in the text, which tells one call from another.
     /// </summary>
     public int OpenParen => _tokens[_paren].Span.Start;

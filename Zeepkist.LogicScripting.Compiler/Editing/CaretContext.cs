@@ -26,6 +26,7 @@ public sealed class CaretContext
         string dottedLibrary,
         string dottedMode,
         string dottedUid,
+        bool isCalleeQualified,
         bool isCallNext,
         string settingName,
         IReadOnlyList<string> settingValues,
@@ -46,6 +47,7 @@ public sealed class CaretContext
         DottedLibrary = dottedLibrary;
         DottedMode = dottedMode;
         DottedUid = dottedUid;
+        IsCalleeQualified = isCalleeQualified;
         IsCallNext = isCallNext;
         SettingName = settingName;
         SettingValues = settingValues;
@@ -88,6 +90,12 @@ public sealed class CaretContext
     /// <see cref="CaretContextKind.SettingValue"/>; null otherwise, and after <c>default</c>.
     /// </summary>
     public string Callee { get; }
+
+    /// <summary>
+    /// Whether a dot comes before the <see cref="Callee"/>'s name, so the call is to a Library's Function,
+    /// <c>timing.edge(x)</c>, or one the parser rejects, even when the Script defines a Function by that name.
+    /// </summary>
+    public bool IsCalleeQualified { get; }
 
     /// <summary>
     /// The name before the dot whose output the word is, for <see cref="CaretContextKind.Output"/>; null otherwise, and
@@ -227,6 +235,7 @@ public sealed class CaretContext
             dottedLibrary,
             dottedMode,
             dottedUid,
+            inCall && call.IsQualified,
             IsOpenParenNext(tokens, word),
             settingName,
             settingValues,
@@ -415,7 +424,7 @@ public sealed class CaretContext
         }
 
         var call = OpenCall.FindStartedAt(tokens, tokens[colon - 1].Span.Start);
-        if (call == null || !BlockManifest.TryGetFunction(call.Callee, out var type))
+        if (call == null || call.IsQualified || !BlockManifest.TryGetFunction(call.Callee, out var type))
             return null;
 
         callee = call.Callee;
