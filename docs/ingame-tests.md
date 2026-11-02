@@ -77,9 +77,9 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `open-window` | Opens the Script window. |
 | `close-window` | Closes it. |
 | `new-script <name>` | Makes a new Script and selects it, as New Script does. Fails when the name is taken. |
-| `select-script <name>` | Selects a Script, as clicking it in the list does. Fails when there's none by that name. |
+| `select-script <name>` | Selects a Script, as clicking it in the list does: the window selects it as it draws the list, after it worked out that frame's layout. Fails when there's none by that name. |
 | `new-library <name>` | Makes a new Library and selects it, as New Library on the Libraries tab does. Fails when the name is taken. |
-| `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does. Fails when there's none by that name. |
+| `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does, the same way. Fails when there's none by that name. |
 | `show-tab scripts\|libraries` | Shows the Scripts side's Scripts or Libraries tab, as clicking it does. The steps for a list and its footer work on the shown tab. |
 | `open-new` | Opens New's name prompt on the shown tab, as clicking New Script or New Library does. |
 | `open-rename <name>` | Opens the rename prompt for a Script or Library on the shown tab, as Rename in its context menu does. Fails when there's none by that name. |
@@ -143,7 +143,7 @@ Unity's own `Input` never sees these keys, so whatever reads it doesn't either. 
 2. Add it to `StepList`, by the name it's written with, reading what follows the name with `StepArgument`.
 3. Add it to the table above and to `StepListTests`, which checks that the two lists match.
 
-To do what a button in the Script window does, add a method to `ScriptWindow.Driver` in the mod. It calls the same code the button does, so the step tests the real thing. A button in a list tab's footer is on `ScriptWindow.Driver.ShownList`, the shown tab's list, whose prompts take a button pressed for the player the next time they're drawn.
+To do what a button in the Script window does, add a method to `ScriptWindow.Driver` in the mod. It calls the same code the button does, so the step tests the real thing. A button in a list tab's footer is on `ScriptWindow.Driver.ShownList`, the shown tab's list, whose prompts take a button pressed for the player the next time they're drawn, and whose list takes a click on an entry the same way.
 
 ## What a run changes, and how it puts it back
 

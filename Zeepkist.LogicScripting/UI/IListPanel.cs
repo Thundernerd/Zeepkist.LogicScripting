@@ -25,6 +25,11 @@ internal interface IListPanel
     /// </summary>
     public bool IsPressPending { get; }
 
+    /// <summary>
+    /// Whether an entry <see cref="Click"/> clicked still waits for the list to be drawn.
+    /// </summary>
+    public bool IsClickPending { get; }
+
     public void OpenNew();
 
     /// <summary>
@@ -49,4 +54,10 @@ internal interface IListPanel
     /// Presses one of <see cref="PromptButtons"/> the next time the prompt is drawn, as clicking it does.
     /// </summary>
     public void Press(PromptButton button);
+
+    /// <summary>
+    /// Clicks an entry the next time the list is drawn, as clicking it does, so what selecting it changes lands in the
+    /// middle of that frame's drawing. Returns whether there's an entry by that name.
+    /// </summary>
+    public bool Click(string name);
 }
