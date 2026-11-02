@@ -1,11 +1,8 @@
-using System.Collections.Generic;
-using System.Linq;
 using Imui.Controls;
 using Imui.Core;
 using Imui.IO.Events;
 using Imui.Rendering;
 using TNRD.Zeepkist.LogicScripting.Blocks;
-using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Storage;
 using UnityEngine;
 
@@ -39,12 +36,6 @@ internal sealed partial class ScriptWindow
     private const int DefaultErrorRows = 5;
     private const int MinErrorRows = 1;
     private const int MinFieldRows = 3;
-
-    /// <summary>
-    /// What the turned-off blocks line names while the in-game tests show it on a game version the startup check passes
-    /// on: the first few Logic Blocks, so it wraps the way a real game update's would.
-    /// </summary>
-    private static readonly IReadOnlyList<string> _sampleDisabledBlocks = [.. BlockManifest.All.Take(3).Select(t => t.Describe(t.Styles[0]))];
 
     private readonly ResizeHandle _scriptsEdge = new(ImAxis.Horizontal, 1);
     private readonly ResizeHandle _blocksEdge = new(ImAxis.Horizontal, -1);
@@ -462,10 +453,10 @@ internal sealed partial class ScriptWindow
 
     private void DrawStartupCheck(ImGui gui)
     {
-        if (!_startupCheck.CanPlace || _showStartupWarning)
+        if (ShowsUpdateNeeded)
             gui.Text($"{StartupCheck.UpdateNeededMessage}. Scripts are still checked, but Compile places nothing.", WindowColors.Error, wrap: true);
 
-        var disabledBlocks = _startupCheck.DisabledBlocks.Count == 0 && _showStartupWarning ? _sampleDisabledBlocks : _startupCheck.DisabledBlocks;
+        var disabledBlocks = ShownDisabledBlocks;
         if (disabledBlocks.Count > 0)
             gui.Text($"Turned off for this game version: {string.Join(", ", disabledBlocks)}", WindowColors.Error, wrap: true);
     }

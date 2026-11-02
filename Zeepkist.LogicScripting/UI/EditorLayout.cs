@@ -24,7 +24,7 @@ internal readonly struct EditorLayout
     public ImRect ErrorsHeader { get; }
 
     /// <summary>
-    /// The height of the editor's three rows.
+    /// The height the editor keeps however short the window is.
     /// </summary>
     public float MinFieldHeight { get; }
 }

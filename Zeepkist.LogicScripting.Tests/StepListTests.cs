@@ -252,7 +252,7 @@ public class StepListTests
     [InlineData("startup-warning", "startup-warning takes on or off")]
     [InlineData("startup-warning yes", "startup-warning takes on or off, not 'yes'")]
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
-    public void TheFooterSteps_WithAWrongArgument_Fail(string line, string error)
+    public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
 

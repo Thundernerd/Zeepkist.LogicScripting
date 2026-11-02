@@ -95,7 +95,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `startup-warning on\|off` | Makes the center show (`on`) or stop showing (`off`) the startup check's warnings, as on a game version the mod doesn't fully support: that Compile places nothing, and a line of blocks turned off for it. Only the window changes: Compile and the checks work as before, so later steps and Scenarios find them working as usual. |
 | `set-text` | Replaces the selected Script's or Library's text with the lines up to `end`, as one edit. `{uid:<name>}` in them is written as the UID of the block `place-block ... as <name>` placed, so a Script can write `placed("{uid:lamp}")`. Fails for a name no block was placed as. |
 | `compile` | Compiles the selected Script, as Ctrl+Enter does. It passes whatever the Compile did: check that with the steps below. |
-| `expect-editor-in-view` | The Script editor is at least three rows tall, and it and the error panel's header lie inside the center, and the center inside the window. |
+| `expect-editor-in-view` | The editor of the selected Script or Library is at least three rows tall, and it and the error panel's header lie inside the center, and the center inside the window. |
 | `expect-text <text>` | The selected Script's or Library's text contains the text, matching case. |
 | `expect-result <text>` | The result line contains the text, matching case. |
 | `expect-no-errors` | The window's check finds no errors in the text. |
