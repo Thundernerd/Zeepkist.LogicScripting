@@ -404,7 +404,8 @@ internal sealed partial class ScriptWindow
             _state.Errors.Size = ClampSize(draggedErrorsHeight, minErrorsHeight, maxErrorsHeight);
 
         var fieldHeight = Mathf.Max(minFieldHeight, available - errorsHeight);
-        var compileRequested = DrawField(gui, gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), fieldHeight));
+        var field = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), fieldHeight);
+        var compileRequested = DrawField(gui, field);
 
         ShowResult(compileClicked ? _edited.Compile() : compileRequested ? _edited.CompileFromKeyboard() : null);
 
@@ -413,6 +414,7 @@ internal sealed partial class ScriptWindow
 
         gui.Box(errors, in gui.Style.List.Box);
         var header = errors.TakeTop(headerHeight, out var body);
+        _editorLayout = new EditorLayout(rect, field, header, minFieldHeight);
         if (DrawErrorsHeader(gui, header))
             _state.Errors.ToggleCollapsed();
 
@@ -480,11 +482,12 @@ internal sealed partial class ScriptWindow
     private IReadOnlyList<string> GetStartupWarnings()
     {
         var warnings = new List<string>();
-        if (!_startupCheck.CanPlace)
+        if (ShowsUpdateNeeded)
             warnings.Add($"{StartupCheck.UpdateNeededMessage}. Scripts are still checked, but Compile places nothing.");
 
-        if (_startupCheck.DisabledBlocks.Count > 0)
-            warnings.Add($"Turned off for this game version: {string.Join(", ", _startupCheck.DisabledBlocks)}");
+        var disabledBlocks = ShownDisabledBlocks;
+        if (disabledBlocks.Count > 0)
+            warnings.Add($"Turned off for this game version: {string.Join(", ", disabledBlocks)}");
 
         return warnings;
     }

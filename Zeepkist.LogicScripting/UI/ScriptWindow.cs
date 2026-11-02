@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using Imui.Core;
 using TNRD.Zeepkist.LogicScripting.Blocks;
 using TNRD.Zeepkist.LogicScripting.Compiler;
+using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Compiler.Storage;
 using TNRD.Zeepkist.LogicScripting.Storage;
 using UnityEngine;
@@ -60,9 +62,24 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
     // Set by the in-game tests to show the libraries.json warning without a file that failed to read
     private bool _showLibraryReadFailed;
 
+    // Set by the in-game tests to show the startup check's warnings on a game version it passes on
+    private bool _showStartupWarning;
+
+    // Kept for the in-game tests
+    private EditorLayout _editorLayout;
+
     private bool AnyFieldFocused => _fieldFocused || _scriptListPanel.NameFocused || _libraryListPanel.NameFocused || _referencePanel.FilterFocused;
     private LibraryList Libraries => _libraryStore.Libraries;
     private bool ShowsLibraryReadFailed => _libraryStore.ReadFailed || _showLibraryReadFailed;
+    private bool ShowsUpdateNeeded => !_startupCheck.CanPlace || _showStartupWarning;
+
+    /// <summary>
+    /// The in-game tests, on a game version the startup check passes on, get the first few Logic Blocks, so the line
+    /// wraps the way a real game update's would.
+    /// </summary>
+    private IReadOnlyList<string> ShownDisabledBlocks => _startupCheck.DisabledBlocks.Count == 0 && _showStartupWarning
+        ? [.. BlockManifest.All.Take(3).Select(t => t.Describe(t.Styles[0]))]
+        : _startupCheck.DisabledBlocks;
     private ScriptEntry CurrentScript => (_edited as EditedScript)?.Entry;
     private Library CurrentLibrary => (_edited as EditedLibrary)?.Library;
 

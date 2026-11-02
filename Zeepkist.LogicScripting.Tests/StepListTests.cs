@@ -30,6 +30,9 @@ public class StepListTests
     [InlineData("set-window-height 300", typeof(SetWindowHeightStep))]
     [InlineData("library-read-failed on", typeof(LibraryReadFailedStep))]
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
+    [InlineData("startup-warning on", typeof(StartupWarningStep))]
+    [InlineData("startup-warning off", typeof(StartupWarningStep))]
+    [InlineData("expect-editor-in-view", typeof(ExpectEditorInViewStep))]
     [InlineData("set-text\na = 1\nend", typeof(SetTextStep))]
     [InlineData("compile", typeof(CompileStep))]
     [InlineData("expect-text a = 1", typeof(ExpectTextStep))]
@@ -202,6 +205,16 @@ public class StepListTests
     }
 
     [Theory]
+    [InlineData("startup-warning on", true)]
+    [InlineData("startup-warning off", false)]
+    public void StartupWarning_ReadsOnOrOff(string line, bool show)
+    {
+        var step = Assert.IsType<StartupWarningStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(show, step.Show);
+    }
+
+    [Theory]
     [InlineData("press-prompt ok", (int)PromptButton.Ok)]
     [InlineData("press-prompt cancel", (int)PromptButton.Cancel)]
     [InlineData("press-prompt delete", (int)PromptButton.Delete)]
@@ -236,7 +249,10 @@ public class StepListTests
     [InlineData("expect-footer-in-view now", "expect-footer-in-view takes nothing after it")]
     [InlineData("library-read-failed", "library-read-failed takes on or off")]
     [InlineData("library-read-failed yes", "library-read-failed takes on or off, not 'yes'")]
-    public void TheFooterSteps_WithAWrongArgument_Fail(string line, string error)
+    [InlineData("startup-warning", "startup-warning takes on or off")]
+    [InlineData("startup-warning yes", "startup-warning takes on or off, not 'yes'")]
+    [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
+    public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
 
@@ -300,6 +316,7 @@ public class StepListTests
     [InlineData("keys.zlstest")]
     [InlineData("libraries.zlstest")]
     [InlineData("list-footer.zlstest")]
+    [InlineData("startup-warning.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");
