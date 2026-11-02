@@ -173,6 +173,19 @@ public class CallHelpTests
         Assert.Null(At(text, uid => _level.GetValueOrDefault(uid)));
     }
 
+    [Theory]
+    [MemberData(nameof(CompletionTests.RejectedFirstLines), MemberType = typeof(CompletionTests))]
+    public void None_ForAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
+    {
+        Assert.Null(At($"{firstLine}\nend\nfunction g()\nend\nx = f(|"));
+    }
+
+    [Fact]
+    public void NestedCalls_InACallToAFunctionWhoseFirstLineTheCompilerRejects_TheCallAroundIt()
+    {
+        Assert.Equal("logic", At("function f(a, a)\nend\nx = logic(1, f(|").Callee);
+    }
+
     [Fact]
     public void OpenParen_IsTheCallsParenthesis()
     {

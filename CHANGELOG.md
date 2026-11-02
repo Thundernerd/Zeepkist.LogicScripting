@@ -25,6 +25,7 @@ All notable changes to Logic Scripting are listed here.
   A name set to a `placed(...)` name that way lists the block's inputs in its call too, like the `placed(...)` name.
   A Function whose first line has an error, like `-> hi, hi`, lists no outputs and no inputs by name, since a call to it doesn't compile.
 - Inside a call, a box above the line shows its inputs and settings, highlighting the one you're writing.
+  It doesn't show for a call to a Function whose first line has an error, and the Function's row in the completion list shows no inputs.
 - Resting the mouse on the Script editor's text tells you about what's under it:
   a block function's Reference entry, the line that defines a name, a named argument's input or setting,
   and an error underline's message.

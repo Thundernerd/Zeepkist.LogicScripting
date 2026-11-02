@@ -199,6 +199,16 @@ public class CompletionTests
         Assert.Equal("(x, n)", edge.Detail);
     }
 
+    [Theory]
+    [MemberData(nameof(RejectedFirstLines))]
+    public void Items_AFunctionWhoseFirstLineTheCompilerRejects_WithoutItsInputs(string firstLine)
+    {
+        var f = Completion.GetItems(At($"{firstLine}\nend\nfunction g()\nend\nx = |")).First(i => i.Label == "f");
+
+        Assert.Equal(CompletionKind.Function, f.Kind);
+        Assert.Equal(string.Empty, f.Detail);
+    }
+
     [Fact]
     public void Items_AFunctionDefinedTwice_Once()
     {

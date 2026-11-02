@@ -119,14 +119,20 @@ public static class Completion
     }
 
     /// <summary>
-    /// A Function defined twice is offered once.
+    /// A Function defined twice is offered once, with the first definition's inputs, which the compiler keeps; one whose
+    /// first line the compiler rejects is offered without them, since a call to it stands for nothing.
     /// </summary>
     private static IEnumerable<CompletionItem> GetFunctionItems(CaretContext context)
     {
         return context.Functions
             .Where(f => f.Name != null && !GraphBuilder.IsReserved(f.Name))
             .GroupBy(f => f.Name)
-            .Select(g => new CompletionItem(g.Key, CompletionKind.Function, $"({string.Join(", ", g.First().Inputs)})"));
+            .Select(g => new CompletionItem(g.Key, CompletionKind.Function, DescribeInputs(g.First())));
+    }
+
+    private static string DescribeInputs(DefinedFunction function)
+    {
+        return function.IsRejected ? string.Empty : $"({string.Join(", ", function.Inputs)})";
     }
 
     /// <summary>
