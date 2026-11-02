@@ -12,6 +12,8 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 /// </summary>
 internal sealed class StepContext
 {
+    private const float ListDrawSeconds = 2;
+
     private readonly Func<string, IEnumerator> _screenshot;
 
     public StepContext(
@@ -109,6 +111,22 @@ internal sealed class StepContext
         while (!condition() && Time.realtimeSinceStartup < giveUpAt)
         {
             yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Waits for the shown tab's list to take the button or click handed to it, the next time the window draws it. When
+    /// it isn't drawn in time, such as with the Scripts side collapsed, fails the step and drops the input, so it can't
+    /// land in a later step.
+    /// </summary>
+    public IEnumerator WaitForShownList(string failure)
+    {
+        var list = Window.ShownList;
+        yield return WaitUntil(() => !list.IsInputPending, ListDrawSeconds);
+        if (list.IsInputPending)
+        {
+            list.CancelInput();
+            Fail(failure);
         }
     }
 

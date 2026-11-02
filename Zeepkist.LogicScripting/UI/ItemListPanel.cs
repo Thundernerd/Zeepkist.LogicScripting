@@ -52,8 +52,7 @@ internal abstract class ItemListPanel<T> : IListPanel
         : ListPrompt.None;
 
     public ListFooterLayout FooterLayout => new(_tab, _list, _prompts, _newRow, _promptsHeight, _minListHeight, _rowHeight);
-    public bool IsPressPending => _pressed != null;
-    public bool IsClickPending => _clicked != null;
+    public bool IsInputPending => _pressed != null || _clicked != null;
 
     public IReadOnlyList<PromptButton> PromptButtons => OpenPrompt switch
     {
@@ -81,8 +80,7 @@ internal abstract class ItemListPanel<T> : IListPanel
     {
         _namePrompt.Close();
         _deletePrompt.Close();
-        _pressed = null;
-        _clicked = null;
+        CancelInput();
         Message = string.Empty;
     }
 
@@ -273,6 +271,12 @@ internal abstract class ItemListPanel<T> : IListPanel
     {
         _clicked = Find(name);
         return _clicked != null;
+    }
+
+    public void CancelInput()
+    {
+        _pressed = null;
+        _clicked = null;
     }
 
     /// <summary>

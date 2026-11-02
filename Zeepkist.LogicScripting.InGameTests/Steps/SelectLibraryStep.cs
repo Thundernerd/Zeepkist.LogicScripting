@@ -7,8 +7,6 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 /// </summary>
 internal sealed class SelectLibraryStep : ScenarioStep
 {
-    private const float DrawSeconds = 2;
-
     public SelectLibraryStep(string name)
     {
         Name = name;
@@ -27,9 +25,6 @@ internal sealed class SelectLibraryStep : ScenarioStep
             yield break;
         }
 
-        var list = context.Window.ShownList;
-        yield return context.WaitUntil(() => !list.IsClickPending, DrawSeconds);
-        if (list.IsClickPending)
-            context.Fail("the list wasn't drawn to take the click");
+        yield return context.WaitForShownList("the list wasn't drawn to take the click: is the Scripts side collapsed?");
     }
 }

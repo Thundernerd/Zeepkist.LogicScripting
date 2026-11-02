@@ -101,7 +101,7 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// Like clicking the Script in the list on the Scripts tab, which selects it the next time the list is drawn:
-        /// see <see cref="IListPanel.IsClickPending"/>. Returns whether there's one by that name.
+        /// see <see cref="IListPanel.IsInputPending"/>. Returns whether there's one by that name.
         /// </summary>
         public bool SelectScript(string name)
         {
@@ -168,7 +168,7 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// Like clicking the Library in the list on the Libraries tab, which selects it the next time the list is drawn:
-        /// see <see cref="IListPanel.IsClickPending"/>. Returns whether there's one by that name.
+        /// see <see cref="IListPanel.IsInputPending"/>. Returns whether there's one by that name.
         /// </summary>
         public bool SelectLibrary(string name)
         {
