@@ -29,6 +29,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
     private readonly StartupCheck _startupCheck;
     private readonly ConfigEntry<KeyCode> _toggleKey;
     private readonly EditorAssist _editorAssist;
+    private readonly EditorAssist _libraryEditorAssist;
     private readonly PlacedBlockHighlight _highlight = new();
     private readonly ScriptList _scripts = new();
     private readonly DraftStore _drafts;
@@ -103,6 +104,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
         _savedState = _state.Copy();
         _toggleKey = toggleKey;
         _editorAssist = editorAssist;
+        _libraryEditorAssist = editorAssist.ForLibrary();
         _draftSaver = new DraftSaver(drafts, _scripts);
         _libraryStore = libraries;
         _librarySaver = new LibrarySaver(libraries);
@@ -368,7 +370,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
     {
         if (!_libraryEditors.TryGetValue(library.Id, out var editor))
         {
-            editor = new ScriptEditor(library.Text, _editorAssist);
+            editor = new ScriptEditor(library.Text, _libraryEditorAssist);
             _libraryEditors.Add(library.Id, editor);
         }
 
