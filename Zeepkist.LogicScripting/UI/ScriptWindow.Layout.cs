@@ -414,7 +414,7 @@ internal sealed partial class ScriptWindow
 
         gui.Box(errors, in gui.Style.List.Box);
         var header = errors.TakeTop(headerHeight, out var body);
-        _editorLayout = new EditorLayout(rect, field, header, minFieldHeight);
+        _editorLayout = new EditorLayout(Time.frameCount, rect, field, header, minFieldHeight, storageWarning != null);
         if (DrawErrorsHeader(gui, header))
             _state.Errors.ToggleCollapsed();
 

@@ -100,18 +100,15 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// Like clicking the Script in the list on the Scripts tab. Returns whether there's one by that name.
+        /// Like clicking the Script in the list on the Scripts tab, which selects it the next time the list is drawn:
+        /// see <see cref="IListPanel.IsInputPending"/>. Returns whether there's one by that name.
         /// </summary>
         public bool SelectScript(string name)
         {
-            var entry = FindScript(name);
-            if (entry == null)
+            if (!_window._scriptListPanel.Click(name))
                 return false;
 
             ShowTab(libraries: false);
-            if (entry != _window.CurrentScript)
-                _window.Select(entry);
-
             return true;
         }
 
@@ -170,18 +167,15 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// Like clicking the Library in the list on the Libraries tab. Returns whether there's one by that name.
+        /// Like clicking the Library in the list on the Libraries tab, which selects it the next time the list is drawn:
+        /// see <see cref="IListPanel.IsInputPending"/>. Returns whether there's one by that name.
         /// </summary>
         public bool SelectLibrary(string name)
         {
-            var library = _window.Libraries.Entries.FirstOrDefault(l => l.Name == name);
-            if (library == null)
+            if (!_window._libraryListPanel.Click(name))
                 return false;
 
             ShowTab(libraries: true);
-            if (library != _window.CurrentLibrary)
-                _window.SelectLibrary(library);
-
             return true;
         }
 

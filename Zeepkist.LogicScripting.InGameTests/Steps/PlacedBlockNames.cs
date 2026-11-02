@@ -28,6 +28,11 @@ internal sealed class PlacedBlockNames
         return true;
     }
 
+    public bool TryGetUid(string name, out string uid)
+    {
+        return _uids.TryGetValue(name, out uid);
+    }
+
     /// <summary>
     /// Writes each <c>{uid:&lt;name&gt;}</c> in <paramref name="text"/> as that block's UID. Returns null, with the
     /// first name no block was placed as in <paramref name="unknown"/>, when there is one.
