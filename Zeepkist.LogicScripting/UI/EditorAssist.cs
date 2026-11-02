@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using BepInEx.Configuration;
 using TNRD.Zeepkist.LogicScripting.Blocks;
@@ -14,11 +15,23 @@ internal sealed class EditorAssist
 {
     private readonly ConfigEntry<bool> _completionWhileTyping;
     private readonly StartupCheck _startupCheck;
+    private readonly Func<string, PlacedBlock> _findPlacedBlock;
 
     public EditorAssist(ConfigEntry<bool> completionWhileTyping, LibraryList libraries, StartupCheck startupCheck)
+        : this(completionWhileTyping, libraries, startupCheck, null)
+    {
+    }
+
+    // A null findPlacedBlock looks in the open level
+    private EditorAssist(
+        ConfigEntry<bool> completionWhileTyping,
+        LibraryList libraries,
+        StartupCheck startupCheck,
+        Func<string, PlacedBlock> findPlacedBlock)
     {
         _completionWhileTyping = completionWhileTyping;
         _startupCheck = startupCheck;
+        _findPlacedBlock = findPlacedBlock ?? FindInLevel;
         Libraries = libraries;
     }
 
@@ -34,10 +47,24 @@ internal sealed class EditorAssist
     public bool CompletionWhileTyping => _completionWhileTyping.Value;
 
     /// <summary>
-    /// The block in the open level with a UID; null outside the editor, when there's none, or when its style is turned
-    /// off for this game version, since the compiler rejects a reference to it.
+    /// The block in the open level with a UID; null outside the editor, when there's none, when its style is turned off
+    /// for this game version, or in a Library's editor, since the compiler rejects a reference to it.
     /// </summary>
     public PlacedBlock FindPlacedBlock(string uid)
+    {
+        return _findPlacedBlock(uid);
+    }
+
+    /// <summary>
+    /// The same help for a Library's editor, which finds no placed blocks: the compiler rejects every placed(...) in a
+    /// Library, since a UID belongs to one level.
+    /// </summary>
+    public EditorAssist ForLibrary()
+    {
+        return new EditorAssist(_completionWhileTyping, Libraries, _startupCheck, _ => null);
+    }
+
+    private PlacedBlock FindInLevel(string uid)
     {
         var central = ComponentCache.Get<LEV_LevelEditorCentral>();
         var block = central == null ? null : PlacedBlocks.FindWithoutWires(central, uid);
