@@ -19,7 +19,8 @@ All notable changes to Logic Scripting are listed here.
 - Completion lists a block's outputs after its name and a `.`, like `t.speed`, in the `mode:` the call is written with,
   or for a `placed(...)` block, the mode it has in the level. Typing the `.` opens the list.
   A name set to a call of one of your Functions lists the Function's outputs, like `r.hi` for `function f(a) -> hi, lo`.
-  A call followed by a `.` lists its outputs too, like `simple_telemetry(mode: global_velocity).heading` or `f(1).hi`.
+  A call followed by a `.` lists its outputs too, like `simple_telemetry(mode: global_velocity).heading` or `f(1).hi`,
+  and so do `placed("UID").`, in the mode the block has in the level, and a Library Function's call, like `timing.edge(x).hi`.
   So does a name set to such a call in parentheses, like `r = (f(1))`, or to another such name, like `s = r`.
   A name set to a `placed(...)` name that way lists the block's inputs in its call too, like the `placed(...)` name.
   A Function whose first line has an error, like `-> hi, hi`, lists no outputs and no inputs by name, since a call to it doesn't compile.

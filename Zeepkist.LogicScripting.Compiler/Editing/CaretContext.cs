@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TNRD.Zeepkist.LogicScripting.Compiler.Graph;
 using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Compiler.Syntax;
 
@@ -22,7 +23,9 @@ public sealed class CaretContext
         string callee,
         string dottedName,
         string dottedCallee,
+        string dottedLibrary,
         string dottedMode,
+        string dottedUid,
         string settingName,
         IReadOnlyList<string> settingValues,
         IReadOnlyCollection<string> givenArguments,
@@ -39,7 +42,9 @@ public sealed class CaretContext
         Callee = callee;
         DottedName = dottedName;
         DottedCallee = dottedCallee;
+        DottedLibrary = dottedLibrary;
         DottedMode = dottedMode;
+        DottedUid = dottedUid;
         SettingName = settingName;
         SettingValues = settingValues;
         GivenArguments = givenArguments;
@@ -90,15 +95,28 @@ public sealed class CaretContext
 
     /// <summary>
     /// The function called by the call before the dot whose output the word is, for <see cref="CaretContextKind.Output"/>;
-    /// null otherwise, and after a name.
+    /// null otherwise, and after a name. For a qualified call, <c>timing.edge(x)</c>, the Function's name without its
+    /// Library's.
     /// </summary>
     public string DottedCallee { get; }
+
+    /// <summary>
+    /// The Library named in the qualified call before the dot, <c>timing</c> in <c>timing.edge(x)</c>; null when the
+    /// <see cref="DottedCallee"/> isn't a Library's Function.
+    /// </summary>
+    public string DottedLibrary { get; }
 
     /// <summary>
     /// The option written for the mode Setting of the <see cref="DottedCallee"/>'s call (<c>mode: local_velocity</c>);
     /// null when none is written, or the call isn't to a Block Function.
     /// </summary>
     public string DottedMode { get; }
+
+    /// <summary>
+    /// The UID in quotes the <c>placed(...)</c> call before the dot starts with; null when there's none, or the
+    /// <see cref="DottedCallee"/> isn't <c>placed</c>.
+    /// </summary>
+    public string DottedUid { get; }
 
     /// <summary>
     /// The Setting whose value the word is, for <see cref="CaretContextKind.SettingValue"/>; null otherwise.
@@ -147,7 +165,7 @@ public sealed class CaretContext
         var tokens = Lexer.Tokenize(text, [], comments);
         var call = OpenCall.FindStartedAt(tokens, word.Start);
         var settingValues = FindSettingValues(tokens, word, out var settingCallee, out var settingName);
-        var dotted = FindDotted(tokens, word, out var isDottedCall);
+        var dotted = FindDotted(tokens, word, out var isDottedCall, out var library);
         CaretContextKind kind;
         if (IsInCommentOrString(tokens, comments, caret))
             kind = CaretContextKind.None;
@@ -169,8 +187,12 @@ public sealed class CaretContext
         var isOutput = kind == CaretContextKind.Output;
         var dottedName = isOutput && !isDottedCall ? tokens[dotted].Text : null;
         var dottedCallee = isOutput && isDottedCall ? tokens[dotted].Text : null;
-        var dottedMode = dottedCallee != null && BlockManifest.TryGetFunction(dottedCallee, out var type)
+        var dottedLibrary = dottedCallee != null && library >= 0 ? tokens[library].Text : null;
+        var dottedMode = dottedCallee != null && dottedLibrary == null && BlockManifest.TryGetFunction(dottedCallee, out var type)
             ? DefinedNames.FindWrittenMode(tokens, dotted + 1, type)
+            : null;
+        var dottedUid = dottedCallee == GraphBuilder.PlacedFunction && dottedLibrary == null
+            ? DefinedNames.FindPlacedUid(tokens, dotted)
             : null;
 
         IReadOnlyCollection<string> givenArguments = inCall ? FindGivenArguments(call, word, out positionalArguments) : [];
@@ -194,7 +216,9 @@ public sealed class CaretContext
             callee,
             dottedName,
             dottedCallee,
+            dottedLibrary,
             dottedMode,
+            dottedUid,
             settingName,
             settingValues,
             givenArguments,
@@ -237,12 +261,17 @@ public sealed class CaretContext
 
     /// <summary>
     /// The token of the name the word picks an output of, or of the function whose call it does: right before a dot
-    /// that's right before the word, and not itself after a dot, since only a name or a call has outputs. -1 when
-    /// there's none.
+    /// that's right before the word, and not itself after a dot, since only a name or a call has outputs, unless the
+    /// call is qualified with a Library's name, <c>timing.edge(x)</c>. -1 when there's none.
     /// </summary>
-    private static int FindDotted(List<Token> tokens, TextSpan word, out bool isCall)
+    /// <param name="tokens"></param>
+    /// <param name="word"></param>
+    /// <param name="isCall"></param>
+    /// <param name="library">The token of the Library's name in a qualified call; -1 when there's none.</param>
+    private static int FindDotted(List<Token> tokens, TextSpan word, out bool isCall, out int library)
     {
         isCall = false;
+        library = -1;
         var dot = tokens.FindLastIndex(t => t.Span.Start < word.Start);
         if (dot < 1 || tokens[dot].Kind != TokenKind.Dot || tokens[dot].Span.End != word.Start
             || !tokens[dot].IsDirectlyAfter(tokens[dot - 1]))
@@ -253,7 +282,15 @@ public sealed class CaretContext
         if (name < 0 || tokens[name].Kind != TokenKind.Name)
             return -1;
 
-        return name >= 1 && tokens[name - 1].Kind == TokenKind.Dot ? -1 : name;
+        if (name < 1 || tokens[name - 1].Kind != TokenKind.Dot)
+            return name;
+
+        // Like the parser, only a name that isn't itself after a dot qualifies a call
+        if (!isCall || name < 2 || tokens[name - 2].Kind != TokenKind.Name || (name >= 3 && tokens[name - 3].Kind == TokenKind.Dot))
+            return -1;
+
+        library = name - 2;
+        return name;
     }
 
     /// <summary>

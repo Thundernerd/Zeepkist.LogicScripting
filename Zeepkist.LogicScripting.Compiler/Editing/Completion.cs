@@ -26,7 +26,19 @@ public static class Completion
     /// top level's, or the inputs and definitions of the Function the caret is in. Of those, only the ones defined
     /// before the caret's statement, unless the caret is inside <c>delay(...)</c>.
     /// </summary>
-    public static IReadOnlyList<CompletionItem> GetItems(CaretContext context, IReadOnlyList<DefinedName> definedNames = null)
+    /// <param name="context"></param>
+    /// <param name="definedNames"></param>
+    /// <param name="findPlacedBlock">
+    /// The block in the level with a UID, or null when there's none; it gives <c>placed(...)</c> before a dot its type.
+    /// </param>
+    /// <param name="findLibrary">
+    /// A Library's text by its name, or null when there's none; it gives a Library's Function before a dot its outputs.
+    /// </param>
+    public static IReadOnlyList<CompletionItem> GetItems(
+        CaretContext context,
+        IReadOnlyList<DefinedName> definedNames = null,
+        Func<string, PlacedBlock> findPlacedBlock = null,
+        Func<string, string> findLibrary = null)
     {
         if (context == null)
             return [];
@@ -41,7 +53,7 @@ public static class Completion
             CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames)),
             CaretContextKind.DefaultSetting => Match(context, [ArgumentItem(BlockSetting.Hide)]),
             CaretContextKind.SettingValue => Match(context, GetValueItems(context), sort: false),
-            CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames), sort: false),
+            CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames, findPlacedBlock, findLibrary), sort: false),
             _ => []
         };
     }
@@ -155,15 +167,21 @@ public static class Completion
 
     /// <summary>
     /// The outputs of the block the name or call before the dot stands for, in its written mode or, for a Placed Block
-    /// Reference, its mode in the level, or of the Script's own Function its value or the call calls, in the order its
-    /// first line writes them. A block or Function with one output is used without a dot, so it offers none; nor does a
-    /// name whose value is neither, a Function's name, which the compiler takes for the Function, or a Function whose
-    /// first line the compiler rejects, since a call to it stands for nothing. A name or Function defined twice is the
-    /// first definition, which the compiler keeps.
+    /// Reference, its mode in the level, or of the Script's own Function or a Library's its value or the call calls, in
+    /// the order its first line writes them. A block or Function with one output is used without a dot, so it offers
+    /// none; nor does a name whose value is neither, a Function's name, which the compiler takes for the Function, or a
+    /// Function whose first line the compiler rejects, since a call to it stands for nothing. A name or Function defined
+    /// twice is the first definition, which the compiler keeps.
     /// </summary>
-    private static IEnumerable<CompletionItem> GetOutputItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
+    private static IEnumerable<CompletionItem> GetOutputItems(
+        CaretContext context,
+        IReadOnlyList<DefinedName> definedNames,
+        Func<string, PlacedBlock> findPlacedBlock,
+        Func<string, string> findLibrary)
     {
-        var outputs = context.DottedCallee != null ? GetCallOutputs(context) : GetNameOutputs(context, definedNames);
+        var outputs = context.DottedCallee != null
+            ? GetCallOutputs(context, findPlacedBlock, findLibrary)
+            : GetNameOutputs(context, definedNames);
         return outputs.Count > 1 ? outputs.Select(o => new CompletionItem(o, CompletionKind.Output, OutputDetail)) : [];
     }
 
@@ -181,14 +199,36 @@ public static class Completion
     }
 
     /// <summary>
-    /// A Block Function's name is reserved, so it's never a Function's.
+    /// A Block Function's name is reserved, so it's never a Function's. A qualified call is always to a Library's
+    /// Function, even when the Script defines a name or Function with either name.
     /// </summary>
-    private static IReadOnlyList<string> GetCallOutputs(CaretContext context)
+    private static IReadOnlyList<string> GetCallOutputs(
+        CaretContext context,
+        Func<string, PlacedBlock> findPlacedBlock,
+        Func<string, string> findLibrary)
     {
+        if (context.DottedLibrary != null)
+            return GetLibraryOutputs(context, findLibrary);
+
+        if (context.DottedCallee == GraphBuilder.PlacedFunction)
+        {
+            var placed = DefinedNames.FindPlaced(context.DottedUid, findPlacedBlock);
+            return placed == null ? [] : GetOutputNames(placed.Type, placed.Mode);
+        }
+
         if (BlockManifest.TryGetFunction(context.DottedCallee, out var type))
             return GetOutputNames(type, context.DottedMode);
 
         return GetUsableOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
+    }
+
+    private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
+    {
+        var text = findLibrary?.Invoke(context.DottedLibrary);
+        if (text == null)
+            return [];
+
+        return GetUsableOutputs(DefinedNames.ReadFunctions(text).FirstOrDefault(f => f.Name == context.DottedCallee));
     }
 
     private static IReadOnlyList<string> GetUsableOutputs(DefinedFunction function)

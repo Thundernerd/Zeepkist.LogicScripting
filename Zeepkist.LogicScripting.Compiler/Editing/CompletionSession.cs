@@ -15,6 +15,7 @@ public sealed class CompletionSession
     public const int MaxRows = 8;
 
     private readonly Func<string, PlacedBlock> _findPlacedBlock;
+    private readonly Func<string, string> _findLibrary;
     private CaretContext _context;
     private IReadOnlyList<DefinedName> _definedNames = [];
     private bool _opensWithoutPrefix;
@@ -24,9 +25,13 @@ public sealed class CompletionSession
     /// <param name="findPlacedBlock">
     /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type.
     /// </param>
-    public CompletionSession(Func<string, PlacedBlock> findPlacedBlock = null)
+    /// <param name="findLibrary">
+    /// A Library's text by its name, or null when there's none; it gives a Library's Function its outputs.
+    /// </param>
+    public CompletionSession(Func<string, PlacedBlock> findPlacedBlock = null, Func<string, string> findLibrary = null)
     {
         _findPlacedBlock = findPlacedBlock;
+        _findLibrary = findLibrary;
     }
 
     public bool IsOpen { get; private set; }
@@ -98,7 +103,7 @@ public sealed class CompletionSession
                 _definedNames = DefinedNames.Read(snapshot.Text, _findPlacedBlock);
 
             _context = CaretContext.At(snapshot.Text, snapshot.Caret);
-            Items = Completion.GetItems(_context, _definedNames);
+            Items = Completion.GetItems(_context, _definedNames, _findPlacedBlock, _findLibrary);
             Selected = 0;
             FirstRow = 0;
             if (IsOpen && wordStart != _context.Word.Start)
