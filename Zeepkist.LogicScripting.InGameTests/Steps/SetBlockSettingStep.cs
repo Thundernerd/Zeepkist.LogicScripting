@@ -125,20 +125,13 @@ internal sealed class SetBlockSettingStep : ScenarioStep
         // What the settings panel's slots do: note the block for undo, write the value, then let the block's editor
         // load it, redraw an open panel and register the undo step
         var before = central.undoRedo.currentHistoryPosition;
-        var properties = blockEdit.GetCustomBlockProperties();
         blockEdit.RegisterUndoRedo();
-        if (stored.Kind == SettingKind.Int)
-            properties.SetIntDictionaryValue(stored.Key, stored.IntValue);
-        else
-            properties.SetStringDictionaryValue(stored.Key, stored.TextValue);
-
+        Write(blockEdit.GetCustomBlockProperties(), stored);
         blockEdit.GetUpdateFromSlot(0, updateSlots: true);
         yield return null;
 
-        var kept = stored.Kind == SettingKind.Int
-            ? block.customBlockEditProperties.GetIntDictionaryValue(stored.Key).ToString(CultureInfo.InvariantCulture)
-            : block.customBlockEditProperties.GetStringDictionaryValue(stored.Key);
         var expected = stored.Kind == SettingKind.Int ? stored.IntValue.ToString(CultureInfo.InvariantCulture) : stored.TextValue;
+        var kept = Read(block.customBlockEditProperties, stored);
         if (kept != expected)
         {
             context.Fail($"the block didn't keep {Setting} {Value} under \"{stored.Key}\"", expected, kept);
@@ -147,5 +140,23 @@ internal sealed class SetBlockSettingStep : ScenarioStep
 
         context.Detail = $"{type.Function} \"{Name}\": {Setting} {Value}, stored as \"{stored.Key}\" = {expected}, "
             + $"history position {before} → {central.undoRedo.currentHistoryPosition}";
+    }
+
+    private static void Write(PropertyDictionariesJSON properties, Setting setting)
+    {
+        if (setting.Kind == SettingKind.Int)
+            properties.SetIntDictionaryValue(setting.Key, setting.IntValue);
+        else
+            properties.SetStringDictionaryValue(setting.Key, setting.TextValue);
+    }
+
+    /// <summary>
+    /// What the block holds under the Setting's key, as text to compare with what was written.
+    /// </summary>
+    private static string Read(PropertyDictionariesJSON properties, Setting setting)
+    {
+        return setting.Kind == SettingKind.Int
+            ? properties.GetIntDictionaryValue(setting.Key).ToString(CultureInfo.InvariantCulture)
+            : properties.GetStringDictionaryValue(setting.Key);
     }
 }
