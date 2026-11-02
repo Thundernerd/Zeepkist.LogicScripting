@@ -357,6 +357,7 @@ public class CompletionTests
     [InlineData("x = lo|", "logic", "x = logic(|")]
     [InlineData("x = lo|gic", "logic", "x = logic(|")]
     [InlineData("x = lo|(1, 2)", "logic", "x = logic(|1, 2)")]
+    [InlineData("x = lo| (1, 2)", "logic", "x = logic (|1, 2)")]
     [InlineData("lo|\ny = 1", "logic", "logic(|\ny = 1")]
     [InlineData("x = tr|", "true", "x = true|")]
     [InlineData("x = |", "placed", "x = placed(|")]
@@ -897,6 +898,7 @@ public class CompletionTests
     [InlineData("x = timing.|", "x = timing.edge(|")]
     [InlineData("x = timing.ed|", "x = timing.edge(|")]
     [InlineData("x = timing.e|(1)", "x = timing.edge(|1)")]
+    [InlineData("x = timing.e| (1)", "x = timing.edge (|1)")]
     public void Accept_ALibrarysFunction_OpensItsQualifiedCall(string text, string expected)
     {
         var context = At(text);

@@ -61,7 +61,8 @@ public static class Completion
 
     /// <summary>
     /// Replaces the context's whole word with the item; a function also gets its opening parenthesis, and a named
-    /// argument its colon and a space, unless one already follows. The caret ends after what was written.
+    /// argument its colon and a space, unless one already follows. The caret ends after what was written, or for a
+    /// function, after its parenthesis.
     /// </summary>
     public static TextSnapshot Accept(CaretContext context, CompletionItem item)
     {
@@ -71,10 +72,12 @@ public static class Completion
         var caret = word.Start + inserted.Length;
         switch (item.Kind)
         {
-            case CompletionKind.Function:
-                if (word.End >= text.Length || text[word.End] != '(')
-                    inserted += "(";
+            case CompletionKind.Function when context.IsCallNext:
+                caret = text.IndexOf('(', word.End) + 1 - word.Length + inserted.Length;
+                break;
 
+            case CompletionKind.Function:
+                inserted += "(";
                 caret++;
                 break;
 
