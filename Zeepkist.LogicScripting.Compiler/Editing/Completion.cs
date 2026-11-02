@@ -32,7 +32,8 @@ public static class Completion
     /// The block in the level with a UID, or null when there's none; it gives <c>placed(...)</c> before a dot its type.
     /// </param>
     /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a Library's Function before a dot its outputs.
+    /// A Library's text by its name, or null when there's none; it gives a Library's name before a dot its Functions,
+    /// and a Library's Function before a dot its outputs.
     /// </param>
     public static IReadOnlyList<CompletionItem> GetItems(
         CaretContext context,
@@ -177,7 +178,9 @@ public static class Completion
     /// the order its first line writes them. A block or Function with one output is used without a dot, so it offers
     /// none; nor does a name whose value is neither, a Function's name, which the compiler takes for the Function, or a
     /// Function whose first line the compiler rejects, since a call to it stands for nothing. A name or Function defined
-    /// twice is the first definition, which the compiler keeps.
+    /// twice is the first definition, which the compiler keeps. After a name, the Functions of the Library by that name
+    /// follow, since a call after the dot is always to the Library's, even when the Script defines the name. When a call
+    /// already follows the word, only they do.
     /// </summary>
     private static IEnumerable<CompletionItem> GetOutputItems(
         CaretContext context,
@@ -185,10 +188,34 @@ public static class Completion
         Func<string, PlacedBlock> findPlacedBlock,
         Func<string, string> findLibrary)
     {
-        var outputs = context.DottedCallee != null
-            ? GetCallOutputs(context, findPlacedBlock, findLibrary)
-            : GetNameOutputs(context, definedNames);
+        if (context.DottedCallee != null)
+            return OutputItems(GetCallOutputs(context, findPlacedBlock, findLibrary));
+
+        var functions = GetLibraryFunctionItems(context.DottedName, findLibrary);
+        return context.IsCallNext ? functions : OutputItems(GetNameOutputs(context, definedNames)).Concat(functions);
+    }
+
+    private static IEnumerable<CompletionItem> OutputItems(IReadOnlyList<string> outputs)
+    {
         return outputs.Count > 1 ? outputs.Select(o => new CompletionItem(o, CompletionKind.Output, OutputDetail)) : [];
+    }
+
+    /// <summary>
+    /// In alphabetical order. None from a Library with an error, since the compiler rejects every call into it.
+    /// </summary>
+    private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
+    {
+        if (findLibrary == null)
+            return [];
+
+        var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
+        if (hasErrors)
+            return [];
+
+        return functions
+            .Select(f => f.Function)
+            .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, $"({string.Join(", ", f.Inputs.Select(i => i.Name))})"))
+            .OrderBy(i => i.Label, StringComparer.Ordinal);
     }
 
     private static IReadOnlyList<string> GetNameOutputs(CaretContext context, IReadOnlyList<DefinedName> definedNames)

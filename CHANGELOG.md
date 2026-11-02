@@ -48,6 +48,10 @@ All notable changes to Logic Scripting are listed here.
 - Completion lists the functions your Script defines, with their inputs, and `function` and `end` at the start of a line.
   Inside a call to one of them it lists its inputs by name, and the box above the line shows them.
   Inside a function's body it lists that function's inputs and the names its body defines, and nothing from outside it.
+- Completion lists a Library's functions after its name and a `.`, with their inputs, like `timing.edge` with `(a)`.
+  Typing the `.` opens the list, and choosing a function opens its call, `timing.edge(`.
+  When your Script also defines a name like the Library's, the list shows that name's outputs first, then the Library's functions,
+  since a call after the `.` is always to the Library. A Library with an error lists none.
 - The Reference tab lists your Libraries' functions under a Libraries heading, as `timing.edge`,
   with their inputs and outputs. An input the function uses as a setting is marked `(setting)`.
 - In the Script editor, Enter after a Function's first line indents the body, and typing `end` lines it up with that first line.

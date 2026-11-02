@@ -117,6 +117,18 @@ public class CompletionSessionTests
     }
 
     [Fact]
+    public void TypingADotAfterALibrarysName_OpensWithItsFunctions()
+    {
+        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null);
+        const string Text = "x = timing.";
+
+        session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
+
+        Assert.True(session.IsOpen);
+        Assert.Equal(["edge"], session.Items.Select(i => i.Label));
+    }
+
+    [Fact]
     public void TypingADotAfterACall_OpensWithItsOutputs()
     {
         var session = new CompletionSession();

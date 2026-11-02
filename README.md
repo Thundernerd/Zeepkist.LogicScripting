@@ -108,6 +108,7 @@ Starting an argument opens the list with the call's named arguments:
 typing the `(` of a call, or a comma or space before its next argument, or choosing a block function from the list.
 After a setting's `:` it lists the values the setting takes, such as the operators after `op:` or `true` and `false` after `hide:`.
 Typing the `:` or a space after it, or choosing the setting from the list, opens it. Number settings list nothing.
+After a Library's name and a `.` it lists the Library's functions, and typing the `.` opens it.
 Up / Down choose one, Enter or Tab writes it, and Escape closes the list.
 Ctrl+Space opens the list at any time.
 To stop it opening by itself, turn off **Completion while typing** in the mod's settings.

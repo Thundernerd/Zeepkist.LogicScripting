@@ -833,6 +833,79 @@ public class CompletionTests
     }
 
     [Theory]
+    [InlineData("x = timing.|")]
+    [InlineData("x = logic(timing.|")]
+    [InlineData("function g()\n  x = timing.|\nend")]
+    [InlineData("function timing(a)\nend\nx = timing.|")]
+    [InlineData("timing = 1\nx = timing.|")]
+    [InlineData("x = timing.|\ntiming = simple_telemetry()")]
+    public void Items_AfterALibrarysNameAndADot_ItsFunctions_WithTheirInputs(string text)
+    {
+        var items = Names(text, Library(TwoFunctionLibrary));
+
+        Assert.Equal(["edge", "pulse"], items.Select(i => i.Label));
+        Assert.All(items, i => Assert.Equal(CompletionKind.Function, i.Kind));
+        Assert.Equal(["(a)", "(a, ticks)"], items.Select(i => i.Detail));
+    }
+
+    [Fact]
+    public void Items_AfterALibrarysNameAndADot_TheFunctionsMatchingThePrefix()
+    {
+        Assert.Equal(["pulse"], NameLabels("x = timing.pu|", Library(TwoFunctionLibrary)));
+    }
+
+    [Theory]
+    [InlineData("timing = simple_telemetry()\nx = timing.|", new[] { "speed", "yaw", "up", "state", "edge", "pulse" })]
+    [InlineData("timing = simple_telemetry()\nx = timing.|(1)", new[] { "edge", "pulse" })]
+    [InlineData("timing = simple_telemetry()\nx = timing.| (1)", new[] { "edge", "pulse" })]
+    public void Items_AfterADot_ANameTheScriptDefinesAndALibrarysName_WhatTheCompilerResolvesEachTo(string text, string[] expected)
+    {
+        Assert.Equal(expected, NameLabels(text, Library(TwoFunctionLibrary)));
+    }
+
+    [Fact]
+    public void Items_AfterADot_NoOutputsOfANameBeforeACall()
+    {
+        Assert.Empty(NameLabels("t = simple_telemetry()\nx = t.|(1)"));
+    }
+
+    [Theory]
+    [InlineData("x = timing.|", EdgeLibrary + "\nx = 1")]
+    [InlineData("x = timing.|", "")]
+    [InlineData("x = nothing.|", EdgeLibrary)]
+    [InlineData("x = a.timing.|", EdgeLibrary)]
+    [InlineData("x = timing .|", EdgeLibrary)]
+    public void Items_AfterALibrarysNameAndADot_NothingFromALibraryWithAnErrorOrNoFunctionsOrWhenItsNotALibrarysName(string text, string libraryText)
+    {
+        Assert.Empty(NameLabels(text, Library(libraryText)));
+    }
+
+    [Fact]
+    public void Items_AfterALibrarysNameAndADot_NothingWithoutTheLibraries()
+    {
+        Assert.Empty(NameLabels("x = timing.|"));
+    }
+
+    [Theory]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
+    public void Items_AfterALibrarysNameAndADot_NothingFromALibraryWithAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
+    {
+        Assert.Empty(NameLabels("x = timing.|", Library($"{firstLine}\nend\nfunction g()\nend")));
+    }
+
+    [Theory]
+    [InlineData("x = timing.|", "x = timing.edge(|")]
+    [InlineData("x = timing.ed|", "x = timing.edge(|")]
+    [InlineData("x = timing.e|(1)", "x = timing.edge(|1)")]
+    public void Accept_ALibrarysFunction_OpensItsQualifiedCall(string text, string expected)
+    {
+        var context = At(text);
+        var item = Completion.GetItems(context, findLibrary: Library(TwoFunctionLibrary)).First(i => i.Label == "edge");
+
+        Assert.Equal(expected, Format(Completion.Accept(context, item)));
+    }
+
+    [Theory]
     [InlineData("x = timing.edge(1).|", "function edge(a) -> hi\n  hi = a\nend")]
     [InlineData("x = timing.other(1).|", EdgeLibrary)]
     [InlineData("x = nothing.edge(1).|", EdgeLibrary)]
@@ -1029,6 +1102,11 @@ public class CompletionTests
     /// A Library with a Function of two outputs.
     /// </summary>
     private const string EdgeLibrary = "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend";
+
+    /// <summary>
+    /// A Library with two Functions, written out of alphabetical order.
+    /// </summary>
+    private const string TwoFunctionLibrary = "function pulse(a, ticks) -> b\n  b = delay(a, ticks: ticks)\nend\n" + EdgeLibrary;
 
     /// <summary>
     /// A lookup with one Library, <c>timing</c>.

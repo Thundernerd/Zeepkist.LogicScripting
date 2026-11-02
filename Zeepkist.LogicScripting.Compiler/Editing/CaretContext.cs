@@ -26,6 +26,7 @@ public sealed class CaretContext
         string dottedLibrary,
         string dottedMode,
         string dottedUid,
+        bool isCallNext,
         string settingName,
         IReadOnlyList<string> settingValues,
         IReadOnlyCollection<string> givenArguments,
@@ -45,6 +46,7 @@ public sealed class CaretContext
         DottedLibrary = dottedLibrary;
         DottedMode = dottedMode;
         DottedUid = dottedUid;
+        IsCallNext = isCallNext;
         SettingName = settingName;
         SettingValues = settingValues;
         GivenArguments = givenArguments;
@@ -117,6 +119,12 @@ public sealed class CaretContext
     /// <see cref="DottedCallee"/> isn't <c>placed</c>.
     /// </summary>
     public string DottedUid { get; }
+
+    /// <summary>
+    /// Whether an opening parenthesis follows the word, so the parser reads it as the function a call calls: after a
+    /// name and a dot, a Library's Function rather than an output.
+    /// </summary>
+    public bool IsCallNext { get; }
 
     /// <summary>
     /// The Setting whose value the word is, for <see cref="CaretContextKind.SettingValue"/>; null otherwise.
@@ -219,6 +227,7 @@ public sealed class CaretContext
             dottedLibrary,
             dottedMode,
             dottedUid,
+            IsOpenParenAfter(tokens, word),
             settingName,
             settingValues,
             givenArguments,
@@ -242,6 +251,12 @@ public sealed class CaretContext
         }
 
         return new TextSpan(start, end - start);
+    }
+
+    private static bool IsOpenParenAfter(List<Token> tokens, TextSpan word)
+    {
+        var after = tokens.FindIndex(t => t.Span.Start >= word.End);
+        return after >= 0 && tokens[after].Kind == TokenKind.OpenParen;
     }
 
     private static bool IsFirstOnLine(List<Token> tokens, TextSpan word)
