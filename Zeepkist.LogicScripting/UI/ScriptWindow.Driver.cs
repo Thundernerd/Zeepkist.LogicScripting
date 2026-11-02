@@ -197,6 +197,30 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
+        /// What a Scenario can change that the window keeps into the next one: its height, the shown tab and the
+        /// warnings the tests turn on. A window that was never drawn has the height it first opens at.
+        /// </summary>
+        public KeptState RememberKeptState()
+        {
+            return new KeptState(
+                _window._state.Height > 0 ? _window._state.Height : DefaultHeight,
+                _window._state.ShowLibraries,
+                _window._showLibraryReadFailed,
+                _window._showStartupWarning);
+        }
+
+        /// <summary>
+        /// Puts back what <see cref="RememberKeptState"/> remembered. A closed window takes the height when it next opens.
+        /// </summary>
+        public void PutBack(KeptState state)
+        {
+            SetWindowHeight(state.Height);
+            ShowTab(state.ShowLibraries);
+            ShowLibraryReadFailed(state.ShowLibraryReadFailed);
+            ShowStartupWarning(state.ShowStartupWarning);
+        }
+
+        /// <summary>
         /// Like clicking the Scripts or the Libraries tab, whose list the buttons for one are in.
         /// </summary>
         public void ShowTab(bool libraries)

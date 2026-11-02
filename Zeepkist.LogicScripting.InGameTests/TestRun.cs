@@ -104,13 +104,15 @@ internal sealed class TestRun : IDisposable
     }
 
     /// <summary>
-    /// A failed step stops its scenario with a screenshot, and the run goes on with the next, on a new level and without
-    /// the Libraries the last one made. The walk already brought the first one to a new level.
+    /// A failed step stops its scenario with a screenshot, and the run goes on with the next, on a new level, without
+    /// the Libraries the last one made, and with the window's height, shown tab and warnings as the run started with
+    /// them, also when the last one failed before putting them back. The walk already brought the first one to a new level.
     /// </summary>
     private IEnumerator RunScenarios(List<Scenario> scenarios)
     {
         var window = ((LogicScripting.Plugin)Chainloader.PluginInfos[LogicScripting.MyPluginInfo.PLUGIN_GUID].Instance).ScriptWindow;
         var driver = new ScriptWindow.Driver(window);
+        var startState = driver.RememberKeptState();
         for (var i = 0; i < scenarios.Count; i++)
         {
             var scenario = scenarios[i];
@@ -119,6 +121,7 @@ internal sealed class TestRun : IDisposable
             if (i > 0)
             {
                 driver.DeleteLibraries();
+                driver.PutBack(startState);
                 yield return GuardedRoutine.Run(NewLevel(scenario.Name), WalkFailed);
                 _walkScenario = string.Empty;
                 if (_walkFailed)

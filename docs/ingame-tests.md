@@ -132,7 +132,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 
 A run starts without the player's Libraries and Drafts, and deletes the Libraries before each Scenario after the first, so a Scenario sees only the Libraries it makes itself.
 
-The window keeps its height and shown tab from one Scenario to the next, the way it does for a player, and so do the libraries.json warning `library-read-failed` turns on and the warnings `startup-warning` turns on: a Scenario that changes them puts them back at its end.
+Before each Scenario after the first, the run also puts back the window's height and shown tab, the libraries.json warning `library-read-failed` turns on and the warnings `startup-warning` turns on, as they were when the run started, also after a Scenario that failed partway. So a Scenario that changes them doesn't need to put them back. The window takes the height when it next opens. Everything else about the window, such as whether it's open, where it is and its panels, stays from one Scenario to the next, the way it does for a player.
 
 The window steps need the window open, and the steps for the editor's text need a Script or a Library selected: they fail and say which step to add first. `compile` and `insert-selected` need a Script. `press` and `type` need a field focused, such as by `caret-at-end`.
 

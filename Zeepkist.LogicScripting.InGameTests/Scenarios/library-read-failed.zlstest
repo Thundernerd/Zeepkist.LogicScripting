@@ -21,7 +21,4 @@ expect-footer-in-view
 library-read-failed off
 expect-footer-in-view
 screenshot no-warning
-
-# Put back what the next Scenario starts with
-show-tab scripts
 expect-no-exceptions
