@@ -29,11 +29,11 @@ internal sealed class ExpectCompletionMissingStep : ScenarioStep
         var items = context.Window.CompletionItems;
         if (items.Count == 0)
         {
-            context.Fail("the completion list is closed", expected, "(the list is closed)");
+            context.Fail("the completion list is closed", expected, CompletionRows.Closed);
             yield break;
         }
 
-        var actual = string.Join(", ", items.Select(i => ExpectCompletionStep.Describe(i.Label, i.Detail)));
+        var actual = CompletionRows.Describe(items);
         if (items.Any(i => i.Label == Label))
             context.Fail("the completion list has the row", expected, actual);
         else

@@ -139,7 +139,7 @@ public class StepListTests
     }
 
     [Fact]
-    public void ExpectCompletionMissing_TheLabel()
+    public void ExpectCompletionMissing_ReadsTheLabel()
     {
         var step = Assert.IsType<ExpectCompletionMissingStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-completion-missing a:", out _).Steps));
 
