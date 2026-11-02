@@ -6,6 +6,7 @@ using TNRD.Zeepkist.LogicScripting.Blocks;
 using TNRD.Zeepkist.LogicScripting.Compiler;
 using TNRD.Zeepkist.LogicScripting.Compiler.Storage;
 using TNRD.Zeepkist.LogicScripting.Storage;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.LogicScripting.UI;
 
@@ -38,6 +39,8 @@ internal sealed class EditedScript : EditedItem
     public ScriptEntry Entry { get; }
 
     public override bool BelongsToLevel => true;
+
+    protected override bool CanCheck => ComponentCache.Get<LEV_LevelEditorCentral>() is not { saveload.isLoading: true };
 
     /// <summary>
     /// Stays up while the level is missing the Script's text: leaving the editor can't be canceled to save it.

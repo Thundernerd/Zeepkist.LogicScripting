@@ -13,13 +13,16 @@ internal static class LevelEdit
 
     /// <summary>
     /// The level editor, or null with the reason it can't take a change now. The editor doesn't register undo steps,
-    /// selection steps included, while blocks are grabbed.
+    /// selection steps included, while blocks are grabbed, and a level still loading, as coming back from test mode,
+    /// doesn't have all its blocks yet.
     /// </summary>
     public static LEV_LevelEditorCentral GetCentral(out string blocker)
     {
         var central = ComponentCache.Get<LEV_LevelEditorCentral>();
         if (central == null)
             blocker = "Open the level editor first";
+        else if (central.saveload.isLoading)
+            blocker = "Wait for the level to load";
         else if (central.gizmos.isGrabbing)
             blocker = GrabbingMessage;
         else

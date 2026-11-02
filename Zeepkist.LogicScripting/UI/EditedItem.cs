@@ -54,6 +54,12 @@ internal abstract class EditedItem
     public virtual string StorageWarning => null;
 
     /// <summary>
+    /// Whether the check can run now. A Script's can't while the level is loading, when the blocks it refers to
+    /// aren't there yet.
+    /// </summary>
+    protected virtual bool CanCheck => true;
+
+    /// <summary>
     /// Returns whether Compile was clicked.
     /// </summary>
     public abstract bool DrawHeader(ImGui gui);
@@ -81,9 +87,12 @@ internal abstract class EditedItem
         Editor.SetErrors([]);
     }
 
+    /// <summary>
+    /// Keeps the last check's errors while <see cref="CanCheck"/> is false, rather than clearing them.
+    /// </summary>
     public void RefreshCheck()
     {
-        if (Time.unscaledTime < _nextCheckTime)
+        if (Time.unscaledTime < _nextCheckTime || !CanCheck)
             return;
 
         var text = Editor.Text;
