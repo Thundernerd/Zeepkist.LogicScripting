@@ -33,6 +33,14 @@ internal static class RectCheck
     }
 
     /// <summary>
+    /// Whether the rects have the same middle.
+    /// </summary>
+    public static bool HasSameCenter(ImRect a, ImRect b)
+    {
+        return Mathf.Abs(a.Center.x - b.Center.x) <= Tolerance && Mathf.Abs(a.Center.y - b.Center.y) <= Tolerance;
+    }
+
+    /// <summary>
     /// Whether the rect has this size.
     /// </summary>
     public static bool HasSize(ImRect rect, float width, float height)

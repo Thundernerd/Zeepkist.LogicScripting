@@ -3,17 +3,18 @@ using Imui.Core;
 namespace TNRD.Zeepkist.LogicScripting.UI;
 
 /// <summary>
-/// The window's minimum height, Imui's resize handle and the screen it's on, the last frame it drew them.
+/// The window's minimum height, Imui's resize handle and the part of the screen it keeps to, the last frame it drew
+/// them.
 /// </summary>
 internal readonly struct WindowLayout
 {
-    public WindowLayout(int frame, float minHeight, ImRect resizeHandle, bool isResizing, ImRect screen)
+    public WindowLayout(int frame, float minHeight, ImRect resizeHandle, bool isResizing, ImRect safeScreen)
     {
         Frame = frame;
         MinHeight = minHeight;
         ResizeHandle = resizeHandle;
         IsResizing = isResizing;
-        Screen = screen;
+        SafeScreen = safeScreen;
     }
 
     /// <summary>
@@ -34,7 +35,7 @@ internal readonly struct WindowLayout
     public bool IsResizing { get; }
 
     /// <summary>
-    /// The part of the screen the window keeps to, Imui's safe screen rect.
+    /// Imui's safe screen rect.
     /// </summary>
-    public ImRect Screen { get; }
+    public ImRect SafeScreen { get; }
 }

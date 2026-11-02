@@ -1,5 +1,5 @@
 # The checks for what the window keeps from one Scenario to the next see each change, and the change put back. It
-# leaves the window shorter and off the middle of the screen, as window-size leaves it bigger and off the middle: run
+# leaves the window shorter and off the middle of the screen, as window-size leaves it smaller and off the middle: run
 # both, in either order, and the second checks that the run put the window's size and position back.
 open-window
 expect-window-size 1120 640
@@ -26,7 +26,7 @@ set-window-height 500
 expect-window-height 500
 expect-window-width 1120
 
-# And back again, but for the window's size and position
+# And back again, leaving the window's size and position for the run to put back
 show-tab scripts
 expect-tab scripts
 expect-no-exceptions

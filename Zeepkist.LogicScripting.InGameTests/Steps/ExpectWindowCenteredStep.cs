@@ -1,5 +1,4 @@
 using System.Collections;
-using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -19,11 +18,11 @@ internal sealed class ExpectWindowCenteredStep : ScenarioStep
             yield break;
 
         var rect = context.Window.WindowRect;
-        var screen = context.Window.WindowLayout.Screen;
+        var screen = context.Window.WindowLayout.SafeScreen;
         var expected = RectCheck.Point(screen.Center);
         var actual = RectCheck.Point(rect.Center);
         var detail = $"{RectCheck.Describe(rect)}, on a screen {RectCheck.Size(screen.W, screen.H)} px";
-        if (Mathf.Abs(rect.Center.x - screen.Center.x) <= RectCheck.Tolerance && Mathf.Abs(rect.Center.y - screen.Center.y) <= RectCheck.Tolerance)
+        if (RectCheck.HasSameCenter(rect, screen))
             context.Pass(detail, expected, actual);
         else
             context.Fail(detail, expected, actual);

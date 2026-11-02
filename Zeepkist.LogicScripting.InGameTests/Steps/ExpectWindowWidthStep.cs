@@ -28,7 +28,7 @@ internal sealed class ExpectWindowWidthStep : ScenarioStep
             yield break;
 
         var width = context.Window.WindowRect.W;
-        var screenWidth = context.Window.WindowLayout.Screen.W;
+        var screenWidth = context.Window.WindowLayout.SafeScreen.W;
         var expectedWidth = Width ?? screenWidth;
         var expected = Width == null ? $"the screen's {RectCheck.Pixels(screenWidth)}" : RectCheck.Pixels(expectedWidth);
         var actual = RectCheck.Pixels(width);
