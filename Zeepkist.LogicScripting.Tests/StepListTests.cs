@@ -65,6 +65,8 @@ public class StepListTests
     [InlineData("place-block lamp", typeof(PlaceBlockStep))]
     [InlineData("place-block lamp as lamp", typeof(PlaceBlockStep))]
     [InlineData("set-block-setting t mode global_velocity", typeof(SetBlockSettingStep))]
+    [InlineData("name-group-block Lights logic as l", typeof(NameGroupBlockStep))]
+    [InlineData("turn-off-style lamp", typeof(TurnOffStyleStep))]
     [InlineData("insert-selected", typeof(InsertSelectedStep))]
     [InlineData("undo", typeof(UndoStep))]
     [InlineData("redo", typeof(RedoStep))]
@@ -428,6 +430,56 @@ public class StepListTests
     }
 
     [Theory]
+    [InlineData("name-group-block Lights logic as l", "Lights", "logic", "l")]
+    [InlineData("name-group-block My Lights  power_display as display-1", "My Lights", "power_display", "display-1")]
+    public void NameGroupBlock_AScript_AFunction_ThenAName(string line, string script, string function, string name)
+    {
+        var step = Assert.IsType<NameGroupBlockStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal((script, function, name), (step.Script, step.Function, step.Name));
+    }
+
+    [Theory]
+    [InlineData("name-group-block")]
+    [InlineData("name-group-block Lights logic")]
+    [InlineData("name-group-block logic as l")]
+    [InlineData("name-group-block Lights logic is l")]
+    public void NameGroupBlock_TakesAScript_AFunction_AndAsAName(string line)
+    {
+        ScenarioParser.Parse("steps", line, out var error);
+
+        Assert.Contains("name-group-block takes a Script's name, a Block Function's name and 'as <name>'", error);
+    }
+
+    [Fact]
+    public void NameGroupBlock_TakesANameOfLettersDigitsDashesAndUnderscores()
+    {
+        ScenarioParser.Parse("steps", "name-group-block Lights logic as a}b", out var error);
+
+        Assert.Contains("takes a name of letters", error);
+    }
+
+    [Theory]
+    [InlineData("turn-off-style lamp", "lamp", null)]
+    [InlineData("turn-off-style logic  wide", "logic", "wide")]
+    public void TurnOffStyle_AFunction_ThenOptionallyAStyle(string line, string function, string style)
+    {
+        var step = Assert.IsType<TurnOffStyleStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal((function, style), (step.Function, step.Style));
+    }
+
+    [Theory]
+    [InlineData("turn-off-style")]
+    [InlineData("turn-off-style logic wide now")]
+    public void TurnOffStyle_TakesAFunction_AndOptionallyAStyle(string line)
+    {
+        ScenarioParser.Parse("steps", line, out var error);
+
+        Assert.Contains("turn-off-style takes a Block Function's name, and optionally one of its styles", error);
+    }
+
+    [Theory]
     [InlineData("basic", 0)]
     [InlineData("global_velocity", 2)]
     public void SetBlockSetting_AnOption_IsStoredAsItsIndex(string value, int index)
@@ -529,6 +581,8 @@ public class StepListTests
     [InlineData("select-layout-each-frame.zlstest")]
     [InlineData("set-block-setting.zlstest")]
     [InlineData("kept-state.zlstest")]
+    [InlineData("group-block-turned-off.zlstest")]
+    [InlineData("turned-off-back-on.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");

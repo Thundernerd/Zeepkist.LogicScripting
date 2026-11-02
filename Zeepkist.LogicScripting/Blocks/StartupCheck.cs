@@ -19,6 +19,7 @@ internal sealed class StartupCheck
     private readonly ManualLogSource _logger;
     private readonly HashSet<int> _disabledBlockIds = [];
     private readonly List<string> _disabledBlocks = [];
+    private readonly HashSet<int> _turnedOffByTests = [];
     private bool _hasRun;
 
     public StartupCheck(ManualLogSource logger)
@@ -63,6 +64,35 @@ internal sealed class StartupCheck
 
         if (CanPlace && _disabledBlockIds.Count == 0)
             _logger.LogInfo($"Startup check passed: all {BlockManifest.All.Sum(t => t.Styles.Count)} Logic Blocks match this game version");
+    }
+
+    /// <summary>
+    /// For the in-game tests: turns a style off as the check does when it doesn't match this game version. Returns
+    /// false when it's already off.
+    /// </summary>
+    public bool TurnOff(BlockType type, BlockStyle style)
+    {
+        if (!_disabledBlockIds.Add(style.BlockId))
+            return false;
+
+        _disabledBlocks.Add(type.Describe(style));
+        _turnedOffByTests.Add(style.BlockId);
+        return true;
+    }
+
+    /// <summary>
+    /// Turns back on what <see cref="TurnOff"/> turned off, and leaves off what the check itself turned off.
+    /// </summary>
+    public void TurnTestStylesBackOn()
+    {
+        foreach (var blockId in _turnedOffByTests)
+        {
+            _disabledBlockIds.Remove(blockId);
+            BlockManifest.TryGetBlock(blockId, out var type, out var style);
+            _disabledBlocks.Remove(type.Describe(style));
+        }
+
+        _turnedOffByTests.Clear();
     }
 
     private void CheckBlocks()

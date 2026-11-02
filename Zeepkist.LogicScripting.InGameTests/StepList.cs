@@ -81,6 +81,8 @@ internal static class StepList
         ["type"] = (step, argument) => new TypeStep(StepArgument.Text(step, argument, "the text to type")),
         ["place-block"] = PlaceBlock,
         ["set-block-setting"] = SetBlockSetting,
+        ["name-group-block"] = NameGroupBlock,
+        ["turn-off-style"] = TurnOffStyle,
         ["insert-selected"] = (step, argument) => None(step, argument, new InsertSelectedStep()),
         ["undo"] = (step, argument) => None(step, argument, new UndoStep()),
         ["redo"] = (step, argument) => None(step, argument, new RedoStep()),
@@ -178,6 +180,37 @@ internal static class StepList
             throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
 
         return new SetBlockSettingStep(StepArgument.FileName(step, words[0]), words[1], words[2]);
+    }
+
+    /// <summary>
+    /// <c>&lt;script&gt; &lt;function&gt; as &lt;name&gt;</c>. A Script's name can have spaces, so the last three words
+    /// are the rest.
+    /// </summary>
+    private static ScenarioStep NameGroupBlock(string step, string argument)
+    {
+        var what = "a Script's name, a Block Function's name and 'as <name>', such as Lights logic as l";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length < 4 || words[words.Length - 2] != "as")
+            throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
+
+        var name = StepArgument.FileName($"{step} ... as", words[words.Length - 1]);
+        return new NameGroupBlockStep(string.Join(" ", words.Take(words.Length - 3)), words[words.Length - 3], name);
+    }
+
+    /// <summary>
+    /// <c>&lt;function&gt;</c>, or <c>&lt;function&gt; &lt;style&gt;</c>. Whether the type has the style is only
+    /// checked when the step runs, as for <c>place-block</c>'s Block Function.
+    /// </summary>
+    private static ScenarioStep TurnOffStyle(string step, string argument)
+    {
+        var what = "a Block Function's name, and optionally one of its styles";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        return words.Length switch
+        {
+            1 => new TurnOffStyleStep(words[0]),
+            2 => new TurnOffStyleStep(words[0], words[1]),
+            _ => throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'"),
+        };
     }
 
     /// <summary>

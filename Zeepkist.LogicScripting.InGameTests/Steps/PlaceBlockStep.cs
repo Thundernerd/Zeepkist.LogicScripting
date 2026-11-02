@@ -59,7 +59,7 @@ internal sealed class PlaceBlockStep : ScenarioStep
 
         if (Name != null && !context.PlacedBlocks.Remember(Name, json.u))
         {
-            context.Fail($"a block was already placed as \"{Name}\"", "a new name", context.PlacedBlocks.Listed);
+            context.Fail($"a block was already placed or named as \"{Name}\"", "a new name", context.PlacedBlocks.Listed);
             yield break;
         }
 

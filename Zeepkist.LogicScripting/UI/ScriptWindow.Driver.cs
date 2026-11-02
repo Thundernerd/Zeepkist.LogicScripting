@@ -3,6 +3,7 @@ using System.Linq;
 using Imui.Core;
 using TNRD.Zeepkist.LogicScripting.Compiler;
 using TNRD.Zeepkist.LogicScripting.Compiler.Editing;
+using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.Compiler.Storage;
 using UnityEngine;
 
@@ -171,6 +172,23 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
+        /// Turns a style off as the startup check does when it doesn't match this game version, so Compile and the checks
+        /// report a Script that places one or refers to one. Returns false when it's already off.
+        /// </summary>
+        public bool TurnOffStyle(BlockType type, BlockStyle style)
+        {
+            return _window._startupCheck.TurnOff(type, style);
+        }
+
+        /// <summary>
+        /// The Script's ID, or null when there's none by that name.
+        /// </summary>
+        public ScriptId FindScriptId(string name)
+        {
+            return FindScript(name)?.Id;
+        }
+
+        /// <summary>
         /// Like New Library on the Libraries tab and naming it in the prompt, which selects it. Returns why the name
         /// isn't taken, or null.
         /// </summary>
@@ -213,7 +231,7 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// What a Scenario can change that the window keeps into the next one: its height, the shown tab and the
-        /// warnings the tests turn on. A window that was never drawn has the height it first opens at.
+        /// warnings the tests turn on. The styles the tests turn off aren't in it: none are at the start of a run. A window that was never drawn has the height it first opens at.
         /// </summary>
         public KeptState RememberKeptState()
         {
@@ -225,10 +243,12 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// Puts back what <see cref="RememberKeptState"/> remembered. A closed window takes the height when it next opens.
+        /// Puts back what <see cref="RememberKeptState"/> remembered, and turns back on the styles
+        /// <see cref="TurnOffStyle"/> turned off. A closed window takes the height when it next opens.
         /// </summary>
         public void PutBackKeptState(KeptState state)
         {
+            _window._startupCheck.TurnTestStylesBackOn();
             SetWindowHeight(state.Height);
             ShowTab(state.ShowLibraries);
             ShowLibraryReadFailed(state.ShowLibraryReadFailed);
