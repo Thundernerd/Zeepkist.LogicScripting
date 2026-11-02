@@ -21,6 +21,7 @@ public class StepListTests
     [InlineData("select-library timing", typeof(SelectLibraryStep))]
     [InlineData("open-delete Lights", typeof(OpenDeleteStep))]
     [InlineData("show-tab libraries", typeof(ShowTabStep))]
+    [InlineData("expect-tab scripts", typeof(ExpectTabStep))]
     [InlineData("open-new", typeof(OpenNewStep))]
     [InlineData("open-rename Lights", typeof(OpenRenameStep))]
     [InlineData("type-name Lights", typeof(TypeNameStep))]
@@ -30,6 +31,7 @@ public class StepListTests
     [InlineData("expect-prompt none", typeof(ExpectPromptStep))]
     [InlineData("expect-footer-in-view", typeof(ExpectFooterInViewStep))]
     [InlineData("set-window-height 300", typeof(SetWindowHeightStep))]
+    [InlineData("expect-window-height 300", typeof(ExpectWindowHeightStep))]
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
@@ -37,6 +39,8 @@ public class StepListTests
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
     [InlineData("startup-warning on", typeof(StartupWarningStep))]
     [InlineData("startup-warning off", typeof(StartupWarningStep))]
+    [InlineData("expect-library-read-failed on", typeof(ExpectLibraryReadFailedStep))]
+    [InlineData("expect-startup-warning off", typeof(ExpectStartupWarningStep))]
     [InlineData("expect-editor-in-view", typeof(ExpectEditorInViewStep))]
     [InlineData("set-text\na = 1\nend", typeof(SetTextStep))]
     [InlineData("compile", typeof(CompileStep))]
@@ -201,6 +205,16 @@ public class StepListTests
     }
 
     [Theory]
+    [InlineData("expect-tab scripts", false)]
+    [InlineData("expect-tab libraries", true)]
+    public void ExpectTab_ReadsTheTab(string line, bool libraries)
+    {
+        var step = Assert.IsType<ExpectTabStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(libraries, step.Libraries);
+    }
+
+    [Theory]
     [InlineData("library-read-failed on", true)]
     [InlineData("library-read-failed off", false)]
     public void LibraryReadFailed_ReadsOnOrOff(string line, bool show)
@@ -218,6 +232,26 @@ public class StepListTests
         var step = Assert.IsType<StartupWarningStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
 
         Assert.Equal(show, step.Show);
+    }
+
+    [Theory]
+    [InlineData("expect-library-read-failed on", true)]
+    [InlineData("expect-library-read-failed off", false)]
+    public void ExpectLibraryReadFailed_ReadsOnOrOff(string line, bool shown)
+    {
+        var step = Assert.IsType<ExpectLibraryReadFailedStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(shown, step.Shown);
+    }
+
+    [Theory]
+    [InlineData("expect-startup-warning on", true)]
+    [InlineData("expect-startup-warning off", false)]
+    public void ExpectStartupWarning_ReadsOnOrOff(string line, bool shown)
+    {
+        var step = Assert.IsType<ExpectStartupWarningStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(shown, step.Shown);
     }
 
     [Theory]
@@ -247,16 +281,24 @@ public class StepListTests
     [Theory]
     [InlineData("show-tab", "show-tab takes scripts or libraries")]
     [InlineData("show-tab blocks", "show-tab takes scripts or libraries, not 'blocks'")]
+    [InlineData("expect-tab", "expect-tab takes scripts or libraries")]
+    [InlineData("expect-tab blocks", "expect-tab takes scripts or libraries, not 'blocks'")]
     [InlineData("press-prompt yes", "press-prompt takes ok, cancel, delete or keep-blocks, not 'yes'")]
     [InlineData("expect-prompt open", "expect-prompt takes none, new, rename or delete, not 'open'")]
     [InlineData("set-window-height 0", "set-window-height takes a whole number of pixels above 0, not '0'")]
     [InlineData("set-window-height tall", "set-window-height takes a whole number of pixels above 0, not 'tall'")]
+    [InlineData("expect-window-height", "expect-window-height takes a whole number of pixels above 0")]
+    [InlineData("expect-window-height 12.5", "expect-window-height takes a whole number of pixels above 0, not '12.5'")]
     [InlineData("open-new now", "open-new takes nothing after it")]
     [InlineData("expect-footer-in-view now", "expect-footer-in-view takes nothing after it")]
     [InlineData("library-read-failed", "library-read-failed takes on or off")]
     [InlineData("library-read-failed yes", "library-read-failed takes on or off, not 'yes'")]
     [InlineData("startup-warning", "startup-warning takes on or off")]
     [InlineData("startup-warning yes", "startup-warning takes on or off, not 'yes'")]
+    [InlineData("expect-library-read-failed", "expect-library-read-failed takes on or off")]
+    [InlineData("expect-library-read-failed yes", "expect-library-read-failed takes on or off, not 'yes'")]
+    [InlineData("expect-startup-warning", "expect-startup-warning takes on or off")]
+    [InlineData("expect-startup-warning yes", "expect-startup-warning takes on or off, not 'yes'")]
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
     [InlineData("expect-editor-in-view-each-frame", "expect-editor-in-view-each-frame takes a whole number of 0 or more")]
     [InlineData("expect-editor-in-view-each-frame many", "expect-editor-in-view-each-frame takes a whole number of 0 or more, not 'many'")]
@@ -281,6 +323,14 @@ public class StepListTests
         var step = Assert.IsType<SetWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-height 300", out _).Steps));
 
         Assert.Equal(300, step.Height);
+    }
+
+    [Fact]
+    public void ExpectWindowHeight_ReadsThePixels()
+    {
+        var step = Assert.IsType<ExpectWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-window-height 640", out _).Steps));
+
+        Assert.Equal(640, step.Height);
     }
 
     [Theory]
@@ -457,6 +507,7 @@ public class StepListTests
     [InlineData("startup-warning.zlstest")]
     [InlineData("select-layout-each-frame.zlstest")]
     [InlineData("set-block-setting.zlstest")]
+    [InlineData("kept-state.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");

@@ -412,7 +412,9 @@ internal sealed partial class ScriptWindow
         var minUnderStartupHeight = spacing + (_edited == null
             ? WrappedText.GetHeight(gui, NoScriptText, in settings, gui.GetLayoutWidth(), minHeight: 0)
             : GetMinScriptHeight(gui, storageWarning != null));
-        DrawWarnings(gui, GetStartupWarnings(), minUnderStartupHeight, "startup check");
+        var startupWarnings = GetStartupWarnings();
+        _startupWarningLayout = new WarningLayout(Time.frameCount, startupWarnings.Count > 0);
+        DrawWarnings(gui, startupWarnings, minUnderStartupHeight, "startup check");
         if (_edited == null)
         {
             gui.Text(NoScriptText, in settings);
