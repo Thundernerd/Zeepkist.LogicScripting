@@ -107,7 +107,7 @@ public class CompletionSessionTests
     [Fact]
     public void TypingADotAfterALibraryFunctionsCall_OpensWithItsOutputs()
     {
-        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\nend" : null);
+        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null);
         const string Text = "x = timing.edge(1).";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);

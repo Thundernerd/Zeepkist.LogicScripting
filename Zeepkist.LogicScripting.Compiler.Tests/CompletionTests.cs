@@ -569,6 +569,8 @@ public class CompletionTests
     [InlineData("x = (a).|")]
     [InlineData("x = f()(1).|")]
     [InlineData("x = a.t.f().|")]
+    [InlineData("x = t .f().|")]
+    [InlineData("x = t. f().|")]
     [InlineData("x = [a].|")]
     public void None_AfterADotThatDoesntFollowANameOrACall(string text)
     {
@@ -757,10 +759,11 @@ public class CompletionTests
                 [Setting.Int(BlockManifest.SimpleTelemetryMode.Key, mode)]),
             ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
         };
+        Func<string, PlacedBlock> findPlacedBlock = level.GetValueOrDefault;
 
-        Assert.Equal(expected, Labels("x = placed(\"T\").|", findPlacedBlock: uid => level.GetValueOrDefault(uid)));
-        Assert.Equal(["distance", "x", "y", "z"], Labels("x = logic(placed(\"D\").|", findPlacedBlock: uid => level.GetValueOrDefault(uid)));
-        Assert.Equal(["y"], Labels("x = placed(\"D\").y|", findPlacedBlock: uid => level.GetValueOrDefault(uid)));
+        Assert.Equal(expected, Labels("x = placed(\"T\").|", findPlacedBlock));
+        Assert.Equal(["distance", "x", "y", "z"], Labels("x = logic(placed(\"D\").|", findPlacedBlock));
+        Assert.Equal(["y"], Labels("x = placed(\"D\").y|", findPlacedBlock));
     }
 
     [Theory]
@@ -775,7 +778,7 @@ public class CompletionTests
             ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
         };
 
-        Assert.Empty(Labels(text, findPlacedBlock: uid => level.GetValueOrDefault(uid)));
+        Assert.Empty(Labels(text, level.GetValueOrDefault));
     }
 
     [Theory]
@@ -786,25 +789,26 @@ public class CompletionTests
     [InlineData("function g()\n  x = timing.edge(1).|\nend")]
     public void Items_AfterALibraryFunctionCallsDot_ItsOutputs_InTheOrderItWritesThem(string text)
     {
-        Assert.Equal(["lo", "hi"], NameLabels(text, Library("function edge(a) -> lo, hi\nend")));
-    }
-
-    [Fact]
-    public void Items_AfterALibraryFunctionCallsDot_TheOutputsOfTheFirstDefinitionOfAFunctionDefinedTwice()
-    {
-        const string LibraryText = "function edge(a) -> lo, hi\nend\nfunction edge(a) -> x, y, z\nend";
-
-        Assert.Equal(["lo", "hi"], NameLabels("x = timing.edge(1).|", Library(LibraryText)));
+        Assert.Equal(["lo", "hi"], NameLabels(text, Library(EdgeLibrary)));
     }
 
     [Theory]
-    [InlineData("x = timing.edge(1).|", "function edge(a) -> hi\nend")]
-    [InlineData("x = timing.other(1).|", "function edge(a) -> lo, hi\nend")]
-    [InlineData("x = nothing.edge(1).|", "function edge(a) -> lo, hi\nend")]
-    [InlineData("x = timing.logic(1).|", "function edge(a) -> lo, hi\nend")]
+    [InlineData("x = timing.edge(1).|", "function edge(a) -> hi\n  hi = a\nend")]
+    [InlineData("x = timing.other(1).|", EdgeLibrary)]
+    [InlineData("x = nothing.edge(1).|", EdgeLibrary)]
+    [InlineData("x = timing.logic(1).|", EdgeLibrary)]
     public void Items_AfterALibraryFunctionCallsDot_NothingWhenItsNotToALibraryFunctionWithSeveralOutputs(string text, string libraryText)
     {
         Assert.Empty(NameLabels(text, Library(libraryText)));
+    }
+
+    [Theory]
+    [InlineData(EdgeLibrary + "\nx = 1")]
+    [InlineData(EdgeLibrary + "\nfunction other(a) -> b\n  b = (a\nend")]
+    [InlineData(EdgeLibrary + "\nfunction edge(a) -> x, y\n  x = a\n  y = a\nend")]
+    public void Items_AfterALibraryFunctionCallsDot_NothingFromALibraryWithAnError(string libraryText)
+    {
+        Assert.Empty(NameLabels("x = timing.edge(1).|", Library(libraryText)));
     }
 
     [Fact]
@@ -1000,6 +1004,11 @@ public class CompletionTests
     {
         return Completion.GetItems(At(text), findPlacedBlock: findPlacedBlock).Select(i => i.Label).ToList();
     }
+
+    /// <summary>
+    /// A Library with a Function of two outputs.
+    /// </summary>
+    private const string EdgeLibrary = "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend";
 
     /// <summary>
     /// A lookup with one Library, <c>timing</c>.

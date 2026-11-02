@@ -222,13 +222,17 @@ public static class Completion
         return GetUsableOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
     }
 
+    /// <summary>
+    /// None from a Library with an error, since the compiler rejects every call into it.
+    /// </summary>
     private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
     {
-        var text = findLibrary?.Invoke(context.DottedLibrary);
-        if (text == null)
+        if (findLibrary == null)
             return [];
 
-        return GetUsableOutputs(DefinedNames.ReadFunctions(text).FirstOrDefault(f => f.Name == context.DottedCallee));
+        var functions = GraphBuilder.DescribeLibrary(context.DottedLibrary, findLibrary, out var hasErrors);
+        var function = hasErrors ? null : functions.FirstOrDefault(f => f.Function.Name.Name == context.DottedCallee).Function;
+        return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 
     private static IReadOnlyList<string> GetUsableOutputs(DefinedFunction function)
