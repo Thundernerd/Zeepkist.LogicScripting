@@ -174,7 +174,7 @@ public class CallHelpTests
     }
 
     [Theory]
-    [MemberData(nameof(CompletionTests.RejectedFirstLines), MemberType = typeof(CompletionTests))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void None_ForAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
     {
         Assert.Null(At($"{firstLine}\nend\nfunction g()\nend\nx = f(|"));

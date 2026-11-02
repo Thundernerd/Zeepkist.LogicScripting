@@ -200,7 +200,7 @@ public class CompletionTests
     }
 
     [Theory]
-    [MemberData(nameof(RejectedFirstLines))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void Items_AFunctionWhoseFirstLineTheCompilerRejects_WithoutItsInputs(string firstLine)
     {
         var f = Completion.GetItems(At($"{firstLine}\nend\nfunction g()\nend\nx = |")).First(i => i.Label == "f");
@@ -836,14 +836,14 @@ public class CompletionTests
     }
 
     [Theory]
-    [MemberData(nameof(RejectedFirstLines))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void Items_AfterALibraryFunctionCallsDot_NothingFromAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
     {
         Assert.Empty(NameLabels("x = timing.f(1).|", Library($"{firstLine}\nend\nfunction g()\nend")));
     }
 
     [Theory]
-    [MemberData(nameof(RejectedFirstLines))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void Items_AfterADot_NothingFromAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
     {
         Assert.Empty(NameLabels($"{firstLine}\nend\nfunction g()\nend\nr = f(1)\nx = r.|"));
@@ -851,7 +851,7 @@ public class CompletionTests
     }
 
     [Theory]
-    [MemberData(nameof(RejectedFirstLines))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void Items_InACallToAFunctionWhoseFirstLineTheCompilerRejects_NoInputs(string firstLine)
     {
         var items = Completion.GetItems(At($"{firstLine}\nend\nfunction g()\nend\nf(|"));
@@ -861,36 +861,16 @@ public class CompletionTests
 
     [Theory]
     [InlineData("function f(a) -> hi, lo")]
-    [MemberData(nameof(RejectedFirstLines))]
+    [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void RejectedFirstLines_AreTheOnesWhoseCallTheCompilerDoesntExpand(string firstLine)
     {
         var text = $"{firstLine}\n    hi = delay(a, ticks: 1)\n    lo = !hi\nend\nfunction g()\nend\nr = f(1)";
-        var isRejected = _rejectedFirstLines.Contains(firstLine);
+        var isRejected = RejectedFirstLines.Lines.Contains(firstLine);
 
         var result = ScriptCompiler.Compile(text, 0, [], _ => null);
 
         Assert.Equal(!isRejected, result.Blocks.Any(b => b.Type == BlockManifest.Delay));
     }
-
-    public static TheoryData<string> RejectedFirstLines => new(_rejectedFirstLines);
-
-    private static readonly string[] _rejectedFirstLines =
-    [
-        "function f(a) -> hi, hi",
-        "function f(a) -> hi, a",
-        "function f(a) -> hi, lo extra",
-        "function f(a) -> hi, lo,",
-        "function f(a) -> hi, , lo",
-        "function f(a, a) -> hi, lo",
-        "function f(a b) -> hi, lo",
-        "function f(a,) -> hi, lo",
-        "function f(a -> hi, lo",
-        "function f(a) extra -> hi, lo",
-        "function f(a) -> hi, logic",
-        "function f(a, true) -> hi, lo",
-        "function f(a) -> hi, g",
-        "function f(a, f) -> hi, lo",
-    ];
 
     [Fact]
     public void Accept_AnOutput_WritesItsName()
