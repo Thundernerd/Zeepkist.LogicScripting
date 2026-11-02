@@ -19,16 +19,10 @@ internal sealed class ExpectEditorInViewStep : ScenarioStep
         yield return null;
 
         var layout = context.Window.EditorLayout;
-        var window = context.Window.WindowRect;
-        if (!RectCheck.Contains(window, layout.Center))
-            context.Fail("the center reaches outside the window", RectCheck.Describe(window), RectCheck.Describe(layout.Center));
-        else if (layout.Field.H < layout.MinFieldHeight - RectCheck.Tolerance)
-            context.Fail("the editor is less than three rows tall", $"{RectCheck.Pixels(layout.MinFieldHeight)} px or more", $"{RectCheck.Pixels(layout.Field.H)} px");
-        else if (!RectCheck.Contains(layout.Center, layout.Field))
-            context.Fail("the editor reaches outside the center", RectCheck.Describe(layout.Center), RectCheck.Describe(layout.Field));
-        else if (!RectCheck.Contains(layout.Center, layout.ErrorsHeader))
-            context.Fail("the error panel's header reaches outside the center", RectCheck.Describe(layout.Center), RectCheck.Describe(layout.ErrorsHeader));
-        else
+        var check = EditorLayoutCheck.Run(layout, context.Window.WindowRect);
+        if (check.Passed)
             context.Pass($"the editor is {RectCheck.Pixels(layout.Field.H)} px tall, with the error panel's header under it", null, null);
+        else
+            context.Fail(check.Failure, check.Expected, check.Actual);
     }
 }

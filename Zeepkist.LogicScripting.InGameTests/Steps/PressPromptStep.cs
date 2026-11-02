@@ -9,8 +9,6 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 /// </summary>
 internal sealed class PressPromptStep : ScenarioStep
 {
-    private const float DrawSeconds = 2;
-
     public PressPromptStep(PromptButton button)
     {
         Button = button;
@@ -36,8 +34,6 @@ internal sealed class PressPromptStep : ScenarioStep
         }
 
         list.Press(Button);
-        yield return context.WaitUntil(() => !list.IsPressPending, DrawSeconds);
-        if (list.IsPressPending)
-            context.Fail("the prompt wasn't drawn to take the click");
+        yield return context.WaitForShownList("the prompt wasn't drawn to take the click");
     }
 }
