@@ -13,7 +13,7 @@ internal sealed class ExpectEditorInViewStep : ScenarioStep
         if (!context.RequireText())
             yield break;
 
-        // The window takes its minimum height a frame after what it counts changed, so the center settles after that
+        // A few frames for what the step before changed to settle; expect-editor-in-view-each-frame checks each one
         yield return null;
         yield return null;
         yield return null;
