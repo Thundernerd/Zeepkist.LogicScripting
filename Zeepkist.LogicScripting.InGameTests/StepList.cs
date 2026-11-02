@@ -59,6 +59,7 @@ internal static class StepList
         ["drag-window-edge"] = DragWindowEdge,
         ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
         ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
+        ["expect-window-start-rect"] = (step, argument) => None(step, argument, new ExpectWindowStartRectStep()),
         ["library-read-failed"] = (step, argument) => new LibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
         ["startup-warning"] = (step, argument) => new StartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
         ["expect-library-read-failed"] = (step, argument) => new ExpectLibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),

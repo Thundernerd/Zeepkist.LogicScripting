@@ -27,4 +27,9 @@ internal readonly struct KeptState
 
     public bool ShowLibraryReadFailed { get; }
     public bool ShowStartupWarning { get; }
+
+    public KeptState WithWindowRect(ImRect windowRect)
+    {
+        return new KeptState(windowRect, ShowLibraries, ShowLibraryReadFailed, ShowStartupWarning);
+    }
 }

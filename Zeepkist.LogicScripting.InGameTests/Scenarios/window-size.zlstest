@@ -1,10 +1,11 @@
 # A bigger window, for screenshots: set-window-size makes it wider and taller, keeping its top left corner, and
 # center-window brings it back onto the screen at that size. set-window-height then keeps the width. It leaves the
 # window off the middle of the screen, as kept-state leaves it: run both, in either order, and the second checks that
-# the run put the window's size and position back.
+# the run put the window's size and position back: the ones the first drew it at, which the run remembered then.
 open-window
 expect-window-size 1120 640
 expect-window-centered
+expect-window-start-rect
 new-script Lights
 set-text
 power_display(1 & 1)

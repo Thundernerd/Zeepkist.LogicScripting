@@ -52,6 +52,12 @@ internal sealed class StepContext
     /// </summary>
     public ImRect? RememberedWindowRect { get; set; }
 
+    /// <summary>
+    /// The window's rect the first time a scenario of the run drew it, which the run puts back before each scenario after
+    /// the first, or null while none has.
+    /// </summary>
+    public ImRect? StartWindowRect { get; set; }
+
     public bool Failed { get; private set; }
 
     /// <summary>
@@ -168,6 +174,23 @@ internal sealed class StepContext
         yield return WaitUntil(() => Window.WindowLayout.Frame == Time.frameCount, WindowDrawSeconds);
         if (Window.WindowLayout.Frame != Time.frameCount)
             Fail("the window wasn't drawn", $"Unity frame {Time.frameCount}", $"Unity frame {Window.WindowLayout.Frame}");
+    }
+
+    /// <summary>
+    /// Waits for the window to be drawn, then passes with <paramref name="same"/> when it's drawn at
+    /// <paramref name="expected"/>, or fails with <paramref name="moved"/>, both rects in the result.
+    /// </summary>
+    public IEnumerator ExpectWindowRect(ImRect expected, string same, string moved)
+    {
+        yield return WaitForWindowDrawn();
+        if (Failed)
+            yield break;
+
+        var rect = Window.WindowRect;
+        if (RectCheck.Matches(expected, rect))
+            Pass(same, RectCheck.Describe(expected), RectCheck.Describe(rect));
+        else
+            Fail(moved, RectCheck.Describe(expected), RectCheck.Describe(rect));
     }
 
     /// <summary>

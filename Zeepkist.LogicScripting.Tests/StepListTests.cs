@@ -41,6 +41,7 @@ public class StepListTests
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
+    [InlineData("expect-window-start-rect", typeof(ExpectWindowStartRectStep))]
     [InlineData("library-read-failed on", typeof(LibraryReadFailedStep))]
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
     [InlineData("startup-warning on", typeof(StartupWarningStep))]
@@ -350,6 +351,7 @@ public class StepListTests
     [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
     [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
     [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
+    [InlineData("expect-window-start-rect now", "expect-window-start-rect takes nothing after it")]
     public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);
