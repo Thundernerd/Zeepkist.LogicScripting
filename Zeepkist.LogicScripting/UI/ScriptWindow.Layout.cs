@@ -99,6 +99,7 @@ internal sealed partial class ScriptWindow
         RefreshScripts();
         _storageWarning = _edited?.StorageWarning;
         var minHeight = GetMinHeight(gui);
+        TakeHeight(gui, minHeight);
         HoldResizeAt(gui, minHeight);
         if (gui.BeginWindow(
                 Title,
@@ -108,13 +109,7 @@ internal sealed partial class ScriptWindow
                 mouseEntered: () => SetMouseBlocked(true),
                 mouseExited: () => SetMouseBlocked(false)))
         {
-            ref var window = ref gui.WindowManager.GetWindowState(gui.PeekId());
-            var height = Mathf.Max(_requestedHeight ?? window.Rect.H, minHeight);
-            _requestedHeight = null;
-            if (height != window.Rect.H)
-                window.Rect = WithHeight(window.Rect, height);
-
-            StoreRect(window.Rect);
+            StoreRect(gui.WindowManager.GetWindowState(gui.PeekId()).Rect);
             hovered = DrawRegions(gui);
         }
 
@@ -182,6 +177,25 @@ internal sealed partial class ScriptWindow
     private static float GetMinEditorHeight(ImGui gui)
     {
         return gui.GetRowsHeightWithSpacing(MinFieldRows) + GetPanelHeaderHeight(gui) + (gui.Style.Layout.Spacing * 2);
+    }
+
+    /// <summary>
+    /// Gives the window the height the in-game tests asked for, and at least <paramref name="minHeight"/>, before it
+    /// begins: Imui lays out its content in the rect it has then, so a rect changed afterwards shows a frame late. A
+    /// window Imui hasn't made yet starts at its minimum through <see cref="GetInitialRect"/>, and takes a requested
+    /// height the frame after.
+    /// </summary>
+    private void TakeHeight(ImGui gui, float minHeight)
+    {
+        var windowId = gui.GetControlId(Title);
+        if (gui.WindowManager.TryFindWindow(windowId) < 0)
+            return;
+
+        ref var window = ref gui.WindowManager.GetWindowState(windowId);
+        var height = Mathf.Max(_requestedHeight ?? window.Rect.H, minHeight);
+        _requestedHeight = null;
+        if (height != window.Rect.H)
+            window.Rect = WithHeight(window.Rect, height);
     }
 
     /// <summary>
