@@ -60,18 +60,9 @@ internal sealed class LibraryListPanel : ItemListPanel<Library>
     /// </summary>
     private static ImRect DrawReadFailed(ImGui gui, ImRect rect)
     {
-        var spacing = gui.Style.Layout.Spacing;
-        var settings = WrappedText.GetSettings(gui);
-        var wanted = WrappedText.GetHeight(gui, ReadFailedText, in settings, rect.W - (spacing * 2), minHeight: 0) + (spacing * 2);
-        var height = FooterSplit.GetWarningHeight(rect.H, wanted, GetMinHeight(gui), WindowRegion.GetRowHeight(gui));
+        var height = WarningRegion.GetHeight(gui, [ReadFailedText], rect.W, rect.H, GetMinHeight(gui));
         var warning = rect.TakeTop(height, out var rest);
-
-        // A scope of its own, so the warning's scroll area doesn't share an id with the list's
-        gui.PushId("read failed");
-        WindowRegion.Begin(gui, warning);
-        gui.Text(ReadFailedText, in settings, WindowColors.Error);
-        WindowRegion.End(gui);
-        gui.PopId();
+        WarningRegion.Draw(gui, warning, [ReadFailedText], "read failed");
         return rest;
     }
 

@@ -39,6 +39,16 @@ internal sealed class EditedScript : EditedItem
 
     public override bool BelongsToLevel => true;
 
+    /// <summary>
+    /// Stays up while the level is missing the Script's text: leaving the editor can't be canceled to save it.
+    /// </summary>
+    public override string StorageWarning => Entry.Mark switch
+    {
+        ScriptMark.CarrierMissing => "The level has this Script's blocks but not its text, likely because a block holding it was deleted. Compile to store it again.",
+        ScriptMark.NeverCompiled when Entry.Text.Length > 0 => "Not stored in the level yet: Compile to store it. Until then, loading a level or going back to the main menu loses it.",
+        _ => null,
+    };
+
     public override bool DrawHeader(ImGui gui)
     {
         var row = AddNameRow(gui, out var settings);
@@ -50,9 +60,7 @@ internal sealed class EditedScript : EditedItem
         if (tooltip != null && nameRect.Contains(gui.Input.MousePosition))
             gui.Tooltip(tooltip, nameRect);
 
-        var compileClicked = DrawCompileButton(gui, buttonRect);
-        DrawStorageWarning(gui);
-        return compileClicked;
+        return DrawCompileButton(gui, buttonRect);
     }
 
     /// <summary>
@@ -120,20 +128,5 @@ internal sealed class EditedScript : EditedItem
 
         LevelEdit.GetCentral(out var blocker);
         return blocker;
-    }
-
-    /// <summary>
-    /// Stays up while the level is missing the Script's text: leaving the editor can't be canceled to save it.
-    /// </summary>
-    private void DrawStorageWarning(ImGui gui)
-    {
-        if (Entry.Mark == ScriptMark.CarrierMissing)
-        {
-            gui.Text("The level has this Script's blocks but not its text, likely because a block holding it was deleted. Compile to store it again.", WindowColors.Error, wrap: true);
-        }
-        else if (Entry.Mark == ScriptMark.NeverCompiled && Entry.Text.Length > 0)
-        {
-            gui.Text("Not stored in the level yet: Compile to store it. Until then, loading a level or going back to the main menu loses it.", WindowColors.Error, wrap: true);
-        }
     }
 }
