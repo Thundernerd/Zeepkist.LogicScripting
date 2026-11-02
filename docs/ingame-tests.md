@@ -118,9 +118,10 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `expect-blocks <count>` | The level has this many Logic Blocks, placed by a Script or not. Other blocks, such as a start block, don't count. |
 | `caret-at-start` | Puts the caret before the selected Script's or Library's first character and focuses the field, as clicking there does. |
 | `caret-at-end` | Puts the caret after its last character, the same way. The call help shows for the call the caret is then in. |
-| `complete` | Opens the completion list at the caret, as Ctrl+Space does. |
+| `complete` | Opens the completion list at the caret, as Ctrl+Space does, and waits for the editor to read its rows, so the steps after it don't check the rows a list already open had before. Fails when the editor isn't drawn in time. |
 | `expect-completion <label> [<detail>]` | The open completion list has a row with the label, matching case, and with exactly the detail when one is given, such as `t logic` or `a input`. |
 | `expect-completion-no-detail <label>` | The open completion list has a row with the label, matching case, and no detail, such as the `function` keyword. `expect-completion` can't say that, as a line's trailing spaces are taken off. |
+| `expect-completion-missing <label>` | The open completion list has no row with the label, matching case, such as `a:` inside `logic(a, `, whose `a` is already given. Fails when the list is closed, as `expect-completion` does. Its result lists the rows the list has. |
 | `expect-call-help <text>` | The call help shows, and its call, written as `logic(a, b, op_in, op:, hide:)`, contains the text, matching case. |
 | `expect-call-help-active <label>` | The call help shows, and the input or Setting it highlights has the label, written as the call help writes it, such as `b`, `op_in` or `op:`. |
 | `expect-call-help-no-active` | The call help shows, and highlights none of its inputs and Settings, such as for an argument past the last input, or after a named argument the call doesn't have. |

@@ -57,6 +57,9 @@ internal sealed partial class ScriptEditor
     /// <inheritdoc cref="CompletionPopup.Items"/>
     public IReadOnlyList<CompletionItem> CompletionItems => _completion.Items;
 
+    /// <inheritdoc cref="CompletionPopup.IsRequestPending"/>
+    public bool IsCompletionRequestPending => _completion.IsRequestPending;
+
     /// <inheritdoc cref="CallHelpPopup.Help"/>
     public CallHelp CallHelp => _callHelp.Help;
 
