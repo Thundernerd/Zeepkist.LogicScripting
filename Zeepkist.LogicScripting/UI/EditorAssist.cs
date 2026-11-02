@@ -9,8 +9,7 @@ using ZeepSDK.Utilities;
 namespace TNRD.Zeepkist.LogicScripting.UI;
 
 /// <summary>
-/// What the Script editor's help reads from outside the editor, shared by every Script's editor, and in its
-/// <see cref="ForLibrary"/> form by every Library's.
+/// What the Script editor's help reads from outside the editor, shared by every Script's editor.
 /// </summary>
 internal sealed class EditorAssist
 {
@@ -19,19 +18,21 @@ internal sealed class EditorAssist
     private readonly Func<string, PlacedBlock> _findPlacedBlock;
 
     public EditorAssist(ConfigEntry<bool> completionWhileTyping, LibraryList libraries, StartupCheck startupCheck)
+        : this(completionWhileTyping, libraries, startupCheck, null)
+    {
+    }
+
+    // A null findPlacedBlock looks in the open level
+    private EditorAssist(
+        ConfigEntry<bool> completionWhileTyping,
+        LibraryList libraries,
+        StartupCheck startupCheck,
+        Func<string, PlacedBlock> findPlacedBlock)
     {
         _completionWhileTyping = completionWhileTyping;
         _startupCheck = startupCheck;
-        _findPlacedBlock = FindInLevel;
+        _findPlacedBlock = findPlacedBlock ?? FindInLevel;
         Libraries = libraries;
-    }
-
-    private EditorAssist(EditorAssist assist, Func<string, PlacedBlock> findPlacedBlock)
-    {
-        _completionWhileTyping = assist._completionWhileTyping;
-        _startupCheck = assist._startupCheck;
-        _findPlacedBlock = findPlacedBlock;
-        Libraries = assist.Libraries;
     }
 
     /// <summary>
@@ -60,7 +61,7 @@ internal sealed class EditorAssist
     /// </summary>
     public EditorAssist ForLibrary()
     {
-        return new EditorAssist(this, _ => null);
+        return new EditorAssist(_completionWhileTyping, Libraries, _startupCheck, _ => null);
     }
 
     private PlacedBlock FindInLevel(string uid)

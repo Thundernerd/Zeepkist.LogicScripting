@@ -12,6 +12,6 @@ public class EditorAssistTests
     {
         var assist = new EditorAssist(null, null, new StartupCheck(new ManualLogSource("Tests")));
 
-        Assert.Null(assist.ForLibrary().FindPlacedBlock("lamp"));
+        Assert.Null(assist.ForLibrary().FindPlacedBlock("AbC12"));
     }
 }
