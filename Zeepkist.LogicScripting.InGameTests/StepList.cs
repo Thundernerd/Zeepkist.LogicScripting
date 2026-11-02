@@ -71,6 +71,7 @@ internal static class StepList
         ["press"] = (step, argument) => new PressStep(StepArgument.Keys(step, argument, KeysStep.MaxKeysPerFrame)),
         ["type"] = (step, argument) => new TypeStep(StepArgument.Text(step, argument, "the text to type")),
         ["place-block"] = PlaceBlock,
+        ["set-block-setting"] = SetBlockSetting,
         ["insert-selected"] = (step, argument) => None(step, argument, new InsertSelectedStep()),
         ["undo"] = (step, argument) => None(step, argument, new UndoStep()),
         ["redo"] = (step, argument) => None(step, argument, new RedoStep()),
@@ -141,6 +142,20 @@ internal static class StepList
 
         var name = StepArgument.FileName($"{step} ... as", string.Join(" ", words.Skip(2)));
         return new PlaceBlockStep(words[0], name);
+    }
+
+    /// <summary>
+    /// <c>&lt;name&gt; &lt;setting&gt; &lt;value&gt;</c>. Whether the block has the Setting and it takes the value is
+    /// only known once the block is placed, so the step checks that when it runs.
+    /// </summary>
+    private static ScenarioStep SetBlockSetting(string step, string argument)
+    {
+        var what = "a placed block's name, a Setting's name and its value, such as t mode global_velocity";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length != 3)
+            throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
+
+        return new SetBlockSettingStep(StepArgument.FileName(step, words[0]), words[1], words[2]);
     }
 
     private static ScenarioStep None(string step, string argument, ScenarioStep created)
