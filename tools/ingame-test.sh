@@ -125,17 +125,21 @@ disabled="$bepinex/zls-ingame-test-disabled"
 deploy="$plugins/Sideloaded/Plugins/$mod_guid"
 test_deploy="$plugins/Sideloaded/Plugins/$test_guid"
 build_files=("$mod_guid.dll" "$mod_guid.pdb" "$mod_guid.Compiler.dll" "$mod_guid.Compiler.pdb")
-# Marks a build --keep left installed, so the next run removes it instead of taking it for the player's own copy
-kept_marker="$deploy/.zls-ingame-test-build"
+# Marks the build a run installed, so the next run removes it instead of taking it for the player's own copy: one
+# --keep left, or one a run killed outright couldn't remove
+build_marker="$deploy/.zls-ingame-test-build"
+# Where the run backs up the mod's data and config and the game's level saves until it has put them back, so a run
+# killed outright leaves them for the next one to put back. Afterwards they move to the run folder.
+backup="$bepinex/zls-ingame-test-backup"
 
 run_id="$(date +%Y%m%d-%H%M%S)"
 run_dir="$repo/.ingame-test/$run_id"
-backup="$run_dir/backup"
-mkdir -p "$backup"
+mkdir -p "$run_dir"
 log "Run $run_id, game in $game"
 
 launched=0
 restored=0
+backing_up=0
 deployed=0
 timed_out=0
 interrupted=0
@@ -175,7 +179,7 @@ remove_build() {
     for file in "${build_files[@]}"; do
         rm -f "$deploy/$file"
     done
-    rm -f "$kept_marker"
+    rm -f "$build_marker"
     [[ -d "$deploy" ]] && rmdir --ignore-fail-on-non-empty "$deploy"
     return 0
 }
@@ -305,6 +309,33 @@ collect() {
     } >"$run_dir/results.md"
 }
 
+# Puts the mod's data and config, the test plugin's config and the game's level saves back as a backup in $1 found
+# them. What a backup that was cut off didn't get to stays as it is.
+put_back() {
+    local from="$1" folder
+    [[ -f "$from/had-test-cfg" ]] || rm -f "$test_cfg"
+    if [[ -f "$from/had-mod-data" ]]; then
+        rm -rf "$mod_data"
+        cp -a "$from/mod-data" "$mod_data"
+    elif [[ -f "$from/backed-up" ]]; then
+        rm -rf "$mod_data"
+    fi
+    [[ -f "$from/backed-up" ]] && rm -rf "$set_aside_data"
+    for folder in "${level_saves[@]}"; do
+        if [[ -f "$from/had-$folder" ]]; then
+            rm -rf "${game_data:?}/$folder"
+            cp -a "$from/$folder" "$game_data/$folder"
+        elif [[ -f "$from/backed-up" ]]; then
+            rm -rf "${game_data:?}/$folder"
+        fi
+    done
+    if [[ -f "$from/had-mod-cfg" ]]; then
+        cp -a "$from/$mod_guid.cfg" "$mod_cfg"
+    elif [[ -f "$from/backed-up" ]]; then
+        rm -f "$mod_cfg"
+    fi
+}
+
 # Runs once, from the end of a run or the EXIT trap. It mustn't stop halfway, so a second Ctrl+C is ignored and a
 # failing step is logged instead of ending the script.
 restore() {
@@ -316,32 +347,13 @@ restore() {
     collect
 
     rm -rf "$test_deploy"
-    [[ -f "$backup/had-test-cfg" ]] || rm -f "$test_cfg"
-
     # The mod saves its data when the game quits, so this has to wait until the game is gone
-    if [[ -f "$backup/had-mod-data" ]]; then
-        rm -rf "$mod_data"
-        cp -a "$backup/mod-data" "$mod_data"
-    elif [[ -f "$backup/backed-up" ]]; then
-        rm -rf "$mod_data"
-    fi
-    [[ -f "$backup/backed-up" ]] && rm -rf "$set_aside_data"
-    for folder in "${level_saves[@]}"; do
-        if [[ -f "$backup/had-$folder" ]]; then
-            rm -rf "${game_data:?}/$folder"
-            cp -a "$backup/$folder" "$game_data/$folder"
-        elif [[ -f "$backup/backed-up" ]]; then
-            rm -rf "${game_data:?}/$folder"
-        fi
-    done
-    if [[ -f "$backup/had-mod-cfg" ]]; then
-        cp -a "$backup/$mod_guid.cfg" "$mod_cfg"
-    elif [[ -f "$backup/backed-up" ]]; then
-        rm -f "$mod_cfg"
+    if ((backing_up)); then
+        put_back "$backup"
+        mv "$backup" "$run_dir/backup"
     fi
 
     if ((keep && deployed)); then
-        touch "$kept_marker"
         log "Kept the test build in $deploy"
         [[ -d "$disabled" ]] && log "Other copies of the mod are set aside in $disabled, the next run puts them back"
     else
@@ -361,10 +373,11 @@ on_exit() {
 trap on_exit EXIT
 trap 'interrupted=1; log "Interrupted"; exit 130' INT TERM
 
-# A run with --keep, or one that was killed outright, may have left its build installed and other copies set aside:
-# undo that first, so this run sets aside, and afterwards restores, the install as it really is
-if [[ -f "$kept_marker" ]]; then
-    log "Removing the build an earlier --keep run left installed"
+# A run with --keep, or one that was killed outright, may have left its build installed and other copies set aside, and
+# a killed one its backup: undo that first, so this run backs up, sets aside, and afterwards restores, the install and
+# the saves as they really are
+if [[ -f "$build_marker" ]]; then
+    log "Removing the build an earlier run left installed"
     remove_build
 fi
 if [[ -d "$disabled" ]]; then
@@ -372,12 +385,19 @@ if [[ -d "$disabled" ]]; then
     move_tree_back "$disabled" "$plugins"
 fi
 rm -rf "$test_deploy"
+if [[ -d "$backup" ]]; then
+    log "Putting back the mod's data and config and the game's level saves as an earlier run found them"
+    put_back "$backup"
+    mv "$backup" "$run_dir/earlier-backup"
+fi
 if [[ -d "$set_aside_data" ]]; then
     log "Putting back the mod's data an earlier run set aside"
     rm -rf "$mod_data"
     mv "$set_aside_data" "$mod_data"
 fi
 
+backing_up=1
+mkdir -p "$backup"
 if [[ -d "$mod_data" ]]; then
     cp -a "$mod_data" "$backup/mod-data"
     touch "$backup/had-mod-data"
@@ -405,6 +425,8 @@ while IFS= read -r -d '' file; do
 done < <(find "$plugins" -type f \( -iname "$mod_guid*" -o -iname 'net.tnrd.zeepkist.logicscripting*' \) -print0)
 
 mkdir -p "$deploy" "$test_deploy"
+# Before the build, so a run killed while it copies doesn't leave files the next run takes for the player's
+touch "$build_marker"
 deployed=1
 for file in "${build_files[@]}"; do
     if [[ -f "$mod_build/$file" ]]; then
