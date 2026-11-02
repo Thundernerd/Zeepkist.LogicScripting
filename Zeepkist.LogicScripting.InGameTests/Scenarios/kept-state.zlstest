@@ -1,0 +1,30 @@
+# The checks for what the window keeps from one Scenario to the next see each change, and the change put back
+open-window
+expect-window-height 640
+expect-tab scripts
+expect-startup-warning off
+
+show-tab libraries
+expect-tab libraries
+expect-library-read-failed off
+library-read-failed on
+expect-library-read-failed on
+screenshot library-read-failed
+library-read-failed off
+expect-library-read-failed off
+
+startup-warning on
+expect-startup-warning on
+screenshot startup-warning
+startup-warning off
+expect-startup-warning off
+
+set-window-height 500
+expect-window-height 500
+
+# Put back what the next Scenario starts with
+set-window-height 640
+expect-window-height 640
+show-tab scripts
+expect-tab scripts
+expect-no-exceptions

@@ -79,6 +79,21 @@ internal sealed partial class ScriptWindow
         public WindowLayout WindowLayout => _window._windowLayout;
 
         /// <summary>
+        /// Whether the center drew the startup check's warnings.
+        /// </summary>
+        public WarningLayout StartupWarningLayout => _window._startupWarningLayout;
+
+        /// <summary>
+        /// Whether the Libraries tab drew its libraries.json warning, the last frame it was shown.
+        /// </summary>
+        public WarningLayout LibraryReadFailedLayout => _window._libraryReadFailedLayout;
+
+        /// <summary>
+        /// Kept while the Scripts side is collapsed, for when it's shown again.
+        /// </summary>
+        public bool ShowsLibraries => _window._state.ShowLibraries;
+
+        /// <summary>
         /// Whether a height <see cref="SetWindowHeight"/> asked for waits for the window to be drawn.
         /// </summary>
         public bool IsHeightPending => _window._requestedHeight != null;
