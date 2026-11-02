@@ -1,7 +1,5 @@
 using System.Collections;
-using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Blocks;
-using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
@@ -36,12 +34,9 @@ internal sealed class PlaceBlockStep : ScenarioStep
         if (central == null)
             yield break;
 
-        var type = BlockManifest.All.FirstOrDefault(t => t.Function == Function);
+        var type = context.RequireBlockType(Function);
         if (type == null)
-        {
-            context.Fail($"no Logic Block type is called '{Function}'");
             yield break;
-        }
 
         // A cell to the side, so it's not where place-start puts the start block
         var camera = central.cam.cameraTransform;
@@ -59,7 +54,7 @@ internal sealed class PlaceBlockStep : ScenarioStep
 
         if (Name != null && !context.PlacedBlocks.Remember(Name, json.u))
         {
-            context.Fail($"a block was already placed as \"{Name}\"", "a new name", context.PlacedBlocks.Listed);
+            context.FailNameTaken(Name);
             yield break;
         }
 

@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
-/// The UIDs of the blocks <c>place-block ... as &lt;name&gt;</c> placed, by that name, so a step's text can write one
-/// as <c>{uid:&lt;name&gt;}</c>.
+/// The UIDs of the blocks <c>place-block ... as &lt;name&gt;</c> placed and <c>name-group-block</c> named, by that
+/// name, so a step's text can write one as <c>{uid:&lt;name&gt;}</c>.
 /// </summary>
 internal sealed class PlacedBlockNames
 {
@@ -17,7 +17,7 @@ internal sealed class PlacedBlockNames
     public string Listed => _uids.Count == 0 ? "(none)" : string.Join(", ", _uids.Keys);
 
     /// <summary>
-    /// Returns false when a block was already placed as <paramref name="name"/>.
+    /// Returns false when a block was already placed or named as <paramref name="name"/>.
     /// </summary>
     public bool Remember(string name, string uid)
     {
@@ -35,7 +35,7 @@ internal sealed class PlacedBlockNames
 
     /// <summary>
     /// Writes each <c>{uid:&lt;name&gt;}</c> in <paramref name="text"/> as that block's UID. Returns null, with the
-    /// first name no block was placed as in <paramref name="unknown"/>, when there is one.
+    /// first name no block was placed or named as in <paramref name="unknown"/>, when there is one.
     /// </summary>
     public string Expand(string text, out string unknown)
     {
