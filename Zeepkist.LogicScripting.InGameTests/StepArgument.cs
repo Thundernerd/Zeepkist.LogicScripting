@@ -56,6 +56,21 @@ internal static class StepArgument
     }
 
     /// <summary>
+    /// As <see cref="Pixels"/> reads it, or null for <c>screen</c>.
+    /// </summary>
+    public static int? PixelsOrScreen(string step, string argument)
+    {
+        var what = $"{step} takes a whole number of pixels above 0, or screen";
+        if (argument.Length == 0)
+            throw new ScenarioFormatException(what);
+
+        if (argument == "screen")
+            return null;
+
+        return TryPositive(argument, out var pixels) ? pixels : throw new ScenarioFormatException($"{what}, not '{argument}'");
+    }
+
+    /// <summary>
     /// A width and a height, as <see cref="Pixels"/> reads each.
     /// </summary>
     public static (int Width, int Height) Size(string step, string argument)

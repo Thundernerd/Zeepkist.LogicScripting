@@ -53,6 +53,14 @@ internal static class RectCheck
         return $"{Pixels(width)} by {Pixels(height)}";
     }
 
+    /// <summary>
+    /// Such as <c>x 800, y 450</c>.
+    /// </summary>
+    public static string Point(Vector2 point)
+    {
+        return $"x {Pixels(point.x)}, y {Pixels(point.y)}";
+    }
+
     public static string Pixels(float pixels)
     {
         return pixels.ToString("0", CultureInfo.InvariantCulture);
