@@ -88,7 +88,7 @@ internal abstract class EditedItem
     }
 
     /// <summary>
-    /// Keeps the last check's errors until the next check runs.
+    /// Keeps the last check's errors while <see cref="CanCheck"/> is false, rather than clearing them.
     /// </summary>
     public void RefreshCheck()
     {

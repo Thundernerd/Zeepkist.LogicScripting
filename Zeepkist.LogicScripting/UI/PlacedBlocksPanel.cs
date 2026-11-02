@@ -42,7 +42,7 @@ internal sealed class PlacedBlocksPanel
             return null;
         }
 
-        // The level's blocks aren't all there yet, as coming back from test mode
+        // A loading level, such as coming back from test mode, doesn't have all its blocks yet
         if (central.saveload.isLoading)
         {
             gui.Text("Loading the level...", WindowColors.Muted, wrap: true);
