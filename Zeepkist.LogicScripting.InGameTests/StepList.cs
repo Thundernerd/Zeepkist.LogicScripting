@@ -150,12 +150,10 @@ internal static class StepList
     /// </summary>
     private static ScenarioStep SetBlockSetting(string step, string argument)
     {
-        var words = argument.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        var what = "a placed block's name, a Setting's name and its value, such as t mode global_velocity";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
         if (words.Length != 3)
-        {
-            var what = $"{step} takes a placed block's name, a Setting's name and its value, such as t mode global_velocity";
-            throw new ScenarioFormatException(argument.Length == 0 ? what : $"{what}, not '{argument}'");
-        }
+            throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
 
         return new SetBlockSettingStep(StepArgument.FileName(step, words[0]), words[1], words[2]);
     }
