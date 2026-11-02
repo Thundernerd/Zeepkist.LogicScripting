@@ -174,6 +174,13 @@ public class CallHelpTests
     }
 
     [Theory]
+    [MemberData(nameof(RejectedPlacedCalls.All), MemberType = typeof(RejectedPlacedCalls))]
+    public void None_ForAPlacedCallTheCompilerRejects(string call)
+    {
+        Assert.Null(At($"l = {string.Format(call, "L")}\nl(|", RejectedPlacedCalls.Level.GetValueOrDefault));
+    }
+
+    [Theory]
     [MemberData(nameof(RejectedFirstLines.All), MemberType = typeof(RejectedFirstLines))]
     public void None_ForAFunctionWhoseFirstLineTheCompilerRejects(string firstLine)
     {

@@ -64,7 +64,7 @@ public class Plugin : BaseUnityPlugin
             libraries,
             new WindowStateStore(storage, Logger),
             _toggleKey,
-            new EditorAssist(completionWhileTyping, libraries.Libraries));
+            new EditorAssist(completionWhileTyping, libraries.Libraries, _startupCheck));
         UIApi.AddZeepGUIDrawer(_scriptWindow);
         _toolbarDrawer = new ScriptToolbarDrawer(_scriptWindow);
         UIApi.AddToolbarDrawer(_toolbarDrawer);

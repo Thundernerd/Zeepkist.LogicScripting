@@ -556,6 +556,27 @@ public class CompletionTests
     }
 
     [Theory]
+    [MemberData(nameof(RejectedPlacedCalls.All), MemberType = typeof(RejectedPlacedCalls))]
+    public void Items_AfterADot_NothingFromAPlacedCallTheCompilerRejects(string call)
+    {
+        var placed = string.Format(call, "T");
+        var context = At($"t = {placed}\nx = t.|");
+
+        Assert.Empty(Completion.GetItems(context, DefinedNames.Read(context.Text, RejectedPlacedCalls.Level.GetValueOrDefault)));
+        Assert.Empty(Labels($"x = {placed}.|", RejectedPlacedCalls.Level.GetValueOrDefault));
+    }
+
+    [Theory]
+    [MemberData(nameof(RejectedPlacedCalls.All), MemberType = typeof(RejectedPlacedCalls))]
+    public void Items_NoNamedArguments_InACallToAPlacedCallTheCompilerRejects(string call)
+    {
+        var context = At($"l = {string.Format(call, "L")}\nl(|");
+        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, RejectedPlacedCalls.Level.GetValueOrDefault));
+
+        Assert.DoesNotContain(items, i => i.Kind == CompletionKind.Argument);
+    }
+
+    [Theory]
     [InlineData("x = timing.edge(1).|")]
     [InlineData("x = timing.edge(g(1), [a]).ho|")]
     [InlineData("x = logic(timing.edge(1).|")]

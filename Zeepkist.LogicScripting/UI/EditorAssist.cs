@@ -1,3 +1,4 @@
+using System.Linq;
 using BepInEx.Configuration;
 using TNRD.Zeepkist.LogicScripting.Blocks;
 using TNRD.Zeepkist.LogicScripting.Compiler;
@@ -12,10 +13,12 @@ namespace TNRD.Zeepkist.LogicScripting.UI;
 internal sealed class EditorAssist
 {
     private readonly ConfigEntry<bool> _completionWhileTyping;
+    private readonly StartupCheck _startupCheck;
 
-    public EditorAssist(ConfigEntry<bool> completionWhileTyping, LibraryList libraries)
+    public EditorAssist(ConfigEntry<bool> completionWhileTyping, LibraryList libraries, StartupCheck startupCheck)
     {
         _completionWhileTyping = completionWhileTyping;
+        _startupCheck = startupCheck;
         Libraries = libraries;
     }
 
@@ -31,11 +34,13 @@ internal sealed class EditorAssist
     public bool CompletionWhileTyping => _completionWhileTyping.Value;
 
     /// <summary>
-    /// The block in the open level with a UID; null outside the editor or when there's none.
+    /// The block in the open level with a UID; null outside the editor, when there's none, or when its style is turned
+    /// off for this game version, since the compiler rejects a reference to it.
     /// </summary>
     public PlacedBlock FindPlacedBlock(string uid)
     {
         var central = ComponentCache.Get<LEV_LevelEditorCentral>();
-        return central == null ? null : PlacedBlocks.FindWithoutWires(central, uid);
+        var block = central == null ? null : PlacedBlocks.FindWithoutWires(central, uid);
+        return block == null || _startupCheck.DisabledBlockIds.Contains(block.BlockId) ? null : block;
     }
 }

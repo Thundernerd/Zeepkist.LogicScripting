@@ -294,21 +294,28 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> starts with; null when there's none.
+    /// The UID in quotes the <c>placed(...)</c> call at <paramref name="start"/> takes; null unless that's its one
+    /// argument, the only kind the compiler accepts.
     /// </summary>
     internal static string FindPlacedUid(List<Token> tokens, int start)
     {
+        if (start + 3 >= tokens.Count)
+            return null;
+
         var uid = tokens[start + 2];
-        return uid.Kind == TokenKind.String ? uid.Text : null;
+        return uid.Kind == TokenKind.String && tokens[start + 3].Kind == TokenKind.CloseParen ? uid.Text : null;
     }
 
     /// <summary>
     /// The Placed Block Reference to the block in the level with <paramref name="uid"/>, in its mode there; null when
-    /// there's no such block, or no UID.
+    /// there's no such block, no UID, or the block is in a Block Group, which the compiler rejects.
     /// </summary>
     internal static DefinedValue FindPlaced(string uid, Func<string, PlacedBlock> findPlacedBlock)
     {
         var block = uid == null ? null : findPlacedBlock?.Invoke(uid);
+        if (block is { IsInBlockGroup: true })
+            return null;
+
         var type = block == null ? null : BlockManifest.GetPlacedType(block.BlockId);
         return type == null ? null : DefinedValue.PlacedBlockReference(type, GetPlacedMode(type, block));
     }
