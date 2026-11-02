@@ -65,13 +65,17 @@ public static class DefinedNames
     /// </summary>
     internal static List<(DefinedFunction Function, List<Token> Inputs)> ReadFunctions(List<Token> tokens)
     {
-        var functionNames = ReadFunctionNames(tokens);
+        var firstLines = ReadFirstLines(tokens);
+        var functionNames = new HashSet<string>(firstLines.Values
+            .Select(l => l.Name?.Name)
+            .Where(n => n != null && !GraphBuilder.IsReserved(n)));
         List<(DefinedFunction, List<Token>)> functions = [];
         for (var i = 0; i + 1 < tokens.Count; i++)
         {
             if (!IsFunctionStart(tokens, i))
                 continue;
 
+            // Read loosely, unlike the parser, so a body sees the inputs of a first line still being typed
             var name = tokens[i + 1].Kind == TokenKind.Name ? tokens[i + 1] : (Token?)null;
             List<Token> inputs = [];
             List<string> outputs = [];
@@ -124,7 +128,7 @@ public static class DefinedNames
 
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
             var inputNames = inputs.Select(t => t.Text).ToList();
-            var firstLine = Parser.ParseFunctionFirstLine(tokens, i);
+            var firstLine = firstLines[i];
             var isRejected = firstLine.Error != null
                 || GraphBuilder.GetFirstLineNameErrors(firstLine.Inputs, firstLine.Outputs, functionNames.Contains).Count > 0;
             var function = new DefinedFunction(name?.Text, name?.Span ?? tokens[i].Span, inputNames, outputs, body, isRejected);
@@ -136,14 +140,14 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// Like the compiler, every Function's name counts against a first line's names, even a later one's.
+    /// Every first line by its keyword's index, read up front since, like the compiler, every Function's name counts
+    /// against a first line's names, even a later one's.
     /// </summary>
-    private static HashSet<string> ReadFunctionNames(List<Token> tokens)
+    private static Dictionary<int, FunctionFirstLine> ReadFirstLines(List<Token> tokens)
     {
-        return new HashSet<string>(Enumerable.Range(0, tokens.Count - 1)
+        return Enumerable.Range(0, tokens.Count - 1)
             .Where(i => IsFunctionStart(tokens, i))
-            .Select(i => Parser.ParseFunctionFirstLine(tokens, i).Name?.Name)
-            .Where(n => n != null && !GraphBuilder.IsReserved(n)));
+            .ToDictionary(i => i, i => Parser.ParseFunctionFirstLine(tokens, i));
     }
 
     /// <summary>
