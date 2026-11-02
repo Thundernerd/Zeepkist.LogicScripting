@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Globalization;
-using Imui.Core;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -10,9 +8,6 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 /// </summary>
 internal sealed class ExpectEditorInViewStep : ScenarioStep
 {
-    // Rects are laid out in fractions of a pixel
-    private const float Tolerance = 0.5f;
-
     public override IEnumerator Run(StepContext context)
     {
         if (!context.RequireText())
@@ -25,34 +20,15 @@ internal sealed class ExpectEditorInViewStep : ScenarioStep
 
         var layout = context.Window.EditorLayout;
         var window = context.Window.WindowRect;
-        if (!Contains(window, layout.Center))
-            context.Fail("the center reaches outside the window", Describe(window), Describe(layout.Center));
-        else if (layout.Field.H < layout.MinFieldHeight - Tolerance)
-            context.Fail("the editor is less than three rows tall", $"{Pixels(layout.MinFieldHeight)} px or more", $"{Pixels(layout.Field.H)} px");
-        else if (!Contains(layout.Center, layout.Field))
-            context.Fail("the editor reaches outside the center", Describe(layout.Center), Describe(layout.Field));
-        else if (!Contains(layout.Center, layout.ErrorsHeader))
-            context.Fail("the error panel's header reaches outside the center", Describe(layout.Center), Describe(layout.ErrorsHeader));
+        if (!RectCheck.Contains(window, layout.Center))
+            context.Fail("the center reaches outside the window", RectCheck.Describe(window), RectCheck.Describe(layout.Center));
+        else if (layout.Field.H < layout.MinFieldHeight - RectCheck.Tolerance)
+            context.Fail("the editor is less than three rows tall", $"{RectCheck.Pixels(layout.MinFieldHeight)} px or more", $"{RectCheck.Pixels(layout.Field.H)} px");
+        else if (!RectCheck.Contains(layout.Center, layout.Field))
+            context.Fail("the editor reaches outside the center", RectCheck.Describe(layout.Center), RectCheck.Describe(layout.Field));
+        else if (!RectCheck.Contains(layout.Center, layout.ErrorsHeader))
+            context.Fail("the error panel's header reaches outside the center", RectCheck.Describe(layout.Center), RectCheck.Describe(layout.ErrorsHeader));
         else
-            context.Pass($"the editor is {Pixels(layout.Field.H)} px tall, with the error panel's header under it", null, null);
-    }
-
-    private static bool Contains(ImRect outer, ImRect inner)
-    {
-        return inner.H >= 0
-            && inner.Left >= outer.Left - Tolerance
-            && inner.Right <= outer.Right + Tolerance
-            && inner.Bottom >= outer.Bottom - Tolerance
-            && inner.Top <= outer.Top + Tolerance;
-    }
-
-    private static string Describe(ImRect rect)
-    {
-        return $"x {Pixels(rect.X)}, y {Pixels(rect.Y)}, {Pixels(rect.W)} by {Pixels(rect.H)} px";
-    }
-
-    private static string Pixels(float pixels)
-    {
-        return pixels.ToString("0", CultureInfo.InvariantCulture);
+            context.Pass($"the editor is {RectCheck.Pixels(layout.Field.H)} px tall, with the error panel's header under it", null, null);
     }
 }
