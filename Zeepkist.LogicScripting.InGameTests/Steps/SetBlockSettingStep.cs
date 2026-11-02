@@ -122,8 +122,7 @@ internal sealed class SetBlockSettingStep : ScenarioStep
             yield break;
         }
 
-        // What the settings panel's slots do: note the block for undo, write the value, then let the block's editor
-        // load it, redraw an open panel and register the undo step
+        // Through the block's editor, as its settings panel goes, so the change is one undo step and the level keeps it
         var before = central.undoRedo.currentHistoryPosition;
         blockEdit.RegisterUndoRedo();
         Write(blockEdit.GetCustomBlockProperties(), stored);
