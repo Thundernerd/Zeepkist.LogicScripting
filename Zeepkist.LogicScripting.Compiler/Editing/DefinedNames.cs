@@ -65,7 +65,7 @@ public static class DefinedNames
     /// </summary>
     internal static List<(DefinedFunction Function, List<Token> Inputs)> ReadFunctions(List<Token> tokens)
     {
-        List<(DefinedFunction, List<Token>)> functions = [];
+        List<(string Name, TextSpan Span, List<Token> Inputs, List<string> Outputs, TextSpan Body, bool IsWellFormed)> read = [];
         for (var i = 0; i + 1 < tokens.Count; i++)
         {
             if (!IsFunctionStart(tokens, i))
@@ -122,12 +122,74 @@ public static class DefinedNames
             }
 
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
-            var function = new DefinedFunction(name?.Text, name?.Span ?? tokens[i].Span, inputs.Select(t => t.Text).ToList(), outputs, body);
-            functions.Add((function, inputs));
+            read.Add((name?.Text, name?.Span ?? tokens[i].Span, inputs, outputs, body, IsWellFormed(tokens, i)));
             i = j - 1;
         }
 
-        return functions;
+        // Like the compiler, any Function's name counts, even a later one's, and one defined twice counts once
+        var functionNames = new HashSet<string>(read.Select(f => f.Name).Where(n => n != null && !GraphBuilder.IsReserved(n)));
+        return read.Select(f =>
+        {
+            var inputs = f.Inputs.Select(t => t.Text).ToList();
+            var isRejected = !f.IsWellFormed || !HasUsableNames(inputs, f.Outputs, functionNames);
+            return (new DefinedFunction(f.Name, f.Span, inputs, f.Outputs, f.Body, isRejected), f.Inputs);
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Whether the first line from the keyword at <paramref name="keyword"/> reads the way the parser needs it: a name,
+    /// its inputs in parentheses and, after <c>-&gt;</c>, its outputs, each separated by a comma, and nothing after.
+    /// </summary>
+    private static bool IsWellFormed(List<Token> tokens, int keyword)
+    {
+        var i = keyword + 1;
+        if (tokens[i].Kind != TokenKind.Name || tokens[i + 1].Kind != TokenKind.OpenParen)
+            return false;
+
+        i += 2;
+        if (tokens[i].Kind != TokenKind.CloseParen && !SkipNames(tokens, ref i))
+            return false;
+
+        if (tokens[i].Kind != TokenKind.CloseParen)
+            return false;
+
+        i++;
+        if (tokens[i].Kind == TokenKind.Arrow)
+        {
+            i++;
+            if (!SkipNames(tokens, ref i))
+                return false;
+        }
+
+        return tokens[i].Kind is TokenKind.NewLine or TokenKind.End;
+    }
+
+    /// <summary>
+    /// Moves past names separated by commas; false when there's no name, or none after a comma.
+    /// </summary>
+    private static bool SkipNames(List<Token> tokens, ref int index)
+    {
+        while (true)
+        {
+            if (tokens[index].Kind != TokenKind.Name)
+                return false;
+
+            index++;
+            if (tokens[index].Kind != TokenKind.Comma)
+                return true;
+
+            index++;
+        }
+    }
+
+    /// <summary>
+    /// The compiler's checks of a first line's names: none is reserved or a Function's, no input or output is written
+    /// twice, and no output has an input's name.
+    /// </summary>
+    private static bool HasUsableNames(List<string> inputs, List<string> outputs, HashSet<string> functionNames)
+    {
+        var names = inputs.Concat(outputs).ToList();
+        return names.All(n => !GraphBuilder.IsReserved(n) && !functionNames.Contains(n)) && names.Distinct().Count() == names.Count;
     }
 
     /// <summary>

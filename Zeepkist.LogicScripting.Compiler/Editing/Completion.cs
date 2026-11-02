@@ -120,7 +120,8 @@ public static class Completion
     /// <summary>
     /// The named arguments the call doesn't have yet: a Block Function's inputs and Settings, a Function's inputs, or
     /// a Placed Block Reference's inputs, since its Settings can't be changed. Inputs its positional arguments give are
-    /// left out. A name defined twice is the first definition, which the compiler keeps.
+    /// left out, and a Function whose first line the compiler rejects has none. A name defined twice is the first
+    /// definition, which the compiler keeps.
     /// </summary>
     private static IEnumerable<CompletionItem> GetArgumentItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
     {
@@ -136,7 +137,7 @@ public static class Completion
 
         var function = context.Functions.FirstOrDefault(f => f.Name != null && f.Name == context.Callee);
         if (function != null)
-            return GetInputItems(context, function.Inputs);
+            return function.IsRejected ? [] : GetInputItems(context, function.Inputs);
 
         var placed = definedNames.FirstOrDefault(n => n.Name == context.Callee && IsVisible(context, n));
         return placed?.Value is { IsPlaced: true } value ? GetInputItems(context, value.Type.Inputs.Select(i => i.Name)) : [];
@@ -156,8 +157,9 @@ public static class Completion
     /// The outputs of the block the name or call before the dot stands for, in its written mode or, for a Placed Block
     /// Reference, its mode in the level, or of the Script's own Function its value or the call calls, in the order its
     /// first line writes them. A block or Function with one output is used without a dot, so it offers none; nor does a
-    /// name whose value is neither, or a Function's name, which the compiler takes for the Function. A name or Function
-    /// defined twice is the first definition, which the compiler keeps.
+    /// name whose value is neither, a Function's name, which the compiler takes for the Function, or a Function whose
+    /// first line the compiler rejects, since a call to it stands for nothing. A name or Function defined twice is the
+    /// first definition, which the compiler keeps.
     /// </summary>
     private static IEnumerable<CompletionItem> GetOutputItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
     {
@@ -175,7 +177,7 @@ public static class Completion
         if (value?.Type != null)
             return GetOutputNames(value.Type, value.Mode);
 
-        return value?.Callee?.Outputs ?? [];
+        return GetOutputs(value?.Callee);
     }
 
     /// <summary>
@@ -186,7 +188,12 @@ public static class Completion
         if (BlockManifest.TryGetFunction(context.DottedCallee, out var type))
             return GetOutputNames(type, context.DottedMode);
 
-        return context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee)?.Outputs ?? [];
+        return GetOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
+    }
+
+    private static IReadOnlyList<string> GetOutputs(DefinedFunction function)
+    {
+        return function is { IsRejected: false } ? function.Outputs : [];
     }
 
     private static IReadOnlyList<string> GetOutputNames(BlockType type, string mode)
