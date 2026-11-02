@@ -52,7 +52,7 @@ internal sealed class SetBlockSettingStep : ScenarioStep
 
         if (!context.PlacedBlocks.TryGetUid(Name, out var uid))
         {
-            context.Fail($"no block was placed as \"{Name}\": add place-block ... as {Name} first", "a placed block's name", context.PlacedBlocks.Listed);
+            context.Fail($"no block was placed or named as \"{Name}\": add place-block ... as {Name} or name-group-block first", "a placed block's name", context.PlacedBlocks.Listed);
             yield break;
         }
 
