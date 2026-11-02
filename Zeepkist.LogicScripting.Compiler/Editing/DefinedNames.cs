@@ -71,7 +71,7 @@ public static class DefinedNames
         List<(DefinedFunction, List<Token>)> functions = [];
         for (var i = 0; i + 1 < tokens.Count; i++)
         {
-            if (!IsFunctionStart(tokens, i))
+            if (!IsFunctionLineStart(tokens, i))
                 continue;
 
             // Read loosely, unlike the parser, so a body sees the inputs of a first line still being typed
@@ -127,14 +127,11 @@ public static class DefinedNames
     private static Dictionary<int, FunctionFirstLine> ReadFirstLines(List<Token> tokens)
     {
         return Enumerable.Range(0, tokens.Count - 1)
-            .Where(i => IsFunctionStart(tokens, i))
+            .Where(i => IsFunctionLineStart(tokens, i))
             .ToDictionary(i => i, i => Parser.ParseFunctionFirstLine(tokens, i));
     }
 
-    /// <summary>
-    /// Whether a Function starts at <paramref name="index"/>, at the start of a line, the way the parser reads it.
-    /// </summary>
-    internal static bool IsFunctionStart(List<Token> tokens, int index)
+    internal static bool IsFunctionLineStart(List<Token> tokens, int index)
     {
         return (index == 0 || tokens[index - 1].Kind == TokenKind.NewLine) && Parser.IsFunctionStart(tokens, index);
     }

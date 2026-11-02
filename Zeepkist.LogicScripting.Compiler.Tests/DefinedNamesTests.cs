@@ -223,12 +223,7 @@ public class DefinedNamesTests
     [InlineData("function f() -> z\nend\nend\nb = 1")]
     public void ReadFunctions_EndEachBody_WhereTheParserDoes(string text)
     {
-        var statements = Parser.Parse(Lexer.Tokenize(text, []), []);
-        var parsed = statements.OfType<Definition>()
-            .Select(d => (d.Name, Function: (string)null))
-            .Concat(statements.OfType<FunctionDefinition>().SelectMany(f => f.Body.OfType<Definition>().Select(d => (d.Name, Function: f.Name.Name))))
-            .Where(d => !GraphBuilder.IsReserved(d.Name))
-            .ToList();
+        var parsed = ParseScopes(text);
         var read = Read(text);
 
         Assert.Contains(parsed, d => d.Name == "b");
@@ -248,5 +243,20 @@ public class DefinedNamesTests
     private static IReadOnlyList<DefinedName> Read(string text)
     {
         return DefinedNames.Read(text, uid => _level.GetValueOrDefault(uid));
+    }
+
+    /// <summary>
+    /// Each definition the parser reads, with the Function whose body it's in, or null outside one.
+    /// </summary>
+    private static List<(string Name, string Function)> ParseScopes(string text)
+    {
+        var statements = Parser.Parse(Lexer.Tokenize(text, []), []);
+        var inBodies = statements.OfType<FunctionDefinition>()
+            .SelectMany(f => f.Body.OfType<Definition>().Select(d => (d.Name, Function: f.Name.Name)));
+        return statements.OfType<Definition>()
+            .Select(d => (d.Name, Function: (string)null))
+            .Concat(inBodies)
+            .Where(d => !GraphBuilder.IsReserved(d.Name))
+            .ToList();
     }
 }

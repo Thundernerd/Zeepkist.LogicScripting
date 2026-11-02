@@ -271,7 +271,7 @@ public sealed class CaretContext
     private static bool IsOnFunctionsFirstLine(List<Token> tokens, TextSpan word)
     {
         var lineStart = tokens.FindLastIndex(t => t.Span.Start < word.Start && t.Kind == TokenKind.NewLine) + 1;
-        return tokens[lineStart].Span.Start < word.Start && DefinedNames.IsFunctionStart(tokens, lineStart);
+        return tokens[lineStart].Span.Start < word.Start && DefinedNames.IsFunctionLineStart(tokens, lineStart);
     }
 
     /// <summary>

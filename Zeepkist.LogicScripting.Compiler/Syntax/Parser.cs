@@ -94,6 +94,8 @@ internal sealed partial class Parser
         if (!isComplete)
             _diagnostics.Add(firstLine.Error);
 
+        // A line never runs past a line break, and a skipped continuation line is never a function or end line, so this
+        // stops right at the body's end
         List<Statement> body = [];
         while (_index < bodyEnd)
         {
@@ -127,12 +129,11 @@ internal sealed partial class Parser
     /// The token the body of the Function at <paramref name="keyword"/> ends at: its <c>end</c>, the next Function's
     /// keyword, or the end of the Script. Indentation is only style, so the body ends at the first <c>end</c> line. A
     /// Function can't be defined inside another, so a <c>function</c> line before it ends this one, to be read as the
-    /// next Function. The editor finds bodies with it too, so it scopes them the way the parser does without parsing
-    /// them.
+    /// next Function. It parses nothing, so the editor can find bodies with it on each key press.
     /// </summary>
     public static int FindBodyEnd(List<Token> tokens, int keyword)
     {
-        var index = SkipLine(tokens, keyword);
+        var index = FindLineEnd(tokens, keyword);
         while (tokens[index].Kind != TokenKind.End)
         {
             if (tokens[index].Kind == TokenKind.NewLine)
@@ -140,7 +141,7 @@ internal sealed partial class Parser
             else if (IsFunctionStart(tokens, index) || IsEndLine(tokens, index))
                 return index;
             else
-                index = SkipLine(tokens, index);
+                index = FindLineEnd(tokens, index);
         }
 
         return index;
@@ -468,8 +469,7 @@ internal sealed partial class Parser
     }
 
     /// <summary>
-    /// Whether the statement starting at <paramref name="index"/> starts a Function. <c>function = ...</c> is a
-    /// definition, so it gets the reserved-word error instead.
+    /// <c>function = ...</c> is a definition, so it gets the reserved-word error instead.
     /// </summary>
     public static bool IsFunctionStart(List<Token> tokens, int index)
     {
@@ -527,13 +527,10 @@ internal sealed partial class Parser
 
     private void SkipLine()
     {
-        _index = SkipLine(_tokens, _index);
+        _index = FindLineEnd(_tokens, _index);
     }
 
-    /// <summary>
-    /// The line break or end of the Script that ends the line <paramref name="index"/> is on.
-    /// </summary>
-    private static int SkipLine(List<Token> tokens, int index)
+    private static int FindLineEnd(List<Token> tokens, int index)
     {
         while (tokens[index].Kind != TokenKind.NewLine && tokens[index].Kind != TokenKind.End)
         {
