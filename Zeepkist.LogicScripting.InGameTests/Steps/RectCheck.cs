@@ -1,5 +1,6 @@
 using System.Globalization;
 using Imui.Core;
+using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -18,6 +19,17 @@ internal static class RectCheck
             && inner.Right <= outer.Right + Tolerance
             && inner.Bottom >= outer.Bottom - Tolerance
             && inner.Top <= outer.Top + Tolerance;
+    }
+
+    /// <summary>
+    /// Whether the rects have the same position and size.
+    /// </summary>
+    public static bool Matches(ImRect a, ImRect b)
+    {
+        return Mathf.Abs(a.X - b.X) <= Tolerance
+            && Mathf.Abs(a.Y - b.Y) <= Tolerance
+            && Mathf.Abs(a.W - b.W) <= Tolerance
+            && Mathf.Abs(a.H - b.H) <= Tolerance;
     }
 
     public static string Describe(ImRect rect)

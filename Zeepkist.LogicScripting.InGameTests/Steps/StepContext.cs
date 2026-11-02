@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using BepInEx.Logging;
+using Imui.Core;
 using TNRD.Zeepkist.LogicScripting.UI;
 using UnityEngine;
 using ZeepSDK.Utilities;
@@ -13,6 +14,7 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 internal sealed class StepContext
 {
     private const float ListDrawSeconds = 2;
+    private const float WindowDrawSeconds = 2;
 
     private readonly Func<string, IEnumerator> _screenshot;
 
@@ -42,6 +44,11 @@ internal sealed class StepContext
     /// They last the scenario.
     /// </summary>
     public PlacedBlockNames PlacedBlocks { get; } = new();
+
+    /// <summary>
+    /// What remember-window-rect remembered, for the rest of the scenario, or null.
+    /// </summary>
+    public ImRect? RememberedWindowRect { get; set; }
 
     public bool Failed { get; private set; }
 
@@ -128,6 +135,17 @@ internal sealed class StepContext
             list.CancelInput();
             Fail(failure);
         }
+    }
+
+    /// <summary>
+    /// Waits for the window to be drawn, unless it was this frame, so its rect is the one Imui keeps now and not the one
+    /// it had before it closed. Fails the step when it isn't drawn in time.
+    /// </summary>
+    public IEnumerator WaitForWindowDrawn()
+    {
+        yield return WaitUntil(() => Window.WindowLayout.Frame == Time.frameCount, WindowDrawSeconds);
+        if (Window.WindowLayout.Frame != Time.frameCount)
+            Fail("the window wasn't drawn", $"Unity frame {Time.frameCount}", $"Unity frame {Window.WindowLayout.Frame}");
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler;
 using TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
@@ -48,6 +49,9 @@ internal static class StepList
         ["expect-prompt"] = (step, argument) => new ExpectPromptStep(StepArgument.Choice(step, argument, PromptNames.Prompts)),
         ["expect-footer-in-view"] = (step, argument) => None(step, argument, new ExpectFooterInViewStep()),
         ["set-window-height"] = (step, argument) => new SetWindowHeightStep(StepArgument.Pixels(step, argument)),
+        ["drag-window-edge"] = DragWindowEdge,
+        ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
+        ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
         ["library-read-failed"] = (step, argument) => new LibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
         ["startup-warning"] = (step, argument) => new StartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
         ["expect-editor-in-view"] = (step, argument) => None(step, argument, new ExpectEditorInViewStep()),
@@ -156,6 +160,19 @@ internal static class StepList
             throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
 
         return new SetBlockSettingStep(StepArgument.FileName(step, words[0]), words[1], words[2]);
+    }
+
+    /// <summary>
+    /// <c>&lt;pixels&gt;</c>, below 0 to drag up, and optionally <c>over &lt;frames&gt;</c>, 1 when left out.
+    /// </summary>
+    private static ScenarioStep DragWindowEdge(string step, string argument)
+    {
+        var what = "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        var frames = 1;
+        var read = int.TryParse(words[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) && pixels != 0
+            && (words.Length == 1 || (words.Length == 3 && words[1] == "over" && StepArgument.TryPositive(words[2], out frames)));
+        return read ? new DragWindowEdgeStep(pixels, frames) : throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
     }
 
     private static ScenarioStep None(string step, string argument, ScenarioStep created)

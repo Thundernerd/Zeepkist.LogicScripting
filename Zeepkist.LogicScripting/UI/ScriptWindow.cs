@@ -67,6 +67,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
 
     // Kept for the in-game tests
     private EditorLayout _editorLayout;
+    private WindowLayout _windowLayout;
 
     private bool AnyFieldFocused => _fieldFocused || _scriptListPanel.NameFocused || _libraryListPanel.NameFocused || _referencePanel.FilterFocused;
     private LibraryList Libraries => _libraryStore.Libraries;
