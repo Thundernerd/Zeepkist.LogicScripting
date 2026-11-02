@@ -59,9 +59,8 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// Reads them the way the parser does: a body ends at its first <c>end</c> line, or before the next Function's
-    /// first line, since Functions can't be defined inside each other. A Function without a name still has a body,
-    /// which is a scope of its own.
+    /// Each body ends where the parser ends it. A Function without a name still has a body, which is a scope of its
+    /// own.
     /// </summary>
     internal static List<(DefinedFunction Function, List<Token> Inputs)> ReadFunctions(List<Token> tokens)
     {
@@ -104,28 +103,10 @@ public static class DefinedNames
             }
 
             var bodyStart = tokens[j].Span.End;
-            var bodyEnd = bodyStart;
-            for (; j < tokens.Count; j++)
-            {
-                if (tokens[j].Kind == TokenKind.End)
-                {
-                    bodyEnd = tokens[j].Span.Start;
-                    break;
-                }
-
-                if (IsFunctionStart(tokens, j))
-                {
-                    bodyEnd = tokens[j - 1].Span.Start;
-                    break;
-                }
-
-                if (IsEndLine(tokens, j))
-                {
-                    bodyEnd = tokens[j].Span.End;
-                    break;
-                }
-            }
-
+            j = Parser.FindBodyEnd(tokens, i);
+            var bodyEnd = tokens[j].Kind == TokenKind.End ? tokens[j].Span.Start
+                : Parser.IsFunctionStart(tokens, j) ? tokens[j - 1].Span.Start
+                : tokens[j].Span.End;
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
             var inputNames = inputs.Select(t => t.Text).ToList();
             var firstLine = firstLines[i];
@@ -151,22 +132,11 @@ public static class DefinedNames
     }
 
     /// <summary>
-    /// Like the parser, <c>function = ...</c> is a definition, and anything else after the keyword starts a Function.
+    /// Whether a Function starts at <paramref name="index"/>, at the start of a line, the way the parser reads it.
     /// </summary>
     internal static bool IsFunctionStart(List<Token> tokens, int index)
     {
-        return (index == 0 || tokens[index - 1].Kind == TokenKind.NewLine)
-            && tokens[index].Kind == TokenKind.Name
-            && tokens[index].Text == FunctionDefinition.Keyword
-            && tokens[index + 1].Kind != TokenKind.Equals;
-    }
-
-    private static bool IsEndLine(List<Token> tokens, int index)
-    {
-        return tokens[index - 1].Kind == TokenKind.NewLine
-            && tokens[index].Kind == TokenKind.Name
-            && tokens[index].Text == FunctionDefinition.EndKeyword
-            && tokens[index + 1].Kind is TokenKind.NewLine or TokenKind.End;
+        return (index == 0 || tokens[index - 1].Kind == TokenKind.NewLine) && Parser.IsFunctionStart(tokens, index);
     }
 
     /// <summary>

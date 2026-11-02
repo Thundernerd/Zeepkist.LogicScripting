@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Editing;
+using TNRD.Zeepkist.LogicScripting.Compiler.Graph;
 using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
+using TNRD.Zeepkist.LogicScripting.Compiler.Syntax;
 using Xunit;
 
 namespace TNRD.Zeepkist.LogicScripting.Compiler.Tests;
@@ -205,6 +207,32 @@ public class DefinedNamesTests
     public void Read_AFunctionWithoutEnd_ToTheNextFunctionOrTheEnd(string text, string function)
     {
         Assert.Equal(function, Read(text).Single(n => n.Name == "z").Function?.Name);
+    }
+
+    [Theory]
+    [InlineData("function f() -> z\n    z = 1\nend\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\n  end  \nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\nfunction g() -> y\n    y = 1\nend\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\n\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\nend x\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\n    a = 1 &\nend\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\n    a = 1 &\nfunction g()\nend\nb = 1")]
+    [InlineData("function f() -> z\n    z = 1\n    a = logic(\nend\nb = 1")]
+    [InlineData("function f() -> z\n    function = 1\n    z = 1\nend\nb = 1")]
+    [InlineData("function f(a -> z\n    z = 1\nend\nb = 1")]
+    [InlineData("function f() -> z\nend\nend\nb = 1")]
+    public void ReadFunctions_EndEachBody_WhereTheParserDoes(string text)
+    {
+        var statements = Parser.Parse(Lexer.Tokenize(text, []), []);
+        var parsed = statements.OfType<Definition>()
+            .Select(d => (d.Name, Function: (string)null))
+            .Concat(statements.OfType<FunctionDefinition>().SelectMany(f => f.Body.OfType<Definition>().Select(d => (d.Name, Function: f.Name.Name))))
+            .Where(d => !GraphBuilder.IsReserved(d.Name))
+            .ToList();
+        var read = Read(text);
+
+        Assert.Contains(parsed, d => d.Name == "b");
+        Assert.All(parsed, d => Assert.Equal(d.Function, read.Single(n => n.Name == d.Name && !n.IsInput).Function?.Name));
     }
 
     [Theory]
