@@ -49,6 +49,11 @@ internal abstract class EditedItem
     public abstract bool BelongsToLevel { get; }
 
     /// <summary>
+    /// The warning pinned under the name row, or null.
+    /// </summary>
+    public virtual string StorageWarning => null;
+
+    /// <summary>
     /// Returns whether Compile was clicked.
     /// </summary>
     public abstract bool DrawHeader(ImGui gui);

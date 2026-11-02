@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Imui.Controls;
 using Imui.Core;
 using Imui.IO.Events;
@@ -27,6 +28,7 @@ internal sealed partial class ScriptWindow
     private const string ReferenceTab = "Reference";
     private const string ScriptsTab = "Scripts";
     private const string LibrariesTab = "Libraries";
+    private const string NoScriptText = "No Script selected. Make one with New Script.";
 
     /// <summary>
     /// Narrower than this, the sides draw collapsed whatever the state says, so the editor stays usable.
@@ -143,8 +145,9 @@ internal sealed partial class ScriptWindow
 
     /// <summary>
     /// The window is no shorter than the Scripts side's tab bar and either tab's minimum: two list rows, a row of the
-    /// open prompt and New, with a row of the libraries.json warning while it shows. Nor is it shorter than the editor's
-    /// minimum.
+    /// open prompt and New, with a row of the libraries.json warning while it shows. Nor is it shorter than the center's
+    /// minimum: the name row and the editor's minimum, with a row of the startup check's and the storage warning while
+    /// they show.
     /// </summary>
     private float GetMinHeight(ImGui gui)
     {
@@ -152,9 +155,24 @@ internal sealed partial class ScriptWindow
         var minTabHeight = Mathf.Max(ScriptListPanel.GetMinHeight(gui), LibraryListPanel.GetMinHeightWithWarning(gui, ShowsLibraryReadFailed));
         var minScriptsHeight = GetPanelHeaderHeight(gui) + ImTabsPane.GetTabBarHeight(gui) + (spacing * 2) + minTabHeight;
 
-        // The center's padding, and the spacing above the editor and above the error panel
-        var minCenterHeight = gui.GetRowHeight() + gui.GetRowsHeightWithSpacing(MinFieldRows) + GetPanelHeaderHeight(gui) + (spacing * 4);
+        // The center's padding, and a row of the startup check's warnings with the spacing under it
+        var minStartupHeight = GetStartupWarnings().Count > 0 ? WindowRegion.GetRowHeight(gui) + spacing : 0;
+        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _edited?.StorageWarning != null);
         return ImWindow.GetTitleBarHeight(gui) + gui.Style.Window.ContentPadding.Vertical + Mathf.Max(minScriptsHeight, minCenterHeight);
+    }
+
+    /// <summary>
+    /// The name row, a row of the storage warning while it shows, and the editor's minimum.
+    /// </summary>
+    private static float GetMinScriptHeight(ImGui gui, bool hasStorageWarning)
+    {
+        var minStorageHeight = hasStorageWarning ? gui.Style.Layout.Spacing + WindowRegion.GetRowHeight(gui) : 0;
+        return gui.GetRowHeight() + minStorageHeight + GetMinEditorHeight(gui);
+    }
+
+    private static float GetMinEditorHeight(ImGui gui)
+    {
+        return gui.GetRowsHeightWithSpacing(MinFieldRows) + GetPanelHeaderHeight(gui) + (gui.Style.Layout.Spacing * 2);
     }
 
     /// <summary>
@@ -343,25 +361,35 @@ internal sealed partial class ScriptWindow
     }
 
     /// <summary>
-    /// The header with Compile, the warnings, the editor, then the error panel: a header with the error count, and the
-    /// error list and result line in a region of their own, so a long list scrolls instead of pushing the editor away.
-    /// The editor takes the height the panel doesn't.
+    /// The startup check's warnings, the header with Compile, the storage warning, the editor, then the error panel: a
+    /// header with the error count, and the error list and result line in a region of their own, so a long list scrolls
+    /// instead of pushing the editor away. The editor takes the height the panel doesn't, and each warning scrolls in a
+    /// region of its own where there isn't room for it.
     /// </summary>
     private void DrawCenter(ImGui gui, ImRect rect)
     {
-        gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(gui.Style.Layout.Spacing));
-        DrawStartupCheck(gui);
+        var spacing = gui.Style.Layout.Spacing;
+        gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(spacing));
+        var storageWarning = _edited?.StorageWarning;
+
+        var settings = WrappedText.GetSettings(gui);
+        var minUnderStartupHeight = spacing + (_edited == null
+            ? WrappedText.GetHeight(gui, NoScriptText, in settings, gui.GetLayoutWidth(), minHeight: 0)
+            : GetMinScriptHeight(gui, storageWarning != null));
+        DrawWarnings(gui, GetStartupWarnings(), minUnderStartupHeight, "startup check");
         if (_edited == null)
         {
-            gui.Text("No Script selected. Make one with New Script.", wrap: true);
+            gui.Text(NoScriptText, in settings);
             gui.Layout.Pop();
             return;
         }
 
         var compileClicked = _edited.DrawHeader(gui);
+        if (storageWarning != null)
+            DrawWarnings(gui, [storageWarning], GetMinEditorHeight(gui), "storage warning");
+
         _edited.RefreshCheck();
 
-        var spacing = gui.Style.Layout.Spacing;
         var available = gui.Layout.GetAvailableHeight() - (spacing * 2);
         var minFieldHeight = gui.GetRowsHeightWithSpacing(MinFieldRows);
         var headerHeight = GetPanelHeaderHeight(gui);
@@ -451,14 +479,31 @@ internal sealed partial class ScriptWindow
         return (_edited.IsChecked ? "No errors found" : "Checking...", WindowColors.Muted);
     }
 
-    private void DrawStartupCheck(ImGui gui)
+    private IReadOnlyList<string> GetStartupWarnings()
     {
+        var warnings = new List<string>();
         if (ShowsUpdateNeeded)
-            gui.Text($"{StartupCheck.UpdateNeededMessage}. Scripts are still checked, but Compile places nothing.", WindowColors.Error, wrap: true);
+            warnings.Add($"{StartupCheck.UpdateNeededMessage}. Scripts are still checked, but Compile places nothing.");
 
         var disabledBlocks = ShownDisabledBlocks;
         if (disabledBlocks.Count > 0)
-            gui.Text($"Turned off for this game version: {string.Join(", ", disabledBlocks)}", WindowColors.Error, wrap: true);
+            warnings.Add($"Turned off for this game version: {string.Join(", ", disabledBlocks)}");
+
+        return warnings;
+    }
+
+    /// <summary>
+    /// Adds the warnings' region to the center's layout, leaving <paramref name="minRestHeight"/> under it.
+    /// </summary>
+    private static void DrawWarnings(ImGui gui, IReadOnlyList<string> warnings, float minRestHeight, string id)
+    {
+        if (warnings.Count == 0)
+            return;
+
+        gui.AddSpacingIfLayoutFrameNotEmpty();
+        var width = gui.GetLayoutWidth();
+        var height = WarningRegion.GetHeight(gui, warnings, width, gui.Layout.GetAvailableHeight(), minRestHeight);
+        WarningRegion.Draw(gui, gui.Layout.AddRect(width, height), warnings, id);
     }
 
     /// <summary>
