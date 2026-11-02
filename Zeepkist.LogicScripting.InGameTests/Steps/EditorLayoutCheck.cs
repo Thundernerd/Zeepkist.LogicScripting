@@ -15,6 +15,8 @@ internal readonly struct EditorLayoutCheck
         Actual = actual;
     }
 
+    public bool Passed => Failure == null;
+
     /// <summary>
     /// What's wrong, or null when the layout passed.
     /// </summary>

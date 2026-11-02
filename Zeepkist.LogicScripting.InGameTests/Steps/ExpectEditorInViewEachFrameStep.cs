@@ -38,7 +38,7 @@ internal sealed class ExpectEditorInViewEachFrameStep : ScenarioStep
         {
             var check = EditorLayoutCheck.Run(layout, context.Window.WindowRect);
             var warning = layout.HasStorageWarning ? ", with the storage warning" : string.Empty;
-            if (check.Failure != null)
+            if (!check.Passed)
             {
                 context.Fail($"frame {frame}{warning}: {check.Failure}", check.Expected, check.Actual);
                 yield break;

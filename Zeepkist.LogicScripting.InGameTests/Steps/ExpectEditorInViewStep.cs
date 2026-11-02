@@ -20,9 +20,9 @@ internal sealed class ExpectEditorInViewStep : ScenarioStep
 
         var layout = context.Window.EditorLayout;
         var check = EditorLayoutCheck.Run(layout, context.Window.WindowRect);
-        if (check.Failure != null)
-            context.Fail(check.Failure, check.Expected, check.Actual);
-        else
+        if (check.Passed)
             context.Pass($"the editor is {RectCheck.Pixels(layout.Field.H)} px tall, with the error panel's header under it", null, null);
+        else
+            context.Fail(check.Failure, check.Expected, check.Actual);
     }
 }
