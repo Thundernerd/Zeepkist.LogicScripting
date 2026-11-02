@@ -71,6 +71,7 @@ internal static class StepList
         ["caret-at-end"] = (step, argument) => None(step, argument, new PlaceCaretStep(atEnd: true)),
         ["complete"] = (step, argument) => None(step, argument, new CompleteStep()),
         ["expect-completion"] = (step, argument) => ExpectCompletion(StepArgument.Text(step, argument, "a row's label, and optionally its detail")),
+        ["expect-completion-no-detail"] = ExpectCompletionNoDetail,
         ["expect-call-help"] = (step, argument) => new ExpectCallHelpStep(StepArgument.Text(step, argument, "the text to look for")),
         ["expect-call-help-active"] = (step, argument) => new ExpectCallHelpActiveStep(StepArgument.Text(step, argument, "the highlighted input's or Setting's label")),
         ["expect-call-help-no-active"] = (step, argument) => None(step, argument, new ExpectCallHelpActiveStep(null)),
@@ -114,6 +115,19 @@ internal static class StepList
         return space < 0
             ? new ExpectCompletionStep(argument, null)
             : new ExpectCompletionStep(argument.Substring(0, space), argument.Substring(space + 1).Trim());
+    }
+
+    /// <summary>
+    /// A label, which has no spaces. The detail can't be left empty on <c>expect-completion</c>'s line, as the line's
+    /// trailing spaces are taken off.
+    /// </summary>
+    private static ScenarioStep ExpectCompletionNoDetail(string step, string argument)
+    {
+        var what = "a row's label";
+        var label = StepArgument.Text(step, argument, what);
+        return label.IndexOf(' ') < 0
+            ? new ExpectCompletionStep(label, string.Empty)
+            : throw new ScenarioFormatException($"{step} takes {what}, with no spaces, not '{argument}'");
     }
 
     /// <summary>

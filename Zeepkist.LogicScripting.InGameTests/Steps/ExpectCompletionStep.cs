@@ -5,7 +5,8 @@ using TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
-/// Passes when the open completion list has a row with the label, and with the detail too when one is given.
+/// Passes when the open completion list has a row with the label, and with the detail too when one is given: empty
+/// for a row with none.
 /// </summary>
 internal sealed class ExpectCompletionStep : ScenarioStep
 {
@@ -20,7 +21,7 @@ internal sealed class ExpectCompletionStep : ScenarioStep
     public string Label { get; }
 
     /// <summary>
-    /// Null to accept any detail.
+    /// Null to accept any detail, empty for none.
     /// </summary>
     public string Detail { get; }
 
@@ -31,7 +32,7 @@ internal sealed class ExpectCompletionStep : ScenarioStep
 
         yield return context.WaitUntil(() => context.Window.CompletionItems.Any(Matches), WaitSeconds);
 
-        var expected = Detail == null ? Label : Describe(Label, Detail);
+        var expected = Detail == null ? Label : Detail.Length == 0 ? $"{Label} (no detail)" : Describe(Label, Detail);
         var items = context.Window.CompletionItems;
         var actual = items.Count == 0 ? "(the list is closed)" : string.Join(", ", items.Select(i => Describe(i.Label, i.Detail)));
         if (items.Any(Matches))
