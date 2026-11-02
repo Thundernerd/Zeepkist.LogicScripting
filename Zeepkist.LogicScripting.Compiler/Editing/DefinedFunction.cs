@@ -47,6 +47,16 @@ public sealed class DefinedFunction
     public bool IsRejected { get; }
 
     /// <summary>
+    /// The <see cref="Inputs"/> a call to the Function can give, which are none when <see cref="IsRejected"/>.
+    /// </summary>
+    public IReadOnlyList<string> UsableInputs => IsRejected ? [] : Inputs;
+
+    /// <summary>
+    /// The <see cref="Outputs"/> a call to the Function has, which are none when <see cref="IsRejected"/>.
+    /// </summary>
+    public IReadOnlyList<string> UsableOutputs => IsRejected ? [] : Outputs;
+
+    /// <summary>
     /// From the line after the first line to the end of its <c>end</c>; while it has none, to the next Function or the
     /// end of the text.
     /// </summary>
