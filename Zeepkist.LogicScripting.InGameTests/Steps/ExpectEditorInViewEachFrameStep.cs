@@ -71,7 +71,6 @@ internal sealed class ExpectEditorInViewEachFrameStep : ScenarioStep
         if (warned.Count == 1)
             return $"frame {warned[0]} with the storage warning";
 
-        // Frames come in order, so a run without gaps reads as a range
         var contiguous = warned.Last() - warned.First() == warned.Count - 1;
         return contiguous
             ? $"frames {warned.First()} to {warned.Last()} with the storage warning"

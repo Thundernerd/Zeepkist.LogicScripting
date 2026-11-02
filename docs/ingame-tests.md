@@ -77,7 +77,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `open-window` | Opens the Script window. |
 | `close-window` | Closes it. |
 | `new-script <name>` | Makes a new Script and selects it, as New Script does. Fails when the name is taken. |
-| `select-script <name>` | Selects a Script, as clicking it in the list does: the window selects it as it draws the list, after it worked out that frame's layout. Fails when there's none by that name. |
+| `select-script <name>` | Selects a Script, as clicking it in the list does: the window selects it as it draws the list, after it worked out that frame's layout. Fails when there's none by that name, or when the Scripts side is collapsed, so the list isn't drawn. |
 | `new-library <name>` | Makes a new Library and selects it, as New Library on the Libraries tab does. Fails when the name is taken. |
 | `select-library <name>` | Selects a Library, as clicking it in the Libraries tab's list does, the same way. Fails when there's none by that name. |
 | `show-tab scripts\|libraries` | Shows the Scripts side's Scripts or Libraries tab, as clicking it does. The steps for a list and its footer work on the shown tab. |
