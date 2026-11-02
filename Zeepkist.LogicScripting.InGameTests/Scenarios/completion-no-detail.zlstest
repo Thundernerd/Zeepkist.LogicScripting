@@ -10,7 +10,7 @@ caret-at-end
 complete
 expect-completion-no-detail function
 expect-completion-no-detail true
-expect-completion logic
+expect-completion logic (a, b, op_in, op:)
 screenshot statement-start
 
 expect-no-exceptions
