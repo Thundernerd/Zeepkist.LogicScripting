@@ -70,9 +70,10 @@ public sealed class CompletionSession
     /// <paramref name="whileTyping"/> is on, typing a name opens the list. So does starting an argument of a call
     /// that takes named arguments, which lists them: typing a <see cref="ScriptText.OpensCompletion">separator</see>
     /// or accepting a function, which opens its call. Starting a Setting's value lists its values the same way: typing
-    /// a separator or accepting the Setting's name. Typing the dot after a block's name lists its outputs, and after a Library's name its Functions. It closes
-    /// when the editor loses focus, text gets selected, the caret moves to another word, or nothing matches; an empty
-    /// prefix keeps it open only when <see cref="Request"/>, an argument's start or a dot opened it.
+    /// a separator or accepting the Setting's name. Typing the dot after a block's name lists its outputs, and after a
+    /// Library's name its Functions. It closes when the editor loses focus, text gets selected, the caret moves to
+    /// another word, or nothing matches; an empty prefix keeps it open only when <see cref="Request"/>, an argument's
+    /// start or a dot opened it.
     /// </summary>
     public void Update(TextSnapshot snapshot, bool typedName, bool whileTyping, bool focused, bool typedSeparator = false)
     {

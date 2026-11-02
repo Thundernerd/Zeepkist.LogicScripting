@@ -136,7 +136,12 @@ public static class Completion
 
     private static string DescribeInputs(DefinedFunction function)
     {
-        return function.IsRejected ? string.Empty : $"({string.Join(", ", function.Inputs)})";
+        return function.IsRejected ? string.Empty : DescribeInputs(function.Inputs);
+    }
+
+    private static string DescribeInputs(IEnumerable<string> inputs)
+    {
+        return $"({string.Join(", ", inputs)})";
     }
 
     /// <summary>
@@ -192,33 +197,37 @@ public static class Completion
         Func<string, string> findLibrary)
     {
         if (context.DottedCallee != null)
-            return OutputItems(GetCallOutputs(context, findPlacedBlock, findLibrary));
+            return ToOutputItems(GetCallOutputs(context, findPlacedBlock, findLibrary));
 
         var functions = GetLibraryFunctionItems(context.DottedName, findLibrary);
-        return context.IsCallNext ? functions : OutputItems(GetNameOutputs(context, definedNames)).Concat(functions);
+        return context.IsCallNext ? functions : ToOutputItems(GetNameOutputs(context, definedNames)).Concat(functions);
     }
 
-    private static IEnumerable<CompletionItem> OutputItems(IReadOnlyList<string> outputs)
+    private static IEnumerable<CompletionItem> ToOutputItems(IReadOnlyList<string> outputs)
     {
         return outputs.Count > 1 ? outputs.Select(o => new CompletionItem(o, CompletionKind.Output, OutputDetail)) : [];
     }
 
     /// <summary>
-    /// In alphabetical order. None from a Library with an error, since the compiler rejects every call into it.
+    /// Sorted here, since the outputs listed before them keep their Connector order.
     /// </summary>
     private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
+    {
+        return GetCallableLibraryFunctions(library, findLibrary)
+            .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, DescribeInputs(f.Inputs.Select(i => i.Name))))
+            .OrderBy(i => i.Label, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// None from a Library with an error, since the compiler rejects every call into it.
+    /// </summary>
+    private static IEnumerable<FunctionDefinition> GetCallableLibraryFunctions(string library, Func<string, string> findLibrary)
     {
         if (findLibrary == null)
             return [];
 
         var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
-        if (hasErrors)
-            return [];
-
-        return functions
-            .Select(f => f.Function)
-            .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, $"({string.Join(", ", f.Inputs.Select(i => i.Name))})"))
-            .OrderBy(i => i.Label, StringComparer.Ordinal);
+        return hasErrors ? [] : functions.Select(f => f.Function);
     }
 
     private static IReadOnlyList<string> GetNameOutputs(CaretContext context, IReadOnlyList<DefinedName> definedNames)
@@ -258,16 +267,10 @@ public static class Completion
         return context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee)?.UsableOutputs ?? [];
     }
 
-    /// <summary>
-    /// None from a Library with an error, since the compiler rejects every call into it.
-    /// </summary>
     private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
     {
-        if (findLibrary == null)
-            return [];
-
-        var functions = GraphBuilder.DescribeLibrary(context.DottedLibrary, findLibrary, out var hasErrors);
-        var function = hasErrors ? null : functions.FirstOrDefault(f => f.Function.Name.Name == context.DottedCallee).Function;
+        var function = GetCallableLibraryFunctions(context.DottedLibrary, findLibrary)
+            .FirstOrDefault(f => f.Name.Name == context.DottedCallee);
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 

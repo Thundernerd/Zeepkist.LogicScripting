@@ -227,7 +227,7 @@ public sealed class CaretContext
             dottedLibrary,
             dottedMode,
             dottedUid,
-            IsOpenParenAfter(tokens, word),
+            IsOpenParenNext(tokens, word),
             settingName,
             settingValues,
             givenArguments,
@@ -253,7 +253,7 @@ public sealed class CaretContext
         return new TextSpan(start, end - start);
     }
 
-    private static bool IsOpenParenAfter(List<Token> tokens, TextSpan word)
+    private static bool IsOpenParenNext(List<Token> tokens, TextSpan word)
     {
         var after = tokens.FindIndex(t => t.Span.Start >= word.End);
         return after >= 0 && tokens[after].Kind == TokenKind.OpenParen;
