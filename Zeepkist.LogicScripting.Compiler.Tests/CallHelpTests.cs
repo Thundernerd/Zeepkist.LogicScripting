@@ -112,6 +112,7 @@ public class CallHelpTests
     [InlineData("x = logic(a, logic(1, 2), op: |", "op:")]
     [InlineData("x = logic(logic(1, |), 2)", "b")]
     [InlineData("x = logic(1, logic(|", "a")]
+    [InlineData("function f(a, b) -> c\nend\nx = f(1, |", "b")]
     public void Active_TheInputOrSettingTheArgumentAtTheCaretGives(string text, string active)
     {
         var help = At(text);
@@ -202,20 +203,15 @@ public class CallHelpTests
     }
 
     [Fact]
-    public void Items_ForAFunctionWithOutputs_ItsInputs()
+    public void None_ForAQualifiedCall_EvenWhenTheScriptDefinesItsFunction()
     {
-        var help = At("function f(a, b) -> c\nend\nx = f(1, |");
-
-        Assert.Equal(["a", "b"], help.Items.Select(i => i.Label));
-        Assert.Equal("b", help.Items[help.Active].Label);
+        Assert.Null(At("function f(a, b) -> c\nend\nx = timing.f(|"));
     }
 
-    [Theory]
-    [InlineData("function f(a, b) -> c\nend\nx = timing.f(|")]
-    [InlineData("function f(a, b) -> c\nend\nx = logic(timing.f(|")]
-    public void QualifiedCalls_NotTheScriptsFunction(string text)
+    [Fact]
+    public void NestedCalls_InAQualifiedCall_TheCallAroundIt()
     {
-        Assert.NotEqual("f", At(text)?.Callee);
+        Assert.Equal("logic", At("function f(a, b) -> c\nend\nx = logic(timing.f(|").Callee);
     }
 
     [Fact]

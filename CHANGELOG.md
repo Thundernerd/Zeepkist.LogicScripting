@@ -82,7 +82,8 @@ All notable changes to Logic Scripting are listed here.
 - A long error message in the error panel wraps onto more lines, instead of being cut off at both ends.
 - Coming back from test mode, a `placed(...)` no longer shows a "No block in this level has UID" error for a moment while the level loads.
 - Compile, and the changes the Scripts list makes to the level, wait for a loading level to finish, instead of running while only some of its blocks are there.
-- A call to a Library's function, like `timing.f(`, no longer lists the inputs of your Script's own `f` by name or shows its call help.
+- A call to a Library's function, like `timing.f(`, no longer lists the inputs and settings by name, or shows the call help,
+  of your Script's own `f` or a block function by that name.
 
 ## 0.1.0-alpha.1
 

@@ -92,8 +92,8 @@ public sealed class CaretContext
     public string Callee { get; }
 
     /// <summary>
-    /// Whether a dot comes before the <see cref="Callee"/>'s name, so the call is to a Library's Function,
-    /// <c>timing.edge(x)</c>, or one the parser rejects, even when the Script defines a Function by that name.
+    /// Whether a dot comes before the <see cref="Callee"/>'s name, so it's none of the Script's, even when the Script
+    /// defines a Function by that name.
     /// </summary>
     public bool IsCalleeQualified { get; }
 

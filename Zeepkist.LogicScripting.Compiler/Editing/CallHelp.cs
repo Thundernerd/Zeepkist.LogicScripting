@@ -48,11 +48,11 @@ public sealed class CallHelp
     public IReadOnlyList<int> EnclosingCalls { get; }
 
     /// <summary>
-    /// The innermost call around the caret whose function is a Block Function or one of the Script's own Functions with
-    /// inputs and a first line the compiler accepts, or whose name is a Placed Block Reference to a block with inputs,
-    /// and isn't qualified with a dot; null when there's none, and inside a comment or string. A named argument is active from its name on; any other
-    /// argument gives the input after those the positional arguments before it give, unless a named argument comes
-    /// before it, which a positional one can't follow.
+    /// The innermost call around the caret, not qualified with a dot, whose function is a Block Function or one of the
+    /// Script's own Functions with inputs and a first line the compiler accepts, or whose name is a Placed Block
+    /// Reference to a block with inputs; null when there's none, and inside a comment or string. A named argument is
+    /// active from its name on; any other argument gives the input after those the positional arguments before it give,
+    /// unless a named argument comes before it, which a positional one can't follow.
     /// </summary>
     /// <param name="text"></param>
     /// <param name="caret"></param>

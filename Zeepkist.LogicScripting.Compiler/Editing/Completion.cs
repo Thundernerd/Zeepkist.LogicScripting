@@ -148,7 +148,7 @@ public static class Completion
     /// The named arguments the call doesn't have yet: a Block Function's inputs and Settings, a Function's inputs, or
     /// a Placed Block Reference's inputs, since its Settings can't be changed. Inputs its positional arguments give are
     /// left out, and a Function whose first line the compiler rejects has none. A name defined twice is the first
-    /// definition, which the compiler keeps. A qualified call is to none of them, so it has none either.
+    /// definition, which the compiler keeps.
     /// </summary>
     private static IEnumerable<CompletionItem> GetArgumentItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
     {
