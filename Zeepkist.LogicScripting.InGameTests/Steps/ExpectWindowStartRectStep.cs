@@ -4,7 +4,7 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
 /// Passes when the window is drawn at the size and position it was first drawn at in the run, which the run puts back
-/// before each scenario after the first.
+/// before each Scenario after the first.
 /// </summary>
 internal sealed class ExpectWindowStartRectStep : ScenarioStep
 {

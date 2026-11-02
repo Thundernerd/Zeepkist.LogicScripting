@@ -248,36 +248,27 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// What a Scenario can change that the window keeps into the next one: its size and position, the shown tab and
-        /// the warnings the tests turn on. A window that was never drawn has no rect, for the one it first opens at, until
-        /// <see cref="RememberFirstWindowRect"/> fills it in. The styles the tests turn off aren't in it, as none are at
-        /// the start of a run.
+        /// the warnings the tests turn on. A window that was never drawn has no rect, for the one it first opens at. The
+        /// styles the tests turn off aren't in it, as none are at the start of a run.
         /// </summary>
         public KeptState RememberKeptState()
         {
             return new KeptState(
-                IsDrawn ? WindowRect : null,
+                DrawnWindowRect,
                 _window._state.ShowLibraries,
                 _window._showLibraryReadFailed,
                 _window._showStartupWarning);
         }
 
         /// <summary>
-        /// Fills in the window's rect, once it was drawn, for kept state remembered before it first was. Call it after
-        /// every step, so the rect is the one the window first opened at, before a later step changes it: only
-        /// open-window opens the window, and it waits for it to be drawn.
+        /// The window's rect as Imui last drew it, or null when it was never drawn.
         /// </summary>
-        public KeptState RememberFirstWindowRect(KeptState state)
-        {
-            return state.WindowRect == null && IsDrawn ? state.WithWindowRect(WindowRect) : state;
-        }
-
-        private bool IsDrawn => _window._state.Width > 0 && _window._state.Height > 0;
+        public ImRect? DrawnWindowRect => _window._state.Width > 0 && _window._state.Height > 0 ? WindowRect : null;
 
         /// <summary>
         /// Puts back what <see cref="RememberKeptState"/> remembered, and turns back on the styles
         /// <see cref="TurnOffStyle"/> turned off. A closed window takes the size and position when it next opens. With no
-        /// rect remembered, as when no Scenario before drew the window, it gets the size it first opens at, in the middle
-        /// of the screen, as it first opens.
+        /// rect remembered the window was never drawn, so it still opens at its first size and position.
         /// </summary>
         public void PutBackKeptState(KeptState state)
         {
@@ -286,11 +277,6 @@ internal sealed partial class ScriptWindow
             {
                 SetWindowSize(rect.W, rect.H);
                 _window._requestedRect.MoveTo(new Vector2(rect.X, rect.Top));
-            }
-            else
-            {
-                SetWindowSize(DefaultWidth, DefaultHeight);
-                CenterWindow();
             }
 
             ShowTab(state.ShowLibraries);

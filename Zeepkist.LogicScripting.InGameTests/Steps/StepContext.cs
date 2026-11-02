@@ -19,6 +19,7 @@ internal sealed class StepContext
     private const float WindowDrawSeconds = 2;
 
     private readonly Func<string, IEnumerator> _screenshot;
+    private readonly Func<ImRect?> _startWindowRect;
 
     public StepContext(
         string scenario,
@@ -26,7 +27,8 @@ internal sealed class StepContext
         GameEvents game,
         ExceptionLog exceptions,
         ManualLogSource logger,
-        Func<string, IEnumerator> screenshot)
+        Func<string, IEnumerator> screenshot,
+        Func<ImRect?> startWindowRect)
     {
         Scenario = scenario;
         Window = window;
@@ -34,6 +36,7 @@ internal sealed class StepContext
         Exceptions = exceptions;
         Logger = logger;
         _screenshot = screenshot;
+        _startWindowRect = startWindowRect;
     }
 
     public string Scenario { get; }
@@ -53,10 +56,10 @@ internal sealed class StepContext
     public ImRect? RememberedWindowRect { get; set; }
 
     /// <summary>
-    /// The window's rect the first time a scenario of the run drew it, which the run puts back before each scenario after
+    /// The window's rect the first time a Scenario of the run drew it, which the run puts back before each Scenario after
     /// the first, or null while none has.
     /// </summary>
-    public ImRect? StartWindowRect { get; set; }
+    public ImRect? StartWindowRect => _startWindowRect();
 
     public bool Failed { get; private set; }
 
@@ -177,10 +180,9 @@ internal sealed class StepContext
     }
 
     /// <summary>
-    /// Waits for the window to be drawn, then passes with <paramref name="same"/> when it's drawn at
-    /// <paramref name="expected"/>, or fails with <paramref name="moved"/>, both rects in the result.
+    /// For a step that checks the window is drawn at <paramref name="expected"/>, so its result has both rects.
     /// </summary>
-    public IEnumerator ExpectWindowRect(ImRect expected, string same, string moved)
+    public IEnumerator ExpectWindowRect(ImRect expected, string passDetail, string failDetail)
     {
         yield return WaitForWindowDrawn();
         if (Failed)
@@ -188,9 +190,9 @@ internal sealed class StepContext
 
         var rect = Window.WindowRect;
         if (RectCheck.Matches(expected, rect))
-            Pass(same, RectCheck.Describe(expected), RectCheck.Describe(rect));
+            Pass(passDetail, RectCheck.Describe(expected), RectCheck.Describe(rect));
         else
-            Fail(moved, RectCheck.Describe(expected), RectCheck.Describe(rect));
+            Fail(failDetail, RectCheck.Describe(expected), RectCheck.Describe(rect));
     }
 
     /// <summary>
