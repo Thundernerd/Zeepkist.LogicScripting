@@ -1,8 +1,10 @@
 # A bigger window, for screenshots: set-window-size makes it wider and taller, keeping its top left corner, and
-# center-window brings it back onto the screen at that size. set-window-height then keeps the width. Run it right
-# before kept-state, which checks that the window's size is put back for the next Scenario.
+# center-window brings it back onto the screen at that size. set-window-height then keeps the width. It leaves the
+# window off the middle of the screen, as kept-state leaves it: run both, in either order, and the second checks that
+# the run put the window's size and position back.
 open-window
 expect-window-size 1120 640
+expect-window-centered
 new-script Lights
 set-text
 power_display(1 & 1)
@@ -12,11 +14,22 @@ set-window-size 1400 800
 expect-window-size 1400 800
 center-window
 expect-window-size 1400 800
+expect-window-centered
 expect-editor-in-view
 screenshot bigger
 
 set-window-height 700
 expect-window-size 1400 700
+
+# The width stays between Imui's 64 px minimum and the screen's width
+set-window-size 1 700
+expect-window-size 64 700
+screenshot narrowest
+set-window-size 100000 700
+expect-window-width screen
+center-window
+expect-window-centered
+screenshot widest
 
 # Below the minimum height gives the shortest window, which still fits the editor
 set-window-size 900 1

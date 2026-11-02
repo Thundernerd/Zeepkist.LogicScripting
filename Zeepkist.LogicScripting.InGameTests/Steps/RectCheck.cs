@@ -33,6 +33,14 @@ internal static class RectCheck
     }
 
     /// <summary>
+    /// Whether the rects have the same middle.
+    /// </summary>
+    public static bool HasSameCenter(ImRect a, ImRect b)
+    {
+        return Mathf.Abs(a.Center.x - b.Center.x) <= Tolerance && Mathf.Abs(a.Center.y - b.Center.y) <= Tolerance;
+    }
+
+    /// <summary>
     /// Whether the rect has this size.
     /// </summary>
     public static bool HasSize(ImRect rect, float width, float height)
@@ -51,6 +59,14 @@ internal static class RectCheck
     public static string Size(float width, float height)
     {
         return $"{Pixels(width)} by {Pixels(height)}";
+    }
+
+    /// <summary>
+    /// Such as <c>x 800, y 450</c>.
+    /// </summary>
+    public static string Point(Vector2 point)
+    {
+        return $"x {Pixels(point.x)}, y {Pixels(point.y)}";
     }
 
     public static string Pixels(float pixels)

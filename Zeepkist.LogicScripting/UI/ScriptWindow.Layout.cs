@@ -116,7 +116,12 @@ internal sealed partial class ScriptWindow
         {
             ref var window = ref gui.WindowManager.GetWindowState(gui.PeekId());
             StoreRect(window.Rect);
-            _windowLayout = new WindowLayout(Time.frameCount, minHeight, ImWindow.GetResizeHandleRect(gui, window.Rect), gui.IsControlActive(resizeHandleId));
+            _windowLayout = new WindowLayout(
+                Time.frameCount,
+                minHeight,
+                ImWindow.GetResizeHandleRect(gui, window.Rect),
+                gui.IsControlActive(resizeHandleId),
+                gui.Canvas.SafeScreenRect);
             hovered = DrawRegions(gui);
         }
 

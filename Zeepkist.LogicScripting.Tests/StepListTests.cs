@@ -35,6 +35,9 @@ public class StepListTests
     [InlineData("set-window-size 1600 900", typeof(SetWindowSizeStep))]
     [InlineData("center-window", typeof(CenterWindowStep))]
     [InlineData("expect-window-size 1600 900", typeof(ExpectWindowSizeStep))]
+    [InlineData("expect-window-width 64", typeof(ExpectWindowWidthStep))]
+    [InlineData("expect-window-width screen", typeof(ExpectWindowWidthStep))]
+    [InlineData("expect-window-centered", typeof(ExpectWindowCenteredStep))]
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
@@ -322,6 +325,10 @@ public class StepListTests
     [InlineData("set-window-size 1600 900 1", "set-window-size takes a width and a height, each a whole number of pixels above 0, not '1600 900 1'")]
     [InlineData("expect-window-size 1600x900", "expect-window-size takes a width and a height, each a whole number of pixels above 0, not '1600x900'")]
     [InlineData("center-window now", "center-window takes nothing after it")]
+    [InlineData("expect-window-width", "expect-window-width takes a whole number of pixels above 0, or screen")]
+    [InlineData("expect-window-width 0", "expect-window-width takes a whole number of pixels above 0, or screen, not '0'")]
+    [InlineData("expect-window-width wide", "expect-window-width takes a whole number of pixels above 0, or screen, not 'wide'")]
+    [InlineData("expect-window-centered now", "expect-window-centered takes nothing after it")]
     [InlineData("open-new now", "open-new takes nothing after it")]
     [InlineData("expect-footer-in-view now", "expect-footer-in-view takes nothing after it")]
     [InlineData("library-read-failed", "library-read-failed takes on or off")]
@@ -374,6 +381,16 @@ public class StepListTests
 
         Assert.Equal(1600, step.Width);
         Assert.Equal(900, step.Height);
+    }
+
+    [Theory]
+    [InlineData("expect-window-width 64", 64)]
+    [InlineData("expect-window-width screen", null)]
+    public void ExpectWindowWidth_ReadsThePixels_OrTheScreen(string line, int? width)
+    {
+        var step = Assert.IsType<ExpectWindowWidthStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(width, step.Width);
     }
 
     [Fact]

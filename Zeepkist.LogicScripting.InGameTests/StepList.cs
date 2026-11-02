@@ -54,6 +54,8 @@ internal static class StepList
         ["set-window-size"] = (step, argument) => new SetWindowSizeStep(StepArgument.Size(step, argument)),
         ["center-window"] = (step, argument) => None(step, argument, new CenterWindowStep()),
         ["expect-window-size"] = (step, argument) => new ExpectWindowSizeStep(StepArgument.Size(step, argument)),
+        ["expect-window-width"] = (step, argument) => new ExpectWindowWidthStep(StepArgument.PixelsOrScreen(step, argument)),
+        ["expect-window-centered"] = (step, argument) => None(step, argument, new ExpectWindowCenteredStep()),
         ["drag-window-edge"] = DragWindowEdge,
         ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
         ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
