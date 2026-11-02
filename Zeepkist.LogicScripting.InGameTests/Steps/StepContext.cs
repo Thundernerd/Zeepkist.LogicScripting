@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Linq;
 using BepInEx.Logging;
 using Imui.Core;
+using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 using TNRD.Zeepkist.LogicScripting.UI;
 using UnityEngine;
 using ZeepSDK.Utilities;
@@ -98,6 +100,26 @@ internal sealed class StepContext
     {
         var list = Window.ShownList;
         Fail($"no {list.Noun} named \"{name}\" on the shown tab", name, string.Join(", ", list.Names));
+    }
+
+    /// <summary>
+    /// For a step that remembers a block by a name another step already placed or named a block as.
+    /// </summary>
+    public void FailNameTaken(string name)
+    {
+        Fail($"a block was already placed or named as \"{name}\"", "a new name", PlacedBlocks.Listed);
+    }
+
+    /// <summary>
+    /// The Logic Block type with the Block Function's name, or null after failing the step when there's none.
+    /// </summary>
+    public BlockType RequireBlockType(string function)
+    {
+        var type = BlockManifest.All.FirstOrDefault(t => t.Function == function);
+        if (type == null)
+            Fail($"no Logic Block type is called '{function}'");
+
+        return type;
     }
 
     /// <summary>

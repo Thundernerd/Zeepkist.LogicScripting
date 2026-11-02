@@ -231,7 +231,8 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// What a Scenario can change that the window keeps into the next one: its height, the shown tab and the
-        /// warnings the tests turn on. The styles the tests turn off aren't in it: none are at the start of a run. A window that was never drawn has the height it first opens at.
+        /// warnings the tests turn on. A window that was never drawn has the height it first opens at. The styles the
+        /// tests turn off aren't in it, as none are at the start of a run.
         /// </summary>
         public KeptState RememberKeptState()
         {

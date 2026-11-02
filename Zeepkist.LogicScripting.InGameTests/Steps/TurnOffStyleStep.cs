@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Linq;
-using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -27,12 +26,13 @@ internal sealed class TurnOffStyleStep : ScenarioStep
 
     public override IEnumerator Run(StepContext context)
     {
-        var type = BlockManifest.All.FirstOrDefault(t => t.Function == Function);
-        if (type == null)
-        {
-            context.Fail($"no Logic Block type is called '{Function}'");
+        // In the editor, the startup check has run, so it can't find the style off again
+        if (context.RequireEditor() == null)
             yield break;
-        }
+
+        var type = context.RequireBlockType(Function);
+        if (type == null)
+            yield break;
 
         var style = Style == null ? type.DefaultStyle : type.FindStyle(Style);
         if (style == null)

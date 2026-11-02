@@ -19,7 +19,11 @@ internal sealed class StartupCheck
     private readonly ManualLogSource _logger;
     private readonly HashSet<int> _disabledBlockIds = [];
     private readonly List<string> _disabledBlocks = [];
-    private readonly HashSet<int> _turnedOffByTests = [];
+
+    /// <summary>
+    /// What <see cref="TurnOff"/> added to <see cref="DisabledBlocks"/>, by block ID.
+    /// </summary>
+    private readonly Dictionary<int, string> _turnedOffByTests = [];
     private bool _hasRun;
 
     public StartupCheck(ManualLogSource logger)
@@ -75,8 +79,9 @@ internal sealed class StartupCheck
         if (!_disabledBlockIds.Add(style.BlockId))
             return false;
 
-        _disabledBlocks.Add(type.Describe(style));
-        _turnedOffByTests.Add(style.BlockId);
+        var name = type.Describe(style);
+        _disabledBlocks.Add(name);
+        _turnedOffByTests.Add(style.BlockId, name);
         return true;
     }
 
@@ -85,11 +90,10 @@ internal sealed class StartupCheck
     /// </summary>
     public void TurnTestStylesBackOn()
     {
-        foreach (var blockId in _turnedOffByTests)
+        foreach (var turnedOff in _turnedOffByTests)
         {
-            _disabledBlockIds.Remove(blockId);
-            BlockManifest.TryGetBlock(blockId, out var type, out var style);
-            _disabledBlocks.Remove(type.Describe(style));
+            _disabledBlockIds.Remove(turnedOff.Key);
+            _disabledBlocks.Remove(turnedOff.Value);
         }
 
         _turnedOffByTests.Clear();
