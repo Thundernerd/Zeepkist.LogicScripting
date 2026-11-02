@@ -155,7 +155,7 @@ public static class Completion
 
         var function = context.Functions.FirstOrDefault(f => f.Name != null && f.Name == context.Callee);
         if (function != null)
-            return function.IsRejected ? [] : GetInputItems(context, function.Inputs);
+            return GetInputItems(context, function.UsableInputs);
 
         var placed = definedNames.FirstOrDefault(n => n.Name == context.Callee && IsVisible(context, n));
         return placed?.Value is { IsPlaced: true } value ? GetInputItems(context, value.Type.Inputs.Select(i => i.Name)) : [];
@@ -201,7 +201,7 @@ public static class Completion
         if (value?.Type != null)
             return GetOutputNames(value.Type, value.Mode);
 
-        return GetUsableOutputs(value?.Callee);
+        return value?.Callee?.UsableOutputs ?? [];
     }
 
     /// <summary>
@@ -225,7 +225,7 @@ public static class Completion
         if (BlockManifest.TryGetFunction(context.DottedCallee, out var type))
             return GetOutputNames(type, context.DottedMode);
 
-        return GetUsableOutputs(context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee));
+        return context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee)?.UsableOutputs ?? [];
     }
 
     /// <summary>
@@ -239,11 +239,6 @@ public static class Completion
         var functions = GraphBuilder.DescribeLibrary(context.DottedLibrary, findLibrary, out var hasErrors);
         var function = hasErrors ? null : functions.FirstOrDefault(f => f.Function.Name.Name == context.DottedCallee).Function;
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
-    }
-
-    private static IReadOnlyList<string> GetUsableOutputs(DefinedFunction function)
-    {
-        return function is { IsRejected: false } ? function.Outputs : [];
     }
 
     private static IReadOnlyList<string> GetOutputNames(BlockType type, string mode)

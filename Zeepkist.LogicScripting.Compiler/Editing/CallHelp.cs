@@ -49,9 +49,10 @@ public sealed class CallHelp
 
     /// <summary>
     /// The innermost call around the caret whose function is a Block Function or one of the Script's own Functions with
-    /// inputs and a first line the compiler accepts, or whose name is a Placed Block Reference to a block with inputs; null when there's none, and inside a comment or string. A named argument is
-    /// active from its name on; any other argument gives the input after those the positional arguments before it give,
-    /// unless a named argument comes before it, which a positional one can't follow.
+    /// inputs and a first line the compiler accepts, or whose name is a Placed Block Reference to a block with inputs;
+    /// null when there's none, and inside a comment or string. A named argument is active from its name on; any other
+    /// argument gives the input after those the positional arguments before it give, unless a named argument comes
+    /// before it, which a positional one can't follow.
     /// </summary>
     /// <param name="text"></param>
     /// <param name="caret"></param>
@@ -106,7 +107,7 @@ public sealed class CallHelp
 
         var function = functions.FirstOrDefault(f => f.Name != null && f.Name == callee);
         if (function != null)
-            return function.IsRejected ? [] : function.Inputs.Select(InputItem).ToList();
+            return function.UsableInputs.Select(InputItem).ToList();
 
         var placed = DefinedNames.Read(text, findPlacedBlock)
             .FirstOrDefault(n => n.Name == callee && n.Span.Start < openParen && n.IsInScopeAt(openParen, functions));
