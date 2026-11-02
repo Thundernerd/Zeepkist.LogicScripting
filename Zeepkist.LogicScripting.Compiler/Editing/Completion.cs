@@ -32,7 +32,8 @@ public static class Completion
     /// The block in the level with a UID, or null when there's none; it gives <c>placed(...)</c> before a dot its type.
     /// </param>
     /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a Library's Function before a dot its outputs.
+    /// A Library's text by its name, or null when there's none; it gives a Library's name before a dot its Functions,
+    /// and a Library's Function before a dot its outputs.
     /// </param>
     public static IReadOnlyList<CompletionItem> GetItems(
         CaretContext context,
@@ -60,7 +61,8 @@ public static class Completion
 
     /// <summary>
     /// Replaces the context's whole word with the item; a function also gets its opening parenthesis, and a named
-    /// argument its colon and a space, unless one already follows. The caret ends after what was written.
+    /// argument its colon and a space, unless one already follows. The caret ends after what was written, or for a
+    /// function, after its parenthesis.
     /// </summary>
     public static TextSnapshot Accept(CaretContext context, CompletionItem item)
     {
@@ -70,10 +72,12 @@ public static class Completion
         var caret = word.Start + inserted.Length;
         switch (item.Kind)
         {
-            case CompletionKind.Function:
-                if (word.End >= text.Length || text[word.End] != '(')
-                    inserted += "(";
+            case CompletionKind.Function when context.IsCallNext:
+                caret = text.IndexOf('(', word.End) + 1 - word.Length + inserted.Length;
+                break;
 
+            case CompletionKind.Function:
+                inserted += "(";
                 caret++;
                 break;
 
@@ -132,7 +136,12 @@ public static class Completion
 
     private static string DescribeInputs(DefinedFunction function)
     {
-        return function.IsRejected ? string.Empty : $"({string.Join(", ", function.Inputs)})";
+        return function.IsRejected ? string.Empty : DescribeInputs(function.Inputs);
+    }
+
+    private static string DescribeInputs(IEnumerable<string> inputs)
+    {
+        return $"({string.Join(", ", inputs)})";
     }
 
     /// <summary>
@@ -177,7 +186,9 @@ public static class Completion
     /// the order its first line writes them. A block or Function with one output is used without a dot, so it offers
     /// none; nor does a name whose value is neither, a Function's name, which the compiler takes for the Function, or a
     /// Function whose first line the compiler rejects, since a call to it stands for nothing. A name or Function defined
-    /// twice is the first definition, which the compiler keeps.
+    /// twice is the first definition, which the compiler keeps. After a name, the Functions of the Library by that name
+    /// follow, since a call after the dot is always to the Library's, even when the Script defines the name. When a call
+    /// already follows the word, only they do.
     /// </summary>
     private static IEnumerable<CompletionItem> GetOutputItems(
         CaretContext context,
@@ -185,10 +196,38 @@ public static class Completion
         Func<string, PlacedBlock> findPlacedBlock,
         Func<string, string> findLibrary)
     {
-        var outputs = context.DottedCallee != null
-            ? GetCallOutputs(context, findPlacedBlock, findLibrary)
-            : GetNameOutputs(context, definedNames);
+        if (context.DottedCallee != null)
+            return ToOutputItems(GetCallOutputs(context, findPlacedBlock, findLibrary));
+
+        var functions = GetLibraryFunctionItems(context.DottedName, findLibrary);
+        return context.IsCallNext ? functions : ToOutputItems(GetNameOutputs(context, definedNames)).Concat(functions);
+    }
+
+    private static IEnumerable<CompletionItem> ToOutputItems(IReadOnlyList<string> outputs)
+    {
         return outputs.Count > 1 ? outputs.Select(o => new CompletionItem(o, CompletionKind.Output, OutputDetail)) : [];
+    }
+
+    /// <summary>
+    /// Sorted here, since the outputs listed before them keep their Connector order.
+    /// </summary>
+    private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
+    {
+        return GetCallableLibraryFunctions(library, findLibrary)
+            .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, DescribeInputs(f.Inputs.Select(i => i.Name))))
+            .OrderBy(i => i.Label, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// None from a Library with an error, since the compiler rejects every call into it.
+    /// </summary>
+    private static IEnumerable<FunctionDefinition> GetCallableLibraryFunctions(string library, Func<string, string> findLibrary)
+    {
+        if (findLibrary == null)
+            return [];
+
+        var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
+        return hasErrors ? [] : functions.Select(f => f.Function);
     }
 
     private static IReadOnlyList<string> GetNameOutputs(CaretContext context, IReadOnlyList<DefinedName> definedNames)
@@ -228,16 +267,10 @@ public static class Completion
         return context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee)?.UsableOutputs ?? [];
     }
 
-    /// <summary>
-    /// None from a Library with an error, since the compiler rejects every call into it.
-    /// </summary>
     private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
     {
-        if (findLibrary == null)
-            return [];
-
-        var functions = GraphBuilder.DescribeLibrary(context.DottedLibrary, findLibrary, out var hasErrors);
-        var function = hasErrors ? null : functions.FirstOrDefault(f => f.Function.Name.Name == context.DottedCallee).Function;
+        var function = GetCallableLibraryFunctions(context.DottedLibrary, findLibrary)
+            .FirstOrDefault(f => f.Name.Name == context.DottedCallee);
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 
