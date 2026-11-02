@@ -62,6 +62,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
 
     private bool AnyFieldFocused => _fieldFocused || _scriptListPanel.NameFocused || _libraryListPanel.NameFocused || _referencePanel.FilterFocused;
     private LibraryList Libraries => _libraryStore.Libraries;
+    private bool ShowsLibraryReadFailed => _libraryStore.ReadFailed || _showLibraryReadFailed;
     private ScriptEntry CurrentScript => (_edited as EditedScript)?.Entry;
     private Library CurrentLibrary => (_edited as EditedLibrary)?.Library;
 
@@ -290,7 +291,7 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
 
     private void DrawLibrariesTab(ImGui gui, ImRect rect)
     {
-        var library = _libraryListPanel.Draw(gui, rect, CurrentLibrary, _libraryStore.ReadFailed || _showLibraryReadFailed);
+        var library = _libraryListPanel.Draw(gui, rect, CurrentLibrary, ShowsLibraryReadFailed);
         if (library != null)
             SelectLibrary(library);
     }
