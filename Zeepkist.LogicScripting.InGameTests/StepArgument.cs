@@ -56,6 +56,21 @@ internal static class StepArgument
     }
 
     /// <summary>
+    /// A width and a height, as <see cref="Pixels"/> reads each.
+    /// </summary>
+    public static (int Width, int Height) Size(string step, string argument)
+    {
+        var what = $"{step} takes a width and a height, each a whole number of pixels above 0";
+        if (argument.Length == 0)
+            throw new ScenarioFormatException(what);
+
+        var words = argument.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        return words.Length == 2 && TryPositive(words[0], out var width) && TryPositive(words[1], out var height)
+            ? (width, height)
+            : throw new ScenarioFormatException($"{what}, not '{argument}'");
+    }
+
+    /// <summary>
     /// A whole number of 1 or more, such as a one-based line.
     /// </summary>
     public static bool TryPositive(string text, out int number)

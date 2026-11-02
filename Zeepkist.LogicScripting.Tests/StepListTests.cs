@@ -32,6 +32,9 @@ public class StepListTests
     [InlineData("expect-footer-in-view", typeof(ExpectFooterInViewStep))]
     [InlineData("set-window-height 300", typeof(SetWindowHeightStep))]
     [InlineData("expect-window-height 300", typeof(ExpectWindowHeightStep))]
+    [InlineData("set-window-size 1600 900", typeof(SetWindowSizeStep))]
+    [InlineData("center-window", typeof(CenterWindowStep))]
+    [InlineData("expect-window-size 1600 900", typeof(ExpectWindowSizeStep))]
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
@@ -312,6 +315,13 @@ public class StepListTests
     [InlineData("set-window-height tall", "set-window-height takes a whole number of pixels above 0, not 'tall'")]
     [InlineData("expect-window-height", "expect-window-height takes a whole number of pixels above 0")]
     [InlineData("expect-window-height 12.5", "expect-window-height takes a whole number of pixels above 0, not '12.5'")]
+    [InlineData("set-window-size", "set-window-size takes a width and a height, each a whole number of pixels above 0")]
+    [InlineData("set-window-size 1600", "set-window-size takes a width and a height, each a whole number of pixels above 0, not '1600'")]
+    [InlineData("set-window-size 1600 0", "set-window-size takes a width and a height, each a whole number of pixels above 0, not '1600 0'")]
+    [InlineData("set-window-size wide 900", "set-window-size takes a width and a height, each a whole number of pixels above 0, not 'wide 900'")]
+    [InlineData("set-window-size 1600 900 1", "set-window-size takes a width and a height, each a whole number of pixels above 0, not '1600 900 1'")]
+    [InlineData("expect-window-size 1600x900", "expect-window-size takes a width and a height, each a whole number of pixels above 0, not '1600x900'")]
+    [InlineData("center-window now", "center-window takes nothing after it")]
     [InlineData("open-new now", "open-new takes nothing after it")]
     [InlineData("expect-footer-in-view now", "expect-footer-in-view takes nothing after it")]
     [InlineData("library-read-failed", "library-read-failed takes on or off")]
@@ -346,6 +356,24 @@ public class StepListTests
         var step = Assert.IsType<SetWindowHeightStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-height 300", out _).Steps));
 
         Assert.Equal(300, step.Height);
+    }
+
+    [Fact]
+    public void SetWindowSize_ReadsTheWidthAndHeight()
+    {
+        var step = Assert.IsType<SetWindowSizeStep>(Assert.Single(ScenarioParser.Parse("steps", "set-window-size 1600 900", out _).Steps));
+
+        Assert.Equal(1600, step.Width);
+        Assert.Equal(900, step.Height);
+    }
+
+    [Fact]
+    public void ExpectWindowSize_ReadsTheWidthAndHeight()
+    {
+        var step = Assert.IsType<ExpectWindowSizeStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-window-size 1600 900", out _).Steps));
+
+        Assert.Equal(1600, step.Width);
+        Assert.Equal(900, step.Height);
     }
 
     [Fact]
@@ -583,6 +611,7 @@ public class StepListTests
     [InlineData("kept-state.zlstest")]
     [InlineData("group-block-turned-off.zlstest")]
     [InlineData("turned-off-back-on.zlstest")]
+    [InlineData("window-size.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");

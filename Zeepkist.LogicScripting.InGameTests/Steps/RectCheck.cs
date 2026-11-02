@@ -32,9 +32,25 @@ internal static class RectCheck
             && Mathf.Abs(a.H - b.H) <= Tolerance;
     }
 
+    /// <summary>
+    /// Whether the rect has this size.
+    /// </summary>
+    public static bool HasSize(ImRect rect, float width, float height)
+    {
+        return Mathf.Abs(rect.W - width) <= Tolerance && Mathf.Abs(rect.H - height) <= Tolerance;
+    }
+
     public static string Describe(ImRect rect)
     {
-        return $"x {Pixels(rect.X)}, y {Pixels(rect.Y)}, {Pixels(rect.W)} by {Pixels(rect.H)} px";
+        return $"x {Pixels(rect.X)}, y {Pixels(rect.Y)}, {Size(rect.W, rect.H)} px";
+    }
+
+    /// <summary>
+    /// Such as <c>1600 by 900</c>.
+    /// </summary>
+    public static string Size(float width, float height)
+    {
+        return $"{Pixels(width)} by {Pixels(height)}";
     }
 
     public static string Pixels(float pixels)
