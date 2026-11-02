@@ -72,6 +72,9 @@ internal sealed partial class ScriptWindow
         /// </summary>
         public ImRect WindowRect => new(_window._state.X, _window._state.Y, _window._state.Width, _window._state.Height);
 
+        /// <inheritdoc cref="UI.EditorLayout"/>
+        public EditorLayout EditorLayout => _window._editorLayout;
+
         /// <summary>
         /// Whether a height <see cref="SetWindowHeight"/> asked for waits for the window to be drawn.
         /// </summary>
@@ -141,6 +144,15 @@ internal sealed partial class ScriptWindow
         public void ShowLibraryReadFailed(bool show)
         {
             _window._showLibraryReadFailed = show;
+        }
+
+        /// <summary>
+        /// Makes the center show, or stop showing, the startup check's warnings, as on a game version the mod doesn't
+        /// fully support. Compile and the checks work as before.
+        /// </summary>
+        public void ShowStartupWarning(bool show)
+        {
+            _window._showStartupWarning = show;
         }
 
         /// <summary>

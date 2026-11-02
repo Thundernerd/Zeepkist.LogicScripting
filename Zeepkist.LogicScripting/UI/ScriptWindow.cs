@@ -60,6 +60,12 @@ internal sealed partial class ScriptWindow : IZeepGUIDrawer
     // Set by the in-game tests to show the libraries.json warning without a file that failed to read
     private bool _showLibraryReadFailed;
 
+    // Set by the in-game tests to show the startup check's warnings on a game version it passes on
+    private bool _showStartupWarning;
+
+    // Kept for the in-game tests
+    private EditorLayout _editorLayout;
+
     private bool AnyFieldFocused => _fieldFocused || _scriptListPanel.NameFocused || _libraryListPanel.NameFocused || _referencePanel.FilterFocused;
     private LibraryList Libraries => _libraryStore.Libraries;
     private bool ShowsLibraryReadFailed => _libraryStore.ReadFailed || _showLibraryReadFailed;
