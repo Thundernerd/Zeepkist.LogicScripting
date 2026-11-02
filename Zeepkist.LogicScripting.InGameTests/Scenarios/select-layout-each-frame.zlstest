@@ -1,6 +1,6 @@
 # Clicking a Script whose storage warning shows, at the window's smallest height, keeps the editor and the error
-# panel's header in view in every frame, the one the warning first shows in too. This fails until #242 is fixed:
-# until then the window grows a frame after the warning shows, so that frame's editor is a warning row short.
+# panel's header in view in every frame, the one the warning first shows in too: the warning waits for a frame whose
+# minimum height counts it, rather than showing with the editor a warning row short.
 open-window
 
 # The startup check's warnings too, so the center sets the window's minimum height rather than the Scripts side
@@ -17,7 +17,7 @@ new-script Empty
 set-window-height 64
 expect-editor-in-view
 
-# The warning shows in the frame the click lands in, frame 0, or from the next
+# The warning shows from the frame after the one the click lands in, frame 0
 select-script Horn booster
 expect-editor-in-view-each-frame 5
 screenshot selected-smallest
