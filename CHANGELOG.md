@@ -80,6 +80,7 @@ All notable changes to Logic Scripting are listed here.
 
 - Undo in the Script editor takes back a line break together with the typing after it, instead of on its own.
 - A long error message in the error panel wraps onto more lines, instead of being cut off at both ends.
+- Coming back from test mode, a `placed(...)` no longer shows a "No block in this level has UID" error for a moment while the level loads.
 
 ## 0.1.0-alpha.1
 

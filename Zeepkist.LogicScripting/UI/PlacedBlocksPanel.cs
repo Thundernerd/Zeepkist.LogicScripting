@@ -42,6 +42,13 @@ internal sealed class PlacedBlocksPanel
             return null;
         }
 
+        // The level's blocks aren't all there yet, as coming back from test mode
+        if (central.saveload.isLoading)
+        {
+            gui.Text("Loading the level...", WindowColors.Muted, wrap: true);
+            return null;
+        }
+
         var rows = GetRows(check);
         gui.Text(rows.Count == 1 ? "1 placed block" : $"{rows.Count} placed blocks", WindowColors.Muted);
         BlockProperties hovered = null;

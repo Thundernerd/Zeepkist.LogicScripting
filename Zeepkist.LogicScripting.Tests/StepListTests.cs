@@ -612,6 +612,7 @@ public class StepListTests
     [InlineData("group-block-turned-off.zlstest")]
     [InlineData("turned-off-back-on.zlstest")]
     [InlineData("window-size.zlstest")]
+    [InlineData("placed-after-test-mode.zlstest")]
     public void TheShippedScenarios_CanBeRead(string file)
     {
         var text = RepoFiles.Read($"Zeepkist.LogicScripting.InGameTests/Scenarios/{file}");
