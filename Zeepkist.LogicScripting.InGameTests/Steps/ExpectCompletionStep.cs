@@ -41,7 +41,10 @@ internal sealed class ExpectCompletionStep : ScenarioStep
             context.Fail("the completion list has no such row", expected, actual);
     }
 
-    private static string Describe(string label, string detail)
+    /// <summary>
+    /// A row as a step's result writes it: the label, then its detail in brackets when it has one.
+    /// </summary>
+    public static string Describe(string label, string detail)
     {
         return detail.Length == 0 ? label : $"{label} ({detail})";
     }
