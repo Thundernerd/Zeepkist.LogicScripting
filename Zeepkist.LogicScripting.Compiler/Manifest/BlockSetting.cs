@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 namespace TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 
@@ -107,6 +109,53 @@ public sealed class BlockSetting
     public static BlockSetting Targets(string name, string keyPrefix)
     {
         return new BlockSetting(name, keyPrefix, SettingType.Targets, [], true);
+    }
+
+    /// <summary>
+    /// The value as the block stores it, from the word or whole number a Script gives it, such as
+    /// <c>global_velocity</c>, <c>true</c> or <c>5</c>. Null, with why in <paramref name="error"/>, for a value the
+    /// Setting doesn't take: only an option's error names the value. Not for <see cref="SettingType.Targets"/>, which
+    /// takes a list of placed blocks.
+    /// </summary>
+    public Setting ToSetting(string value, out string error)
+    {
+        error = null;
+        switch (Type)
+        {
+            case SettingType.Number:
+                if (!long.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
+                    error = $"{Name} takes a whole number";
+                else if (number < Minimum)
+                    error = $"{Name} must be at least {Minimum}";
+                else if (number > Maximum)
+                    error = $"{Name} must be at most {Maximum}";
+
+                return error == null ? Setting.Text(Key, number.ToString(CultureInfo.InvariantCulture)) : null;
+
+            case SettingType.Bool:
+                if (value is "true" or "false")
+                    return Setting.Int(Key, value == "true" ? 1 : 0);
+
+                error = $"{Name} takes true or false";
+                return null;
+
+            case SettingType.Player:
+                if (IndexOf(value) >= 0)
+                    return Choose(value);
+
+                error = $"{Name} takes {string.Join(", ", Options.Take(Options.Count - 1))} or {Options[Options.Count - 1]}";
+                return null;
+
+            case SettingType.Targets:
+                throw new InvalidOperationException($"{Name} takes a list of placed blocks, not one value");
+
+            default:
+                if (IndexOf(value) >= 0)
+                    return Choose(value);
+
+                error = $"'{value}' isn't an option of {Name}. Use {string.Join(", ", Options)}";
+                return null;
+        }
     }
 
     public Setting Choose(string option)

@@ -31,45 +31,17 @@ internal sealed class SetBlockSettingStep : ScenarioStep
     /// </summary>
     public static Setting ToSetting(BlockSetting setting, string value, out string error)
     {
-        error = null;
-        switch (setting.Type)
+        if (setting.Type == SettingType.Targets)
         {
-            case SettingType.Number:
-                if (!long.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
-                    error = $"{setting.Name} takes a whole number, not '{value}'";
-                else if (number < setting.Minimum)
-                    error = $"{setting.Name} must be at least {setting.Minimum}, not '{value}'";
-                else if (number > setting.Maximum)
-                    error = $"{setting.Name} must be at most {setting.Maximum}, not '{value}'";
-
-                return error == null ? Compiler.Setting.Text(setting.Key, number.ToString(CultureInfo.InvariantCulture)) : null;
-
-            case SettingType.Bool:
-                if (value is "true" or "false")
-                    return Compiler.Setting.Int(setting.Key, value == "true" ? 1 : 0);
-
-                error = $"{setting.Name} takes true or false, not '{value}'";
-                return null;
-
-            case SettingType.Player:
-                if (setting.IndexOf(value) >= 0)
-                    return setting.Choose(value);
-
-                var players = string.Join(", ", setting.Options.Take(setting.Options.Count - 1));
-                error = $"{setting.Name} takes {players} or {setting.Options[setting.Options.Count - 1]}, not '{value}'";
-                return null;
-
-            case SettingType.Targets:
-                error = $"set-block-setting can't set {setting.Name}, a list of blocks";
-                return null;
-
-            default:
-                if (setting.IndexOf(value) >= 0)
-                    return setting.Choose(value);
-
-                error = $"'{value}' isn't an option of {setting.Name}. Use {string.Join(", ", setting.Options)}";
-                return null;
+            error = $"set-block-setting can't set {setting.Name}, a list of blocks";
+            return null;
         }
+
+        var stored = setting.ToSetting(value, out error);
+        if (stored == null && setting.Type != SettingType.Option)
+            error += $", not '{value}'";
+
+        return stored;
     }
 
     public override IEnumerator Run(StepContext context)
