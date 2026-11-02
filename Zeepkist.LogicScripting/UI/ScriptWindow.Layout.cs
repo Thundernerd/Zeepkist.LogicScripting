@@ -46,8 +46,11 @@ internal sealed partial class ScriptWindow
     private WindowState _savedState;
     private bool _showReference;
 
-    // Whether this frame's minimum height counts the storage warning, which the center then shows
-    private bool _countsStorageWarning;
+    /// <summary>
+    /// The storage warning as the frame began, which its minimum height counts and the center shows. One that comes up
+    /// while drawing, such as by clicking a Script in the list, shows from the next frame, at any height.
+    /// </summary>
+    private string _storageWarning;
 
     /// <summary>
     /// Opening tries again after a failure, and logs the next one. A failure in the work before the toggle key is
@@ -92,10 +95,9 @@ internal sealed partial class ScriptWindow
         // A field sets whether it has focus as it's drawn, so one in a hidden tab or a collapsed side has none
         ReleasePanelFocus();
 
-        // Before the minimum height, which counts the warnings for a Script a Compile or the level changed. One that
-        // comes up while drawing, such as by clicking a Script in the list, waits for the next frame's minimum height.
+        // First, so the minimum height counts the warnings of Scripts that a Compile or a change to the level marked
         RefreshScripts();
-        _countsStorageWarning = _edited?.StorageWarning != null;
+        _storageWarning = _edited?.StorageWarning;
         var minHeight = GetMinHeight(gui);
         HoldResizeAt(gui, minHeight);
         if (gui.BeginWindow(
@@ -164,7 +166,7 @@ internal sealed partial class ScriptWindow
 
         // The center's padding, and a row of the startup check's warnings with the spacing under it
         var minStartupHeight = GetStartupWarnings().Count > 0 ? WindowRegion.GetRowHeight(gui) + spacing : 0;
-        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _countsStorageWarning);
+        var minCenterHeight = (spacing * 2) + minStartupHeight + GetMinScriptHeight(gui, _storageWarning != null);
         return ImWindow.GetTitleBarHeight(gui) + gui.Style.Window.ContentPadding.Vertical + Mathf.Max(minScriptsHeight, minCenterHeight);
     }
 
@@ -377,12 +379,11 @@ internal sealed partial class ScriptWindow
     {
         var spacing = gui.Style.Layout.Spacing;
         gui.Layout.Push(ImAxis.Vertical, rect.WithPadding(spacing));
-        var storageWarning = _countsStorageWarning ? _edited?.StorageWarning : null;
 
         var settings = WrappedText.GetSettings(gui);
         var minUnderStartupHeight = spacing + (_edited == null
             ? WrappedText.GetHeight(gui, NoScriptText, in settings, gui.GetLayoutWidth(), minHeight: 0)
-            : GetMinScriptHeight(gui, storageWarning != null));
+            : GetMinScriptHeight(gui, _storageWarning != null));
         DrawWarnings(gui, GetStartupWarnings(), minUnderStartupHeight, "startup check");
         if (_edited == null)
         {
@@ -392,8 +393,8 @@ internal sealed partial class ScriptWindow
         }
 
         var compileClicked = _edited.DrawHeader(gui);
-        if (storageWarning != null)
-            DrawWarnings(gui, [storageWarning], GetMinEditorHeight(gui), "storage warning");
+        if (_storageWarning != null)
+            DrawWarnings(gui, [_storageWarning], GetMinEditorHeight(gui), "storage warning");
 
         _edited.RefreshCheck();
 
