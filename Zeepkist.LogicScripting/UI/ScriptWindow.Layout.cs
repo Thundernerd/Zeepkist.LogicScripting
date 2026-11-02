@@ -149,7 +149,7 @@ internal sealed partial class ScriptWindow
     private float GetMinHeight(ImGui gui)
     {
         var spacing = gui.Style.Layout.Spacing;
-        var minTabHeight = Mathf.Max(ScriptListPanel.GetMinHeight(gui), LibraryListPanel.GetMinHeightWithWarning(gui, _libraryStore.ReadFailed));
+        var minTabHeight = Mathf.Max(ScriptListPanel.GetMinHeight(gui), LibraryListPanel.GetMinHeightWithWarning(gui, ShowsLibraryReadFailed));
         var minScriptsHeight = GetPanelHeaderHeight(gui) + ImTabsPane.GetTabBarHeight(gui) + (spacing * 2) + minTabHeight;
 
         // The center's padding, and the spacing above the editor and above the error panel
