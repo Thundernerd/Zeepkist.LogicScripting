@@ -118,6 +118,9 @@ internal sealed partial class ScriptWindow
         /// </summary>
         public int ReferenceDrawnFrame => _window._referenceDrawnFrame;
 
+        /// <inheritdoc cref="ReferencePanel.DrawnHeadings"/>
+        public IReadOnlyList<ReferenceHeading> ReferenceHeadings => _window._referencePanel.DrawnHeadings;
+
         /// <summary>
         /// Whether a size or position asked for waits for the window to be drawn.
         /// </summary>

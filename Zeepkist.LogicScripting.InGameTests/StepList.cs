@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler;
 using TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
+using TNRD.Zeepkist.LogicScripting.UI;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests;
 
@@ -14,6 +15,11 @@ internal static class StepList
 {
     public const string SetText = "set-text";
     public const string End = "end";
+
+    /// <summary>
+    /// What <c>expect-reference-headings</c> takes for a Reference tab that draws no headings.
+    /// </summary>
+    public const string NoHeadings = "none";
 
     /// <summary>
     /// Whether the tab is the Libraries tab.
@@ -53,6 +59,7 @@ internal static class StepList
         ["show-blocks-tab"] = (step, argument) => new ShowBlocksTabStep(StepArgument.Choice(step, argument, _blocksTabs)),
         ["expect-blocks-tab"] = (step, argument) => new ExpectBlocksTabStep(StepArgument.Choice(step, argument, _blocksTabs)),
         ["set-reference-filter"] = (_, argument) => new SetReferenceFilterStep(argument),
+        ["expect-reference-headings"] = ExpectReferenceHeadings,
         ["open-new"] = (step, argument) => None(step, argument, new OpenNewStep()),
         ["open-rename"] = (step, argument) => new OpenRenameStep(StepArgument.Text(step, argument, "a name")),
         ["type-name"] = (step, argument) => new TypeNameStep(StepArgument.Text(step, argument, "the name to type")),
@@ -151,6 +158,31 @@ internal static class StepList
         var what = "a row's label";
         var label = StepArgument.Text(step, argument, what);
         return label.IndexOf(' ') < 0 ? label : throw new ScenarioFormatException($"{step} takes {what}, with no spaces, not '{argument}'");
+    }
+
+    /// <summary>
+    /// Headings separated by spaces, each a name with <see cref="ReferenceHeading.ClosedSuffix"/> after it for a closed
+    /// one, or <see cref="NoHeadings"/> alone. A heading's name has no spaces, nor a colon.
+    /// </summary>
+    private static ScenarioStep ExpectReferenceHeadings(string step, string argument)
+    {
+        var what = $"the headings, such as Inputs Libraries{ReferenceHeading.ClosedSuffix}, or {NoHeadings}";
+        var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 1 && words[0] == NoHeadings)
+            return new ExpectReferenceHeadingsStep([]);
+
+        var headings = new List<ReferenceHeading>();
+        foreach (var word in words)
+        {
+            var open = !word.EndsWith(ReferenceHeading.ClosedSuffix, StringComparison.Ordinal);
+            var name = open ? word : word.Substring(0, word.Length - ReferenceHeading.ClosedSuffix.Length);
+            if (name.Length == 0 || name == NoHeadings || name.IndexOf(':') >= 0)
+                throw new ScenarioFormatException($"{step} takes {what}, not '{word}'");
+
+            headings.Add(new ReferenceHeading(name, open));
+        }
+
+        return new ExpectReferenceHeadingsStep((IReadOnlyList<UI.ReferenceHeading>)headings);
     }
 
     /// <summary>

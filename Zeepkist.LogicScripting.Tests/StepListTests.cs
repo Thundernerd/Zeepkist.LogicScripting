@@ -26,6 +26,7 @@ public class StepListTests
     [InlineData("expect-blocks-tab placed", typeof(ExpectBlocksTabStep))]
     [InlineData("set-reference-filter delay", typeof(SetReferenceFilterStep))]
     [InlineData("set-reference-filter", typeof(SetReferenceFilterStep))]
+    [InlineData("expect-reference-headings Inputs Libraries", typeof(ExpectReferenceHeadingsStep))]
     [InlineData("open-new", typeof(OpenNewStep))]
     [InlineData("open-rename Lights", typeof(OpenRenameStep))]
     [InlineData("type-name Lights", typeof(TypeNameStep))]
@@ -332,6 +333,28 @@ public class StepListTests
         var step = Assert.IsType<SetReferenceFilterStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
 
         Assert.Equal(text, step.Text);
+    }
+
+    [Theory]
+    [InlineData("expect-reference-headings Libraries", "Libraries")]
+    [InlineData("expect-reference-headings Inputs:closed  Libraries", "Inputs:closed Libraries")]
+    [InlineData("expect-reference-headings none", "")]
+    public void ExpectReferenceHeadings_ReadsEachHeadingAndWhetherItsOpen(string line, string headings)
+    {
+        var step = Assert.IsType<ExpectReferenceHeadingsStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(headings, ReferenceHeading.Describe(step.Headings));
+    }
+
+    [Theory]
+    [InlineData("expect-reference-headings", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none")]
+    [InlineData("expect-reference-headings Inputs:open", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not 'Inputs:open'")]
+    [InlineData("expect-reference-headings none Inputs", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not 'none'")]
+    public void ExpectReferenceHeadings_WithAWrongArgument_Fails(string line, string error)
+    {
+        ScenarioParser.Parse("steps", line, out var actual);
+
+        Assert.Equal($"line 1: {error}", actual);
     }
 
     [Theory]
