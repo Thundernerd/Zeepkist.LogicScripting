@@ -13,6 +13,10 @@ internal static class LibraryFunctions
 {
     public static IEnumerable<FunctionDefinition> GetCallable(string library, EditorLookups lookups)
     {
+        // Saves a Library-less editor parsing nothing on every keystroke
+        if (lookups.FindLibrary(library) == null)
+            return [];
+
         var functions = GraphBuilder.DescribeLibrary(library, lookups.FindLibrary, out var hasErrors);
         return hasErrors ? [] : functions.Select(f => f.Function);
     }

@@ -47,9 +47,8 @@ internal sealed class EditorAssist
     public bool CompletionWhileTyping => _completionWhileTyping.Value;
 
     /// <summary>
-    /// The block in the open level by its UID and the Libraries' text by name. No block is found outside the editor,
-    /// when its style is turned off for this game version, or in a Library's editor, since the compiler rejects a
-    /// reference to it.
+    /// The block in the open level by its UID, none outside the editor or when its style is turned off for this game
+    /// version, and the Libraries' text by name.
     /// </summary>
     public EditorLookups Lookups { get; }
 

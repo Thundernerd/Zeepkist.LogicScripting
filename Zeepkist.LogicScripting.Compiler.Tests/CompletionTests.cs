@@ -562,7 +562,7 @@ public class CompletionTests
             ["L"] = new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId)
         };
         var context = At("lamp_1 = placed(\"L\")\nlamp_1(1, |");
-        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(uid => level.GetValueOrDefault(uid))))
+        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)))
             .Where(i => i.Kind == CompletionKind.Argument)
             .Select(i => i.Label);
 
@@ -577,7 +577,7 @@ public class CompletionTests
             ["L"] = new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId)
         };
         var context = At("lamp_1 = placed(\"L\")\nlamp_1 = logic(1, 2)\nlamp_1(|");
-        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(uid => level.GetValueOrDefault(uid))))
+        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)))
             .Where(i => i.Kind == CompletionKind.Argument)
             .Select(i => i.Label);
 
@@ -636,7 +636,7 @@ public class CompletionTests
         var placed = string.Format(call, "T");
         var context = At($"t = {placed}\nx = t.|");
 
-        Assert.Empty(Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(RejectedPlacedCalls.Level.GetValueOrDefault))));
+        Assert.Empty(Completion.GetItems(context, DefinedNames.Read(context.Text, Level(RejectedPlacedCalls.Level))));
         Assert.Empty(Labels($"x = {placed}.|", RejectedPlacedCalls.Level.GetValueOrDefault));
     }
 
@@ -645,7 +645,7 @@ public class CompletionTests
     public void Items_NoNamedArguments_InACallToAPlacedCallTheCompilerRejects(string call)
     {
         var context = At($"l = {string.Format(call, "L")}\nl(|");
-        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(RejectedPlacedCalls.Level.GetValueOrDefault)));
+        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(RejectedPlacedCalls.Level)));
 
         Assert.DoesNotContain(items, i => i.Kind == CompletionKind.Argument);
     }
@@ -730,12 +730,12 @@ public class CompletionTests
             ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
         };
         var context = At("t = placed(\"T\")\nd = placed(\"D\")\nx = t.|");
-        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(uid => level.GetValueOrDefault(uid))));
+        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)));
 
         Assert.Equal(expected, items.Select(i => i.Label));
 
         context = At("t = placed(\"T\")\nd = placed(\"D\")\nx = d.|");
-        items = Completion.GetItems(context, DefinedNames.Read(context.Text, new EditorLookups(uid => level.GetValueOrDefault(uid))));
+        items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)));
         Assert.Equal(["distance", "x", "y", "z"], items.Select(i => i.Label));
     }
 
@@ -1193,6 +1193,11 @@ public class CompletionTests
     /// A Library with two Functions, written out of alphabetical order.
     /// </summary>
     private const string TwoFunctionLibrary = "function pulse(a, ticks) -> b\n  b = delay(a, ticks: ticks)\nend\n" + EdgeLibrary;
+
+    private static EditorLookups Level(IReadOnlyDictionary<string, PlacedBlock> level)
+    {
+        return new EditorLookups(uid => level.GetValueOrDefault(uid));
+    }
 
     /// <summary>
     /// A lookup with one Library, <c>timing</c>.

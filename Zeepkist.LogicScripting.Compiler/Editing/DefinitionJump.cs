@@ -33,15 +33,19 @@ public sealed class DefinitionJump
     /// defines. The latest definition above the name is the one used, or the first below it when there's none above,
     /// as only <c>delay(...)</c> may refer to a name defined later.
     /// </summary>
+    /// <param name="text"></param>
+    /// <param name="index"></param>
+    /// <param name="lookups">The level gives a Placed Block Reference its type.</param>
     public static DefinitionJump At(string text, int index, EditorLookups lookups = null)
     {
         text ??= string.Empty;
+        lookups ??= EditorLookups.None;
         var tokens = Lexer.Tokenize(text, []);
         var name = FindName(tokens, index);
         if (name < 0 || BlockManifest.TryGetFunction(tokens[name].Text, out _) || tokens[name + 1].Kind == TokenKind.Colon)
             return null;
 
-        return Find(text, tokens, tokens[name], lookups ?? EditorLookups.None);
+        return Find(text, tokens, tokens[name], lookups);
     }
 
     /// <summary>
