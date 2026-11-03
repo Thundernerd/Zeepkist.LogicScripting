@@ -357,6 +357,57 @@ public class CompletionTests
         Assert.DoesNotContain(Completion.GetItems(At(text)), i => i.Kind == CompletionKind.Argument);
     }
 
+    [Theory]
+    [InlineData("x = timing.edge(|", new[] { "a:", "b:" })]
+    [InlineData("x = timing.edge(1, |", new[] { "b:" })]
+    [InlineData("x = timing.edge(b: 1, |", new[] { "a:" })]
+    [InlineData("x = timing.edge(1, b: 2, |", new string[0])]
+    [InlineData("x = logic(timing.edge(1, |", new[] { "b:" })]
+    [InlineData("function edge(x)\nend\nx = timing.edge(1, |", new[] { "b:" })]
+    [InlineData("function g()\n  x = timing.edge(1, |\nend", new[] { "b:" })]
+    [InlineData("x = timing.edge(1, |\ny = 2", new[] { "b:" })]
+    public void Items_InACallToALibrarysFunction_ItsInputsItDoesntHaveYet(string text, string[] arguments)
+    {
+        var items = Arguments(text, Library(TwoInputLibrary));
+
+        Assert.Equal(arguments, items.Select(i => i.Label));
+        Assert.All(items, i => Assert.Equal("input", i.Detail));
+    }
+
+    [Fact]
+    public void Items_NamingAnArgumentOfALibrarysFunction_ItsInputsMatchingThePrefix()
+    {
+        Assert.Equal(["b:"], Arguments("x = timing.edge(1, b|: 2)", Library(TwoInputLibrary)).Select(i => i.Label));
+    }
+
+    [Theory]
+    [InlineData("x = timing.edge(|", TwoInputLibrary + "\nx = 1")]
+    [InlineData("x = timing.edge(|", TwoInputLibrary + "\nfunction other(a) -> b\n  b = (a\nend")]
+    [InlineData("x = timing.other(|", TwoInputLibrary)]
+    [InlineData("x = nothing.edge(|", TwoInputLibrary)]
+    [InlineData("x = a.timing.edge(|", TwoInputLibrary)]
+    [InlineData("x = timing .edge(|", TwoInputLibrary)]
+    [InlineData("x = timing. edge(|", TwoInputLibrary)]
+    public void Items_InACallToALibrarysFunction_NoneFromALibraryWithAnErrorOrWhenItsNotALibrarysFunction(string text, string libraryText)
+    {
+        Assert.Empty(Arguments(text, Library(libraryText)));
+    }
+
+    [Fact]
+    public void Items_InACallToALibrarysFunction_NoneWithoutTheLibraries()
+    {
+        Assert.Empty(Arguments("x = timing.edge(|"));
+    }
+
+    [Fact]
+    public void Accept_ALibrarysFunctionsInput_AddsItsColon()
+    {
+        var context = At("x = timing.edge(1, |");
+        var item = Completion.GetItems(context, findLibrary: Library(TwoInputLibrary)).First(i => i.Label == "b:");
+
+        Assert.Equal("x = timing.edge(1, b: |", Format(Completion.Accept(context, item)));
+    }
+
     [Fact]
     public void Accept_AFunctionsInput_AddsItsColon()
     {
@@ -1113,6 +1164,11 @@ public class CompletionTests
         return Completion.GetItems(context, DefinedNames.Read(context.Text), findLibrary: findLibrary);
     }
 
+    private static List<CompletionItem> Arguments(string text, Func<string, string> findLibrary = null)
+    {
+        return Names(text, findLibrary).Where(i => i.Kind == CompletionKind.Argument).ToList();
+    }
+
     private static List<string> NameLabels(string text, Func<string, string> findLibrary = null)
     {
         return Names(text, findLibrary).Select(i => i.Label).ToList();
@@ -1127,6 +1183,11 @@ public class CompletionTests
     /// A Library with a Function of two outputs.
     /// </summary>
     private const string EdgeLibrary = "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend";
+
+    /// <summary>
+    /// A Library whose Function takes two inputs, as the issue's <c>timing</c> does.
+    /// </summary>
+    private const string TwoInputLibrary = "function edge(a, b) -> lo\n  lo = a & b\nend";
 
     /// <summary>
     /// A Library with two Functions, written out of alphabetical order.

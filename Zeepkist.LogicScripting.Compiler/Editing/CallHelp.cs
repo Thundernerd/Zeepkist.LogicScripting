@@ -22,7 +22,7 @@ public sealed class CallHelp
     }
 
     /// <summary>
-    /// The function or name called, as written.
+    /// The function or name called, as written; for a Library's Function, without its Library's name.
     /// </summary>
     public string Callee { get; }
 
@@ -48,9 +48,10 @@ public sealed class CallHelp
     public IReadOnlyList<int> EnclosingCalls { get; }
 
     /// <summary>
-    /// The innermost call around the caret, not qualified with a dot, whose function is a Block Function or one of the
-    /// Script's own Functions with inputs and a first line the compiler accepts, or whose name is a Placed Block
-    /// Reference to a block with inputs; null when there's none, and inside a comment or string. A named argument is
+    /// The innermost call around the caret whose function is a Block Function, one of the Script's own Functions with
+    /// inputs and a first line the compiler accepts, or a Library's Function with inputs, or whose name is a Placed
+    /// Block Reference to a block with inputs; null when there's none, and inside a comment or string. A qualified call
+    /// is always to a Library's Function, even when the Script defines one by that name. A named argument is
     /// active from its name on; any other argument gives the input after those the positional arguments before it give,
     /// unless a named argument comes before it, which a positional one can't follow.
     /// </summary>
@@ -60,7 +61,15 @@ public sealed class CallHelp
     /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type, and is
     /// only asked when the call isn't to a Block Function.
     /// </param>
-    public static CallHelp At(string text, int caret, Func<string, PlacedBlock> findPlacedBlock = null)
+    /// <param name="findLibrary">
+    /// A Library's text by its name, or null when there's none; it gives a call to a Library's Function its inputs.
+    /// None come from a Library with an error, since the compiler rejects every call into it.
+    /// </param>
+    public static CallHelp At(
+        string text,
+        int caret,
+        Func<string, PlacedBlock> findPlacedBlock = null,
+        Func<string, string> findLibrary = null)
     {
         text ??= string.Empty;
         caret = Math.Max(0, Math.Min(caret, text.Length));
@@ -74,9 +83,12 @@ public sealed class CallHelp
         var enclosingCalls = calls.Select(c => c.OpenParen).ToList();
         foreach (var call in calls)
         {
-            var items = GetItems(text, call.Callee, call.OpenParen, functions, findPlacedBlock);
+            var callee = call.LibraryFunction ?? call.Callee;
+            var items = call.Library != null
+                ? GetLibraryItems(call.Library, callee, findLibrary)
+                : GetItems(text, callee, call.OpenParen, functions, findPlacedBlock);
             if (items.Count > 0)
-                return new CallHelp(call.Callee, call.OpenParen, items, FindActive(text, call, caret, items), enclosingCalls);
+                return new CallHelp(callee, call.OpenParen, items, FindActive(text, call, caret, items), enclosingCalls);
         }
 
         return null;
@@ -112,6 +124,12 @@ public sealed class CallHelp
         var placed = DefinedNames.Read(text, findPlacedBlock)
             .FirstOrDefault(n => n.Name == callee && n.Span.Start < openParen && n.IsInScopeAt(openParen, functions));
         return placed?.Value is { IsPlaced: true } value ? GetInputItems(value.Type) : [];
+    }
+
+    private static List<CallHelpItem> GetLibraryItems(string library, string function, Func<string, string> findLibrary)
+    {
+        var definition = Completion.FindLibraryFunction(library, function, findLibrary);
+        return definition == null ? [] : definition.Inputs.Select(i => InputItem(i.Name)).ToList();
     }
 
     private static List<CallHelpItem> GetInputItems(BlockType type)

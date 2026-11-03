@@ -28,6 +28,17 @@ internal sealed class OpenCall
     public string Callee => Lexer.IsAfterDot(_tokens, _paren - 1) ? null : _tokens[_paren - 1].Text;
 
     /// <summary>
+    /// The Library named in a qualified call, <c>timing</c> in <c>timing.edge(x)</c>; null when the call isn't to a
+    /// Library's Function, and for one the parser rejects.
+    /// </summary>
+    public string Library => Lexer.FindLibraryName(_tokens, _paren - 1) is var library and >= 0 ? _tokens[library].Text : null;
+
+    /// <summary>
+    /// The <see cref="Library"/>'s Function it calls, <c>edge</c> in <c>timing.edge(x)</c>; null when it doesn't call one.
+    /// </summary>
+    public string LibraryFunction => Library == null ? null : _tokens[_paren - 1].Text;
+
+    /// <summary>
     /// Where its opening parenthesis is in the text, which tells one call from another.
     /// </summary>
     public int OpenParen => _tokens[_paren].Span.Start;

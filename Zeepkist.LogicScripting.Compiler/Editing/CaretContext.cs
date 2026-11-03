@@ -21,6 +21,7 @@ public sealed class CaretContext
         int statementStart,
         bool canReferAhead,
         string callee,
+        string calleeLibrary,
         string dottedName,
         string dottedCallee,
         string dottedLibrary,
@@ -41,6 +42,7 @@ public sealed class CaretContext
         StatementStart = statementStart;
         CanReferAhead = canReferAhead;
         Callee = callee;
+        CalleeLibrary = calleeLibrary;
         DottedName = dottedName;
         DottedCallee = dottedCallee;
         DottedLibrary = dottedLibrary;
@@ -85,10 +87,16 @@ public sealed class CaretContext
     /// <summary>
     /// The function or name called by the call whose argument the word is, for <see cref="CaretContextKind.Argument"/>
     /// and <see cref="CaretContextKind.ArgumentName"/>, or whose Setting the word is the value of, for
-    /// <see cref="CaretContextKind.SettingValue"/>; null otherwise, after <c>default</c>, and in a qualified call, whose
-    /// Function is a Library's.
+    /// <see cref="CaretContextKind.SettingValue"/>; null otherwise and after <c>default</c>. For a qualified call,
+    /// <c>timing.edge(x)</c>, the Function's name without its Library's, and only with its <see cref="CalleeLibrary"/>.
     /// </summary>
     public string Callee { get; }
+
+    /// <summary>
+    /// The Library named in the qualified call whose argument the word is, <c>timing</c> in <c>timing.edge(x)</c>; null
+    /// when the <see cref="Callee"/> isn't a Library's Function, and for a call the parser rejects.
+    /// </summary>
+    public string CalleeLibrary { get; }
 
     /// <summary>
     /// The name before the dot whose output the word is, for <see cref="CaretContextKind.Output"/>; null otherwise, and
@@ -191,7 +199,8 @@ public sealed class CaretContext
 
         var statementStart = FindStatementStart(tokens, word, out var canReferAhead);
         var inCall = kind is CaretContextKind.Argument or CaretContextKind.ArgumentName;
-        var callee = inCall ? call.Callee : null;
+        var calleeLibrary = inCall ? call.Library : null;
+        var callee = calleeLibrary != null ? call.LibraryFunction : inCall ? call.Callee : null;
         var positionalArguments = 0;
         var isOutput = kind == CaretContextKind.Output;
         var dottedName = isOutput && !isDottedCall ? tokens[dotted].Text : null;
@@ -223,6 +232,7 @@ public sealed class CaretContext
             statementStart,
             canReferAhead,
             callee,
+            calleeLibrary,
             dottedName,
             dottedCallee,
             dottedLibrary,
@@ -301,20 +311,8 @@ public sealed class CaretContext
         if (!Lexer.IsAfterDot(tokens, name))
             return name;
 
-        if (!isCall || !tokens[name].IsDirectlyAfter(tokens[name - 1]) || !IsLibraryName(tokens, name - 2)
-            || !tokens[name - 1].IsDirectlyAfter(tokens[name - 2]))
-            return -1;
-
-        library = name - 2;
-        return name;
-    }
-
-    /// <summary>
-    /// Like the parser, only a name that isn't itself after a dot qualifies a call, with no space around the dot.
-    /// </summary>
-    private static bool IsLibraryName(List<Token> tokens, int index)
-    {
-        return index >= 0 && tokens[index].Kind == TokenKind.Name && !Lexer.IsAfterDot(tokens, index);
+        library = isCall ? Lexer.FindLibraryName(tokens, name) : -1;
+        return library >= 0 ? name : -1;
     }
 
     /// <summary>
