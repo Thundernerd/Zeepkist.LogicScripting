@@ -154,6 +154,14 @@ public class HoverInfoTests
         Assert.Equal(("intensity", "input"), (info.Argument.Name, info.Argument.Value));
     }
 
+    [Fact]
+    public void NamedArgument_OfALibrarysFunction_IsItsInput()
+    {
+        var info = At("x = timing.edge(1, |b: 1)", findLibrary: name => name == "timing" ? "function edge(a, b) -> lo\n  lo = a & b\nend" : null);
+
+        Assert.Equal(("b", "input"), (info.Argument.Name, info.Argument.Value));
+    }
+
     [Theory]
     [InlineData("x = logic(a, |nope: 1)")]
     [InlineData("x = logic(a, nothing(|op: 1))")]
@@ -204,9 +212,13 @@ public class HoverInfoTests
         Assert.Null(At("x = 1|2 + 3", errors: errors));
     }
 
-    private static HoverInfo At(string marked, Func<string, PlacedBlock> findPlacedBlock = null, IReadOnlyList<ErrorUnderline> errors = null)
+    private static HoverInfo At(
+        string marked,
+        Func<string, PlacedBlock> findPlacedBlock = null,
+        IReadOnlyList<ErrorUnderline> errors = null,
+        Func<string, string> findLibrary = null)
     {
         var index = marked.IndexOf('|');
-        return HoverInfo.At(marked.Remove(index, 1), index, errors, findPlacedBlock);
+        return HoverInfo.At(marked.Remove(index, 1), index, errors, findPlacedBlock, findLibrary);
     }
 }
