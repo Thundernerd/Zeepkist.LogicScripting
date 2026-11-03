@@ -30,6 +30,16 @@ internal sealed class ReferencePanel
 
     public bool FilterFocused { get; private set; }
 
+    public string Filter => _filter;
+
+    /// <summary>
+    /// Replaces the text in the filter, as typing it would.
+    /// </summary>
+    public void SetFilter(string filter)
+    {
+        _filter = filter;
+    }
+
     public void ReleaseFocus()
     {
         FilterFocused = false;

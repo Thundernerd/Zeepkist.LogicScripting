@@ -24,6 +24,15 @@ internal static class StepList
         ["libraries"] = true,
     };
 
+    /// <summary>
+    /// Whether the Blocks side's tab is the Reference tab.
+    /// </summary>
+    private static readonly Dictionary<string, bool> _blocksTabs = new()
+    {
+        ["placed"] = false,
+        ["reference"] = true,
+    };
+
     private static readonly Dictionary<string, bool> _onOff = new()
     {
         ["on"] = true,
@@ -41,6 +50,9 @@ internal static class StepList
         ["open-delete"] = (step, argument) => new OpenDeleteStep(StepArgument.Text(step, argument, "a name")),
         ["show-tab"] = (step, argument) => new ShowTabStep(StepArgument.Choice(step, argument, _tabs)),
         ["expect-tab"] = (step, argument) => new ExpectTabStep(StepArgument.Choice(step, argument, _tabs)),
+        ["show-blocks-tab"] = (step, argument) => new ShowBlocksTabStep(StepArgument.Choice(step, argument, _blocksTabs)),
+        ["expect-blocks-tab"] = (step, argument) => new ExpectBlocksTabStep(StepArgument.Choice(step, argument, _blocksTabs)),
+        ["set-reference-filter"] = (_, argument) => new SetReferenceFilterStep(argument),
         ["open-new"] = (step, argument) => None(step, argument, new OpenNewStep()),
         ["open-rename"] = (step, argument) => new OpenRenameStep(StepArgument.Text(step, argument, "a name")),
         ["type-name"] = (step, argument) => new TypeNameStep(StepArgument.Text(step, argument, "the name to type")),
