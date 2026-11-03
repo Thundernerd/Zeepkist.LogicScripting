@@ -1,6 +1,6 @@
 # The README's screenshots: a countdown Script with its blocks in the level, the Reference tab, a hover, completion,
-# call help, an error and a Library. Run it again after a change to the window, and copy each shot to docs/images/<name>.png with
-# `magick <shot>.png -strip PNG24:<name>.png`: hero is countdown-script-and-blocks, reference reference-tab, hover hover-definition,
+# call help, an error and a Library. Run it again after a change to the window, and copy each shot to docs/images/<name>.webp with
+# `magick <shot>.png -quality 92 -define webp:method=6 <name>.webp`: hero is countdown-script-and-blocks, reference reference-tab, hover hover-definition,
 # completion completion-outputs, call-help call-help, error error-underline and library library-tab
 
 # Other mods' messages from starting the game, such as a sign-in, are gone before the first shot
