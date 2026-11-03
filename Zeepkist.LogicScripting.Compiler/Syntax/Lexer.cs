@@ -175,6 +175,24 @@ internal static class Lexer
     }
 
     /// <summary>
+    /// The token of the Library's name that qualifies the name at <paramref name="index"/>, <c>timing</c> in
+    /// <c>timing.edge</c>; -1 when there's none. Like the parser, only a name that isn't itself after a dot qualifies
+    /// one, with no space around the dot.
+    /// </summary>
+    internal static int FindLibraryName(List<Token> tokens, int index)
+    {
+        var library = index - 2;
+        return IsAfterDot(tokens, index)
+            && library >= 0
+            && tokens[library].Kind == TokenKind.Name
+            && !IsAfterDot(tokens, library)
+            && tokens[index - 1].IsDirectlyAfter(tokens[library])
+            && tokens[index].IsDirectlyAfter(tokens[index - 1])
+                ? library
+                : -1;
+    }
+
+    /// <summary>
     /// A line that starts a definition or a Function, or is a Function's <c>end</c>.
     /// </summary>
     internal static bool IsStatementStart(List<Token> tokens, int index)

@@ -25,7 +25,7 @@ internal sealed class CallHelpPopup
 
     public CallHelpPopup(EditorAssist assist)
     {
-        _session = new CallHelpSession(assist.FindPlacedBlock);
+        _session = new CallHelpSession(assist.FindPlacedBlock, assist.Libraries.FindText);
     }
 
     public bool IsShown => _session.Help != null;

@@ -214,6 +214,62 @@ public class CallHelpTests
         Assert.Equal("logic", At("function f(a, b) -> c\nend\nx = logic(timing.f(|").Callee);
     }
 
+    [Theory]
+    [InlineData("x = timing.edge(1, |", 1)]
+    [InlineData("x = timing.edge(|", 0)]
+    [InlineData("x = timing.edge(b: |", 1)]
+    [InlineData("function edge(x)\nend\nx = timing.edge(1, |", 1)]
+    [InlineData("x = logic(timing.edge(1, |", 1)]
+    public void Items_ForALibrarysFunction_ItsInputs(string text, int active)
+    {
+        var help = At(text, findLibrary: Library(TwoInputLibrary));
+
+        Assert.Equal("edge", help.Callee);
+        Assert.Equal(["a", "b"], help.Items.Select(i => i.Label));
+        Assert.All(help.Items, i => Assert.True(i.IsInput));
+        Assert.Equal(active, help.Active);
+    }
+
+    [Theory]
+    [InlineData("x = timing.edge(|", TwoInputLibrary + "\nx = 1")]
+    [InlineData("x = timing.other(|", TwoInputLibrary)]
+    [InlineData("x = nothing.edge(|", TwoInputLibrary)]
+    [InlineData("x = a.timing.edge(|", TwoInputLibrary)]
+    [InlineData("x = timing .edge(|", TwoInputLibrary)]
+    [InlineData("x = timing.pulse(|", "function pulse() -> b\n  b = true\nend")]
+    public void None_ForALibrarysFunction_FromALibraryWithAnErrorOrWithoutInputs(string text, string libraryText)
+    {
+        Assert.Null(At(text, findLibrary: Library(libraryText)));
+    }
+
+    [Fact]
+    public void NestedCalls_InACallToALibraryWithAnError_TheCallAroundIt()
+    {
+        Assert.Equal("logic", At("x = logic(timing.edge(|", findLibrary: Library(TwoInputLibrary + "\nx = 1")).Callee);
+    }
+
+    [Fact]
+    public void Session_ForALibrarysFunction_ItsInputs()
+    {
+        var session = new CallHelpSession(findLibrary: Library(TwoInputLibrary));
+
+        session.Update(Snapshot("x = timing.edge(1, |"), focused: true);
+
+        Assert.Equal("edge", session.Help.Callee);
+    }
+
+    [Fact]
+    public void Session_Dismissed_InACallToALibrarysFunction_StaysHiddenWhileTheCaretIsInIt()
+    {
+        var session = new CallHelpSession(findLibrary: Library(TwoInputLibrary));
+        session.Update(Snapshot("x = timing.edge(|"), focused: true);
+        session.Dismiss();
+
+        session.Update(Snapshot("x = timing.edge(1, |"), focused: true);
+
+        Assert.Null(session.Help);
+    }
+
     [Fact]
     public void OpenParen_IsTheCallsParenthesis()
     {
@@ -325,10 +381,20 @@ public class CallHelpTests
         Assert.Equal("logic", session.Help.Callee);
     }
 
-    private static CallHelp At(string marked, Func<string, PlacedBlock> findPlacedBlock = null)
+    private const string TwoInputLibrary = "function edge(a, b) -> lo\n  lo = a & b\nend";
+
+    private static CallHelp At(string marked, Func<string, PlacedBlock> findPlacedBlock = null, Func<string, string> findLibrary = null)
     {
         var snapshot = Snapshot(marked);
-        return CallHelp.At(snapshot.Text, snapshot.Caret, findPlacedBlock);
+        return CallHelp.At(snapshot.Text, snapshot.Caret, findPlacedBlock, findLibrary);
+    }
+
+    /// <summary>
+    /// A lookup with one Library, <c>timing</c>.
+    /// </summary>
+    private static Func<string, string> Library(string text)
+    {
+        return name => name == "timing" ? text : null;
     }
 
     private static TextSnapshot Snapshot(string marked)
