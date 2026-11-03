@@ -13,7 +13,7 @@ using ZeepSDK.UI;
 namespace TNRD.Zeepkist.LogicScripting;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency("ZeepSDK", "2.7.5")]
+[BepInDependency("ZeepSDK", "2.7.6")]
 public class Plugin : BaseUnityPlugin
 {
     private Harmony _harmony;
