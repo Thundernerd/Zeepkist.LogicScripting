@@ -20,7 +20,7 @@ The script prints a summary and exits 0 only when every step of every Scenario p
 - `results.md`: each Scenario's steps, with what a failing check expected and found, the exceptions the game logged meanwhile, and the exceptions it logged as it quit
 - `results.json`: the same, for tools, without the exceptions at quit
 - the screenshots: `editor.png` once the walk reaches the editor, and `<scenario>-<name>.png` for a Scenario's own, including `<scenario>-failure.png` where one failed
-- `LogOutput.log`: the game's BepInEx log, where the test plugin's lines start with `[ZLS-TEST]`
+- `LogOutput.log`: the game's BepInEx log, where the test plugin's lines start with `[ZLS-TEST]`. The script removes the game's log before it starts the game, so a run whose game wrote none has none, and its `results.md` says so.
 
 Only one run can use the game at a time. A second run, say from another worktree, waits until the first is done.
 
@@ -33,7 +33,9 @@ Only one run can use the game at a time. A second run, say from another worktree
 | `--timeout <seconds>` | Stops the game and fails the run after this long. The default is 300. |
 | `-h`, `--help` | Prints the usage. |
 
-`ZEEPKIST_DIR` sets the game's install folder, when it isn't found in Steam's libraries.
+`ZEEPKIST_DIR` sets the game's install folder, when it isn't found in Steam's libraries. `STEAM` sets the command that starts the game, `steam` by default: `STEAM=true` makes a run whose game never starts.
+
+When the game hasn't started a minute after the launch, the run stops there and fails, with the reason Steam's log gives, such as `failed with AppError_19` when Steam has an update for the game to install first. Start the game from Steam once to let it update, and run again. The run doesn't call off Steam's launch, so if Steam starts the game later anyway, close it.
 
 ### Exceptions
 
