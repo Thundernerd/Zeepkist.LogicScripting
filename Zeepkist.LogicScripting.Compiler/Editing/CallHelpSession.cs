@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 
 namespace TNRD.Zeepkist.LogicScripting.Compiler.Editing;
@@ -8,24 +7,16 @@ namespace TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 /// </summary>
 public sealed class CallHelpSession
 {
-    private readonly Func<string, PlacedBlock> _findPlacedBlock;
-    private readonly Func<string, string> _findLibrary;
+    private readonly EditorLookups _lookups;
     private TextSnapshot? _snapshot;
     private int? _dismissedCall;
 
     // A paren index alone would also match a different call whose paren lands at the same place after an edit.
     private string _textThroughDismissedCall;
 
-    /// <param name="findPlacedBlock">
-    /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type.
-    /// </param>
-    /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a call to a Library's Function its inputs.
-    /// </param>
-    public CallHelpSession(Func<string, PlacedBlock> findPlacedBlock = null, Func<string, string> findLibrary = null)
+    public CallHelpSession(EditorLookups lookups = null)
     {
-        _findPlacedBlock = findPlacedBlock;
-        _findLibrary = findLibrary;
+        _lookups = lookups ?? EditorLookups.None;
     }
 
     /// <summary>
@@ -61,7 +52,7 @@ public sealed class CallHelpSession
             return;
 
         _snapshot = snapshot;
-        var help = CallHelp.At(snapshot.Text, snapshot.Caret, _findPlacedBlock, _findLibrary);
+        var help = CallHelp.At(snapshot.Text, snapshot.Caret, _lookups);
 
         if (_dismissedCall is { } dismissed && !StillInDismissedCall(dismissed, snapshot.Text, help))
             _dismissedCall = null;

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Graph;
@@ -12,22 +11,17 @@ namespace TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 /// </summary>
 internal static class LibraryFunctions
 {
-    /// <param name="library"></param>
-    /// <param name="findLibrary">A Library's text by its name, or null when there's none; null finds no Library.</param>
-    public static IEnumerable<FunctionDefinition> GetCallable(string library, Func<string, string> findLibrary)
+    public static IEnumerable<FunctionDefinition> GetCallable(string library, EditorLookups lookups)
     {
-        if (findLibrary == null)
-            return [];
-
-        var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
+        var functions = GraphBuilder.DescribeLibrary(library, lookups.FindLibrary, out var hasErrors);
         return hasErrors ? [] : functions.Select(f => f.Function);
     }
 
     /// <summary>
     /// Null when the Library has no callable Function by that name.
     /// </summary>
-    public static FunctionDefinition Find(string library, string name, Func<string, string> findLibrary)
+    public static FunctionDefinition Find(string library, string name, EditorLookups lookups)
     {
-        return GetCallable(library, findLibrary).FirstOrDefault(f => f.Name.Name == name);
+        return GetCallable(library, lookups).FirstOrDefault(f => f.Name.Name == name);
     }
 }

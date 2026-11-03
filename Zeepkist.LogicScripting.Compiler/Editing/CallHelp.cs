@@ -56,21 +56,15 @@ public sealed class CallHelp
     /// </summary>
     /// <param name="text"></param>
     /// <param name="caret"></param>
-    /// <param name="findPlacedBlock">
-    /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type, and is
-    /// only asked when the call isn't to a Block Function.
+    /// <param name="lookups">
+    /// The level gives a Placed Block Reference its type, and is only asked when the call isn't to a Block Function.
+    /// The Libraries give a call to a Library's Function its inputs. None come from a Library with an error, since the
+    /// compiler rejects every call into it.
     /// </param>
-    /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a call to a Library's Function its inputs.
-    /// None come from a Library with an error, since the compiler rejects every call into it.
-    /// </param>
-    public static CallHelp At(
-        string text,
-        int caret,
-        Func<string, PlacedBlock> findPlacedBlock = null,
-        Func<string, string> findLibrary = null)
+    public static CallHelp At(string text, int caret, EditorLookups lookups = null)
     {
         text ??= string.Empty;
+        lookups ??= EditorLookups.None;
         caret = Math.Max(0, Math.Min(caret, text.Length));
         List<TextSpan> comments = [];
         var tokens = Lexer.Tokenize(text, [], comments);
@@ -84,8 +78,8 @@ public sealed class CallHelp
         {
             var callee = call.Function;
             var items = call.Library != null
-                ? GetLibraryItems(call.Library, callee, findLibrary)
-                : GetItems(text, callee, call.OpenParen, functions, findPlacedBlock);
+                ? GetLibraryItems(call.Library, callee, lookups)
+                : GetItems(text, callee, call.OpenParen, functions, lookups);
             if (items.Count > 0)
                 return new CallHelp(callee, call.OpenParen, items, FindActive(text, call, caret, items), enclosingCalls);
         }
@@ -103,7 +97,7 @@ public sealed class CallHelp
         string callee,
         int openParen,
         List<DefinedFunction> functions,
-        Func<string, PlacedBlock> findPlacedBlock)
+        EditorLookups lookups)
     {
         if (BlockManifest.TryGetFunction(callee, out var type))
             return type.Arguments.Select(a => new CallHelpItem(a.Name, a.IsInput, a.Detail)).ToList();
@@ -112,14 +106,14 @@ public sealed class CallHelp
         if (function != null)
             return function.UsableInputs.Select(InputItem).ToList();
 
-        var placed = DefinedNames.Read(text, findPlacedBlock)
+        var placed = DefinedNames.Read(text, lookups)
             .FirstOrDefault(n => n.Name == callee && n.Span.Start < openParen && n.IsInScopeAt(openParen, functions));
         return placed?.Value is { IsPlaced: true } value ? GetInputItems(value.Type) : [];
     }
 
-    private static List<CallHelpItem> GetLibraryItems(string library, string function, Func<string, string> findLibrary)
+    private static List<CallHelpItem> GetLibraryItems(string library, string function, EditorLookups lookups)
     {
-        var definition = LibraryFunctions.Find(library, function, findLibrary);
+        var definition = LibraryFunctions.Find(library, function, lookups);
         return definition == null ? [] : definition.Inputs.Select(i => InputItem(i.Name)).ToList();
     }
 

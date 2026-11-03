@@ -42,7 +42,7 @@ internal sealed class CompletionPopup
     public CompletionPopup(EditorAssist assist)
     {
         _assist = assist;
-        _session = new CompletionSession(assist.FindPlacedBlock, assist.Libraries.FindText);
+        _session = new CompletionSession(assist.Lookups);
     }
 
     public bool IsOpen => _session.IsOpen;

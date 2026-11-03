@@ -18,9 +18,10 @@ public static class DefinedNames
     /// twice is listed twice.
     /// </summary>
     /// <param name="text"></param>
-    /// <param name="findPlacedBlock">The block in the level with a UID, or null when there's none.</param>
-    public static IReadOnlyList<DefinedName> Read(string text, Func<string, PlacedBlock> findPlacedBlock = null)
+    /// <param name="lookups">The level gives a Placed Block Reference its type.</param>
+    public static IReadOnlyList<DefinedName> Read(string text, EditorLookups lookups = null)
     {
+        lookups ??= EditorLookups.None;
         var tokens = Lexer.Tokenize(text ?? string.Empty, []);
         var functions = ReadFunctions(tokens);
         var definedFunctions = functions.Select(f => f.Function).ToList();
@@ -43,7 +44,7 @@ public static class DefinedNames
                 continue;
 
             var function = definedFunctions.FirstOrDefault(f => f.Contains(tokens[i].Span.Start));
-            var value = ReadValue(tokens, i + 2, findPlacedBlock, definedFunctions, names.Where(n => n.Function == function).ToList());
+            var value = ReadValue(tokens, i + 2, lookups, definedFunctions, names.Where(n => n.Function == function).ToList());
             names.Add(new DefinedName(name, tokens[i].Span, value, function));
         }
 
@@ -148,13 +149,13 @@ public static class DefinedNames
     /// </summary>
     /// <param name="tokens"></param>
     /// <param name="start"></param>
-    /// <param name="findPlacedBlock"></param>
+    /// <param name="lookups"></param>
     /// <param name="functions"></param>
     /// <param name="earlierInScope">The names defined before the value, in its scope.</param>
     private static DefinedValue ReadValue(
         List<Token> tokens,
         int start,
-        Func<string, PlacedBlock> findPlacedBlock,
+        EditorLookups lookups,
         IReadOnlyList<DefinedFunction> functions,
         IEnumerable<DefinedName> earlierInScope)
     {
@@ -169,7 +170,7 @@ public static class DefinedNames
         int end;
         if (IsCall(tokens, inner))
         {
-            value = ReadBlockValue(tokens, inner, findPlacedBlock, out end) ?? ReadFunctionCall(tokens, inner, functions, out end);
+            value = ReadBlockValue(tokens, inner, lookups, out end) ?? ReadFunctionCall(tokens, inner, functions, out end);
         }
         else if (tokens[inner].Kind == TokenKind.Name && FindFunction(functions, tokens[inner].Text) == null)
         {
@@ -194,14 +195,14 @@ public static class DefinedNames
     /// The block the call starting at <paramref name="start"/> stands for when it's a Block Function call, or a Placed
     /// Block Reference to a block in the level. <paramref name="end"/> is the token after it.
     /// </summary>
-    private static DefinedValue ReadBlockValue(List<Token> tokens, int start, Func<string, PlacedBlock> findPlacedBlock, out int end)
+    private static DefinedValue ReadBlockValue(List<Token> tokens, int start, EditorLookups lookups, out int end)
     {
         end = start;
 
         var function = tokens[start].Text;
         if (function == GraphBuilder.PlacedFunction)
         {
-            var placed = FindPlaced(FindPlacedUid(tokens, start), findPlacedBlock);
+            var placed = FindPlaced(FindPlacedUid(tokens, start), lookups);
             if (placed != null)
                 end = FindCallEnd(tokens, start + 1, placed.Type, out _);
 
@@ -245,9 +246,9 @@ public static class DefinedNames
     /// The Placed Block Reference to the block in the level with <paramref name="uid"/>, in its mode there; null when
     /// there's no such block, no UID, or the block is in a Block Group, which the compiler rejects.
     /// </summary>
-    internal static DefinedValue FindPlaced(string uid, Func<string, PlacedBlock> findPlacedBlock)
+    internal static DefinedValue FindPlaced(string uid, EditorLookups lookups)
     {
-        var block = uid == null ? null : findPlacedBlock?.Invoke(uid);
+        var block = uid == null ? null : lookups.FindPlacedBlock(uid);
         if (block is { IsInBlockGroup: true })
             return null;
 

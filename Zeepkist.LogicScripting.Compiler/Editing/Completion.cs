@@ -27,33 +27,30 @@ public static class Completion
     /// </summary>
     /// <param name="context"></param>
     /// <param name="definedNames"></param>
-    /// <param name="findPlacedBlock">
-    /// The block in the level with a UID, or null when there's none; it gives <c>placed(...)</c> before a dot its type.
-    /// </param>
-    /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a Library's name before a dot its Functions,
-    /// a Library's Function before a dot its outputs, and a call to a Library's Function its inputs.
+    /// <param name="lookups">
+    /// The level gives <c>placed(...)</c> before a dot its type, and the Libraries give a Library's name before a dot
+    /// its Functions, a Library's Function before a dot its outputs, and a call to a Library's Function its inputs.
     /// </param>
     public static IReadOnlyList<CompletionItem> GetItems(
         CaretContext context,
         IReadOnlyList<DefinedName> definedNames = null,
-        Func<string, PlacedBlock> findPlacedBlock = null,
-        Func<string, string> findLibrary = null)
+        EditorLookups lookups = null)
     {
         if (context == null)
             return [];
 
         definedNames ??= [];
+        lookups ??= EditorLookups.None;
         return context.Kind switch
         {
             CaretContextKind.Expression => Match(context, GetExpressionItems(context, definedNames)),
-            CaretContextKind.Argument => Match(context, GetArgumentItems(context, definedNames, findLibrary))
+            CaretContextKind.Argument => Match(context, GetArgumentItems(context, definedNames, lookups))
                 .Concat(Match(context, GetExpressionItems(context, definedNames)))
                 .ToList(),
-            CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames, findLibrary)),
+            CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames, lookups)),
             CaretContextKind.DefaultSetting => Match(context, [ArgumentItem(BlockArgument.ForSetting(BlockSetting.Hide))]),
             CaretContextKind.SettingValue => Match(context, GetValueItems(context), sort: false),
-            CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames, findPlacedBlock, findLibrary), sort: false),
+            CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames, lookups), sort: false),
             _ => []
         };
     }
@@ -152,11 +149,11 @@ public static class Completion
     private static IEnumerable<CompletionItem> GetArgumentItems(
         CaretContext context,
         IReadOnlyList<DefinedName> definedNames,
-        Func<string, string> findLibrary)
+        EditorLookups lookups)
     {
         if (context.CalleeLibrary != null)
         {
-            var libraryFunction = LibraryFunctions.Find(context.CalleeLibrary, context.Callee, findLibrary);
+            var libraryFunction = LibraryFunctions.Find(context.CalleeLibrary, context.Callee, lookups);
             return libraryFunction == null ? [] : GetInputItems(context, libraryFunction.Inputs.Select(i => i.Name));
         }
 
@@ -192,13 +189,12 @@ public static class Completion
     private static IEnumerable<CompletionItem> GetOutputItems(
         CaretContext context,
         IReadOnlyList<DefinedName> definedNames,
-        Func<string, PlacedBlock> findPlacedBlock,
-        Func<string, string> findLibrary)
+        EditorLookups lookups)
     {
         if (context.DottedCallee != null)
-            return ToOutputItems(GetCallOutputs(context, findPlacedBlock, findLibrary));
+            return ToOutputItems(GetCallOutputs(context, lookups));
 
-        var functions = GetLibraryFunctionItems(context.DottedName, findLibrary);
+        var functions = GetLibraryFunctionItems(context.DottedName, lookups);
         return context.IsCallNext ? functions : ToOutputItems(GetNameOutputs(context, definedNames)).Concat(functions);
     }
 
@@ -210,9 +206,9 @@ public static class Completion
     /// <summary>
     /// Sorted here, since the outputs listed before them keep their Connector order.
     /// </summary>
-    private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
+    private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, EditorLookups lookups)
     {
-        return LibraryFunctions.GetCallable(library, findLibrary)
+        return LibraryFunctions.GetCallable(library, lookups)
             .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, DescribeInputs(f.Inputs.Select(i => i.Name))))
             .OrderBy(i => i.Label, StringComparer.Ordinal);
     }
@@ -234,17 +230,14 @@ public static class Completion
     /// A Block Function's name is reserved, so it's never a Function's. A qualified call is always to a Library's
     /// Function, even when the Script defines a name or Function with either name.
     /// </summary>
-    private static IReadOnlyList<string> GetCallOutputs(
-        CaretContext context,
-        Func<string, PlacedBlock> findPlacedBlock,
-        Func<string, string> findLibrary)
+    private static IReadOnlyList<string> GetCallOutputs(CaretContext context, EditorLookups lookups)
     {
         if (context.DottedLibrary != null)
-            return GetLibraryOutputs(context, findLibrary);
+            return GetLibraryOutputs(context, lookups);
 
         if (context.DottedCallee == GraphBuilder.PlacedFunction)
         {
-            var placed = DefinedNames.FindPlaced(context.DottedUid, findPlacedBlock);
+            var placed = DefinedNames.FindPlaced(context.DottedUid, lookups);
             return placed == null ? [] : GetOutputNames(placed.Type, placed.Mode);
         }
 
@@ -254,9 +247,9 @@ public static class Completion
         return context.Functions.FirstOrDefault(f => f.Name == context.DottedCallee)?.UsableOutputs ?? [];
     }
 
-    private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
+    private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, EditorLookups lookups)
     {
-        var function = LibraryFunctions.Find(context.DottedLibrary, context.DottedCallee, findLibrary);
+        var function = LibraryFunctions.Find(context.DottedLibrary, context.DottedCallee, lookups);
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 

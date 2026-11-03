@@ -61,6 +61,8 @@ public class NeverThrowsTests
         ["OTHER"] = new PlacedBlock(1)
     };
 
+    private static readonly EditorLookups _lookups = new(uid => _level.GetValueOrDefault(uid));
+
     private static readonly string[] _tokens =
     [
         "x", "y", "later", "default", "function", "end", "->", "f", "f(x)", "function f(x) -> y\n", "\nend\n", "true", "false", "placed", "logic", "power_display", "delay", "toggler", "targets",
@@ -314,7 +316,7 @@ public class NeverThrowsTests
             Hover(text, index, underlines);
         }
 
-        var definedNames = DefinedNames.Read(text, uid => _level.GetValueOrDefault(uid));
+        var definedNames = DefinedNames.Read(text, _lookups);
         Complete(new TextSnapshot(text, -1), definedNames);
         Complete(new TextSnapshot(text, text.Length + 1), definedNames);
 
@@ -382,13 +384,13 @@ public class NeverThrowsTests
         if (items.Count > 0)
             Completion.Accept(context, items[0]);
 
-        CallHelp.At(snapshot.Text, snapshot.Caret, uid => _level.GetValueOrDefault(uid));
+        CallHelp.At(snapshot.Text, snapshot.Caret, _lookups);
     }
 
     private static void Hover(string text, int index, IReadOnlyList<ErrorUnderline> underlines)
     {
-        HoverInfo.At(text, index, underlines, uid => _level.GetValueOrDefault(uid));
-        DefinitionJump.At(text, index, uid => _level.GetValueOrDefault(uid));
+        HoverInfo.At(text, index, underlines, _lookups);
+        DefinitionJump.At(text, index, _lookups);
     }
 
     private static CompileResult Compile(string text)

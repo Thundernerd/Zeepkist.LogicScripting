@@ -219,6 +219,6 @@ public class HoverInfoTests
         Func<string, string> findLibrary = null)
     {
         var index = marked.IndexOf('|');
-        return HoverInfo.At(marked.Remove(index, 1), index, errors, findPlacedBlock, findLibrary);
+        return HoverInfo.At(marked.Remove(index, 1), index, errors, new EditorLookups(findPlacedBlock, findLibrary));
     }
 }

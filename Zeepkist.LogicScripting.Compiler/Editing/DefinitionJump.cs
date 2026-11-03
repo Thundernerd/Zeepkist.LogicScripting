@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Graph;
@@ -34,10 +33,7 @@ public sealed class DefinitionJump
     /// defines. The latest definition above the name is the one used, or the first below it when there's none above,
     /// as only <c>delay(...)</c> may refer to a name defined later.
     /// </summary>
-    /// <param name="text"></param>
-    /// <param name="index"></param>
-    /// <param name="findPlacedBlock">The block in the level with a UID, or null when there's none.</param>
-    public static DefinitionJump At(string text, int index, Func<string, PlacedBlock> findPlacedBlock = null)
+    public static DefinitionJump At(string text, int index, EditorLookups lookups = null)
     {
         text ??= string.Empty;
         var tokens = Lexer.Tokenize(text, []);
@@ -45,7 +41,7 @@ public sealed class DefinitionJump
         if (name < 0 || BlockManifest.TryGetFunction(tokens[name].Text, out _) || tokens[name + 1].Kind == TokenKind.Colon)
             return null;
 
-        return Find(text, tokens, tokens[name], findPlacedBlock);
+        return Find(text, tokens, tokens[name], lookups ?? EditorLookups.None);
     }
 
     /// <summary>
@@ -62,10 +58,10 @@ public sealed class DefinitionJump
     /// <summary>
     /// The jump of <paramref name="token"/>, a name that isn't a Block Function or a named argument's name.
     /// </summary>
-    internal static DefinitionJump Find(string text, List<Token> tokens, Token token, Func<string, PlacedBlock> findPlacedBlock)
+    internal static DefinitionJump Find(string text, List<Token> tokens, Token token, EditorLookups lookups)
     {
         var functions = DefinedNames.ReadFunctions(tokens).Select(f => f.Function).ToList();
-        var targets = DefinedNames.Read(text, findPlacedBlock)
+        var targets = DefinedNames.Read(text, lookups)
             .Where(n => n.Name == token.Text && n.IsInScopeAt(token.Span.Start, functions))
             .Select(n => n.Span)
             .Concat(GraphBuilder.IsReserved(token.Text) ? [] : functions.Where(f => f.Name == token.Text).Select(f => f.Span))
