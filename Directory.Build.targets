@@ -30,4 +30,24 @@
     </ItemGroup>
   </Target>
 
+  <!-- MyPluginInfo has no room for our own values, so ZeepSdkVersion reaches the plugins' BepInDependency through this -->
+  <Target Name="GenerateZeepSdkInfo" BeforeTargets="CoreCompile" Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
+    <PropertyGroup>
+      <ZeepSdkInfoFile>$(IntermediateOutputPath)ZeepSdkInfo.g.cs</ZeepSdkInfoFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <ZeepSdkInfoLine Include="namespace $(RootNamespace)%3B" />
+      <ZeepSdkInfoLine Include="internal static class ZeepSdkInfo" />
+      <ZeepSdkInfoLine Include="{" />
+      <ZeepSdkInfoLine Include="%20%20%20%20public const string Guid = &quot;ZeepSDK&quot;%3B" />
+      <ZeepSdkInfoLine Include="%20%20%20%20public const string Version = &quot;$(ZeepSdkVersion)&quot;%3B" />
+      <ZeepSdkInfoLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ZeepSdkInfoFile)" Lines="@(ZeepSdkInfoLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(ZeepSdkInfoFile)" />
+      <FileWrites Include="$(ZeepSdkInfoFile)" />
+    </ItemGroup>
+  </Target>
+
 </Project>
