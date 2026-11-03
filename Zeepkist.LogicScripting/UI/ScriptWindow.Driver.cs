@@ -107,6 +107,21 @@ internal sealed partial class ScriptWindow
         public bool ShowsLibraries => _window._state.ShowLibraries;
 
         /// <summary>
+        /// Whether the Blocks side shows its Reference tab rather than its Placed blocks tab. Kept while the Blocks side
+        /// is collapsed, for when it's shown again.
+        /// </summary>
+        public bool ShowsReference => _window._showReference;
+
+        /// <summary>
+        /// The Unity frame the Reference tab was last drawn in, which it isn't while the Placed blocks tab shows or the
+        /// Blocks side is collapsed.
+        /// </summary>
+        public int ReferenceDrawnFrame => _window._referenceDrawnFrame;
+
+        /// <inheritdoc cref="ReferencePanel.DrawnHeadings"/>
+        public IReadOnlyList<ReferenceHeading> ReferenceHeadings => _window._referencePanel.DrawnHeadings;
+
+        /// <summary>
         /// Whether a size or position asked for waits for the window to be drawn.
         /// </summary>
         public bool IsRectPending => _window._requestedRect.IsPending;
@@ -259,15 +274,17 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// What a Scenario can change that the window keeps into the next one: its size and position, the shown tab and
-        /// the warnings the tests turn on. A window that was never drawn has no rect, for the one it first opens at. The
-        /// styles the tests turn off aren't in it, as none are at the start of a run.
+        /// What a Scenario can change that the window keeps into the next one: its size and position, the shown tabs,
+        /// the Reference tab's filter and the warnings the tests turn on. A window that was never drawn has no rect, for
+        /// the one it first opens at. The styles the tests turn off aren't in it, as none are at the start of a run.
         /// </summary>
         public KeptState RememberKeptState()
         {
             return new KeptState(
                 DrawnWindowRect,
                 _window._state.ShowLibraries,
+                _window._showReference,
+                _window._referencePanel.Filter,
                 _window._showLibraryReadFailed,
                 _window._showStartupWarning);
         }
@@ -292,6 +309,8 @@ internal sealed partial class ScriptWindow
             }
 
             ShowTab(state.ShowLibraries);
+            ShowBlocksTab(state.ShowReference);
+            _window._referencePanel.SetFilter(state.ReferenceFilter);
             ShowLibraryReadFailed(state.ShowLibraryReadFailed);
             ShowStartupWarning(state.ShowStartupWarning);
         }
@@ -302,6 +321,23 @@ internal sealed partial class ScriptWindow
         public void ShowTab(bool libraries)
         {
             _window._state.ShowLibraries = libraries;
+        }
+
+        /// <summary>
+        /// Like clicking the Blocks side's Placed blocks or Reference tab.
+        /// </summary>
+        public void ShowBlocksTab(bool reference)
+        {
+            _window._showReference = reference;
+        }
+
+        /// <summary>
+        /// Replaces the text in the Reference tab's filter, as typing it would, so only the headings with a match show,
+        /// open.
+        /// </summary>
+        public void SetReferenceFilter(string filter)
+        {
+            _window._referencePanel.SetFilter(filter);
         }
 
         /// <summary>

@@ -7,10 +7,18 @@ namespace TNRD.Zeepkist.LogicScripting.UI;
 /// </summary>
 internal readonly struct KeptState
 {
-    public KeptState(ImRect? windowRect, bool showLibraries, bool showLibraryReadFailed, bool showStartupWarning)
+    public KeptState(
+        ImRect? windowRect,
+        bool showLibraries,
+        bool showReference,
+        string referenceFilter,
+        bool showLibraryReadFailed,
+        bool showStartupWarning)
     {
         WindowRect = windowRect;
         ShowLibraries = showLibraries;
+        ShowReference = showReference;
+        ReferenceFilter = referenceFilter;
         ShowLibraryReadFailed = showLibraryReadFailed;
         ShowStartupWarning = showStartupWarning;
     }
@@ -25,11 +33,18 @@ internal readonly struct KeptState
     /// </summary>
     public bool ShowLibraries { get; }
 
+    /// <summary>
+    /// Whether the Blocks side shows its Reference tab rather than its Placed blocks tab.
+    /// </summary>
+    public bool ShowReference { get; }
+
+    public string ReferenceFilter { get; }
+
     public bool ShowLibraryReadFailed { get; }
     public bool ShowStartupWarning { get; }
 
     public KeptState WithWindowRect(ImRect windowRect)
     {
-        return new KeptState(windowRect, ShowLibraries, ShowLibraryReadFailed, ShowStartupWarning);
+        return new KeptState(windowRect, ShowLibraries, ShowReference, ReferenceFilter, ShowLibraryReadFailed, ShowStartupWarning);
     }
 }

@@ -18,6 +18,7 @@ internal sealed class ReferencePanel
     private const string LibrariesHeader = "Libraries";
 
     private readonly LibraryList _libraries;
+    private readonly List<ReferenceHeading> _drawnHeadings = [];
 
     private string _filter = string.Empty;
     private IReadOnlyList<LibraryReferenceEntry> _libraryEntries = [];
@@ -29,6 +30,21 @@ internal sealed class ReferencePanel
     }
 
     public bool FilterFocused { get; private set; }
+
+    public string Filter => _filter;
+
+    /// <summary>
+    /// The headings the last <see cref="DrawEntries"/> drew, in order.
+    /// </summary>
+    public IReadOnlyList<ReferenceHeading> DrawnHeadings => _drawnHeadings;
+
+    /// <summary>
+    /// Replaces the text in the filter, as typing it would.
+    /// </summary>
+    public void SetFilter(string filter)
+    {
+        _filter = filter;
+    }
 
     public void ReleaseFocus()
     {
@@ -55,13 +71,12 @@ internal sealed class ReferencePanel
     public void DrawEntries(ImGui gui, ICollection<string> collapsed)
     {
         var filtering = _filter.Trim().Length > 0;
-        var shown = 0;
+        _drawnHeadings.Clear();
         foreach (var category in BlockReference.Categories)
         {
             if (!category.Entries.Any(e => e.Matches(_filter)))
                 continue;
 
-            shown++;
             if (!DrawHeader(gui, category.Category.Name, collapsed, filtering))
                 continue;
 
@@ -75,7 +90,6 @@ internal sealed class ReferencePanel
         var libraryEntries = GetLibraryEntries();
         if (libraryEntries.Any(e => e.Matches(_filter)))
         {
-            shown++;
             if (DrawHeader(gui, LibrariesHeader, collapsed, filtering))
             {
                 foreach (var entry in libraryEntries)
@@ -86,7 +100,7 @@ internal sealed class ReferencePanel
             }
         }
 
-        if (shown == 0)
+        if (_drawnHeadings.Count == 0)
             gui.Text("Nothing matches", wrap: true);
     }
 
@@ -107,7 +121,7 @@ internal sealed class ReferencePanel
     /// <summary>
     /// Whether the category is open. Clicking it while filtering does nothing, as it can't close then.
     /// </summary>
-    private static bool DrawHeader(ImGui gui, string name, ICollection<string> collapsed, bool filtering)
+    private bool DrawHeader(ImGui gui, string name, ICollection<string> collapsed, bool filtering)
     {
         gui.AddSpacingIfLayoutFrameNotEmpty();
         var id = gui.GetControlId(name);
@@ -117,13 +131,17 @@ internal sealed class ReferencePanel
         ImFoldout.DrawFoldout(gui, id, ref open, name, rect);
         gui.EndReadOnlyWithoutStyleChanges();
         if (filtering)
+        {
+            _drawnHeadings.Add(new ReferenceHeading(name, true));
             return true;
+        }
 
         if (open)
             collapsed.Remove(name);
         else if (!collapsed.Contains(name))
             collapsed.Add(name);
 
+        _drawnHeadings.Add(new ReferenceHeading(name, open));
         return open;
     }
 
