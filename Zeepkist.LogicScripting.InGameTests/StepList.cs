@@ -121,6 +121,7 @@ internal static class StepList
         ["back-to-editor"] = (step, argument) => None(step, argument, new BackToEditorStep()),
         ["wait"] = (step, argument) => new WaitStep(StepArgument.Seconds(step, argument)),
         ["screenshot"] = (step, argument) => new ScreenshotStep(StepArgument.FileName(step, argument)),
+        ["expect-blank-screenshot"] = (step, argument) => new ExpectBlankScreenshotStep(StepArgument.FileName(step, argument)),
         ["expect-no-exceptions"] = (step, argument) => None(step, argument, new ExpectNoExceptionsStep()),
         ["log"] = (step, argument) => new LogStep(StepArgument.Text(step, argument, "the text to log")),
     };

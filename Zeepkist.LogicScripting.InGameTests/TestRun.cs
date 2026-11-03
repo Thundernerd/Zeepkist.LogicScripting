@@ -30,6 +30,7 @@ internal sealed class TestRun : IDisposable
     private readonly RunRequest _request;
     private readonly string _folder;
     private readonly GameEvents _game = new();
+    private readonly Screenshots _screenshots;
 
     // Set once a step of the walk failed, which ends the run, unlike a failed step of a scenario
     private bool _walkFailed;
@@ -44,6 +45,7 @@ internal sealed class TestRun : IDisposable
         _exceptions = exceptions;
         _request = request;
         _folder = folder;
+        _screenshots = new Screenshots(results, logger);
         Application.logMessageReceived += OnLogMessage;
     }
 
@@ -130,7 +132,7 @@ internal sealed class TestRun : IDisposable
                     yield break;
             }
 
-            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, Screenshot, () => startState.WindowRect);
+            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, _screenshots, () => startState.WindowRect);
             foreach (var step in scenario.Steps)
             {
                 context.Reset();
@@ -175,6 +177,8 @@ internal sealed class TestRun : IDisposable
     {
         // BepInEx flushes its log file every couple of seconds, and the copies it skipped are logged before plugins load
         yield return new WaitForSecondsRealtime(3);
+        _results.Display = Display();
+        _logger.LogInfo($"{Marker} display {_results.Display}");
         var buildCheck = BuildCheck.Run(_folder);
         Step(buildCheck);
         _walkFailed = !buildCheck.Passed;
@@ -338,11 +342,16 @@ internal sealed class TestRun : IDisposable
 
     private IEnumerator Screenshot(string name)
     {
-        yield return new WaitForEndOfFrame();
-        var texture = ScreenCapture.CaptureScreenshotAsTexture();
-        File.WriteAllBytes(_results.ScreenshotPath(name), texture.EncodeToPNG());
-        Object.Destroy(texture);
-        _logger.LogInfo($"{Marker} screenshot {name}");
+        return _screenshots.Take(name);
+    }
+
+    /// <summary>
+    /// The monitor is the one the game's window is on, or the desktop's size without one.
+    /// </summary>
+    private static string Display()
+    {
+        var monitor = Screen.currentResolution;
+        return $"{Screen.width}×{Screen.height} px, {Screen.fullScreenMode}, on a {monitor.width}×{monitor.height} px monitor";
     }
 
     private void Step(RunStep step)

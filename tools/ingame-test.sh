@@ -323,6 +323,7 @@ collect() {
         fi
         echo
         if [[ -f "$run_dir/results.json" ]]; then
+            jq -r 'if (.Display // "") != "" then "Display: \(.Display)", "" else empty end' "$run_dir/results.json"
             # The walk to the editor first, then each scenario with its steps, which stop at the first that failed, and
             # the exceptions the game logged meanwhile
             jq -r '
@@ -342,7 +343,8 @@ collect() {
             ' <(jq '.Steps |= to_entries | .Steps |= map(.value + {Index: .key})' "$run_dir/results.json")
             quit_exceptions
             echo
-            jq -r '.Screenshots[] | "- ![\(.)](\(.))"' "$run_dir/results.json"
+            jq -r '(.BlankScreenshots // {}) as $blank
+                | .Screenshots[] | "- ![\(.)](\(.))" + (if $blank[.] then " **blank**: every pixel is \($blank[.])" else "" end)' "$run_dir/results.json"
         elif [[ -f "$run_dir/LogOutput.log" ]]; then
             echo "No results: the test plugin didn't write any. See LogOutput.log."
         else
@@ -551,7 +553,7 @@ stop_game
 
 restore
 echo
-grep -E '^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^The game didn.t start|^Steam says|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
+grep -E '^Display: |^- !\[.*\*\*blank\*\*|^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^The game didn.t start|^Steam says|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
 log "Results in $run_dir"
 if [[ "$passed" == true ]]; then
     log "Passed: $(jq -r '[.Steps[].Scenario | select(. != "")] | unique | join(", ")' "$run_dir/results.json")"
