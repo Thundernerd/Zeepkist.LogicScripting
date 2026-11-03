@@ -29,6 +29,10 @@ screenshot dragged-narrowest
 drag-window-edge-sideways 300 over 3
 expect-window-size 660 700
 
+# In one press, coming back from past the minimum grows the window again by however far the mouse comes back
+drag-window-edge-sideways -2000 over 10 then 500 over 5
+expect-window-size 860 700
+
 # The width stays between the window's minimum, which fits the editor with both sides collapsed, and the screen's width
 set-window-size 1 700
 expect-window-size 360 700

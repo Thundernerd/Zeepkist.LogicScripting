@@ -13,6 +13,14 @@ expect-editor-in-view
 # From 640 px, far past the minimum, a hundred pixels a frame
 drag-window-edge -1000 over 10
 screenshot dragged
+
+# In one press, coming back from past the minimum grows the window again by however far the mouse comes back: as far
+# as a second press from the minimum does
+drag-window-edge 200 over 2
+remember-window-rect
+drag-window-edge -1000 over 10 then 200 over 2
+expect-window-rect
+drag-window-edge -1000 over 10
 remember-window-rect
 
 close-window

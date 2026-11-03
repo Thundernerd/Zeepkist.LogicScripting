@@ -355,16 +355,21 @@ public class StepListTests
     [InlineData("expect-editor-in-view now", "expect-editor-in-view takes nothing after it")]
     [InlineData("expect-editor-in-view-each-frame", "expect-editor-in-view-each-frame takes a whole number of 0 or more")]
     [InlineData("expect-editor-in-view-each-frame many", "expect-editor-in-view-each-frame takes a whole number of 0 or more, not 'many'")]
-    [InlineData("drag-window-edge", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'")]
-    [InlineData("drag-window-edge 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '0'")]
-    [InlineData("drag-window-edge up", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not 'up'")]
-    [InlineData("drag-window-edge -400 over 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over 0'")]
-    [InlineData("drag-window-edge -400 in 8", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 in 8'")]
-    [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
-    [InlineData("drag-window-edge-sideways", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>'")]
-    [InlineData("drag-window-edge-sideways 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not '0'")]
-    [InlineData("drag-window-edge-sideways left", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not 'left'")]
-    [InlineData("drag-window-edge-sideways -400 over 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not '-400 over 0'")]
+    [InlineData("drag-window-edge", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first")]
+    [InlineData("drag-window-edge 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '0'")]
+    [InlineData("drag-window-edge up", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not 'up'")]
+    [InlineData("drag-window-edge -400 over 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 over 0'")]
+    [InlineData("drag-window-edge -400 in 8", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 in 8'")]
+    [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 over'")]
+    [InlineData("drag-window-edge-sideways", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', with 'then' before each move after the first")]
+    [InlineData("drag-window-edge-sideways 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', with 'then' before each move after the first, not '0'")]
+    [InlineData("drag-window-edge-sideways left", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', with 'then' before each move after the first, not 'left'")]
+    [InlineData("drag-window-edge -400 then", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 then'")]
+    [InlineData("drag-window-edge -400 then 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 then 0'")]
+    [InlineData("drag-window-edge then 300", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not 'then 300'")]
+    [InlineData("drag-window-edge -400 300", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 300'")]
+    [InlineData("drag-window-edge -400 over 8 then 300 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 over 8 then 300 over'")]
+    [InlineData("drag-window-edge-sideways -400 over 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', with 'then' before each move after the first, not '-400 over 0'")]
     [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
     [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
     [InlineData("expect-window-start-rect now", "expect-window-start-rect takes nothing after it")]
@@ -429,7 +434,19 @@ public class StepListTests
     {
         var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
 
-        Assert.Equal((pixels, frames, sideways), (step.Pixels, step.Frames, step.Sideways));
+        var move = Assert.Single(step.Moves);
+        Assert.Equal((pixels, frames, sideways), (move.Pixels, move.Frames, step.Sideways));
+    }
+
+    [Theory]
+    [InlineData("drag-window-edge -2000 over 10 then 300 over 3", "-2000/10 300/3")]
+    [InlineData("drag-window-edge 300 then -50", "300/1 -50/1")]
+    [InlineData("drag-window-edge-sideways -100 then 40 over 2 then -10", "-100/1 40/2 -10/1")]
+    public void DragWindowEdge_ReadsEachMoveAfterThen_InOnePress(string line, string moves)
+    {
+        var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(moves, string.Join(" ", step.Moves.Select(move => $"{move.Pixels}/{move.Frames}")));
     }
 
     [Fact]
