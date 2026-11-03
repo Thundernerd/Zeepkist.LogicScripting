@@ -10,6 +10,7 @@
     <!-- CS1701;CS1702 is the SDK's default, which it only sets when nothing set NoWarn before it -->
     <NoWarn>$(NoWarn);CS1701;CS1702;CS1591</NoWarn>
     <!-- The plugins compile against ZeepSDK and the mod's tests run with it; both should see the same one -->
+    <!-- It is also the plugins' BepInDependency minimum, so it stays a plain version that BepInEx can parse, never a range -->
     <ZeepSdkVersion>2.7.6</ZeepSdkVersion>
     <RestoreAdditionalProjectSources>
       https://api.nuget.org/v3/index.json;

@@ -11,7 +11,7 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests;
 /// </summary>
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency(LogicScripting.MyPluginInfo.PLUGIN_GUID)]
-[BepInDependency("ZeepSDK")]
+[BepInDependency(ZeepSdkInfo.PluginGuid, ZeepSdkInfo.Version)]
 public class Plugin : BaseUnityPlugin
 {
     private Harmony _harmony;
