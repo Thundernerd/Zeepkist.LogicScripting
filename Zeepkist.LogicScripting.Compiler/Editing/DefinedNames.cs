@@ -103,10 +103,15 @@ public static class DefinedNames
             }
 
             var bodyStart = tokens[j].Span.End;
-            j = Parser.FindBodyEnd(tokens, i);
-            var bodyEnd = tokens[j].Kind == TokenKind.End ? tokens[j].Span.Start
-                : Parser.IsFunctionStart(tokens, j) ? tokens[j - 1].Span.Start
-                : tokens[j].Span.End;
+            var end = Parser.FindBodyEnd(tokens, i);
+            j = end.Index;
+            var bodyEnd = end.Reason switch
+            {
+                FunctionBodyEndReason.EndLine => tokens[j].Span.End,
+                FunctionBodyEndReason.NextFunction => tokens[j - 1].Span.Start,
+                FunctionBodyEndReason.EndOfScript => tokens[j].Span.Start,
+                _ => throw new InvalidOperationException($"No body span for a body ending at {end.Reason}")
+            };
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
             var inputNames = inputs.Select(t => t.Text).ToList();
             var firstLine = firstLines[i];

@@ -97,7 +97,7 @@ internal sealed partial class Parser
         // A line never runs past a line break, and a skipped continuation line is never a function or end line, so this
         // stops right at the body's end
         List<Statement> body = [];
-        while (_index < bodyEnd)
+        while (_index < bodyEnd.Index)
         {
             if (Current.Kind == TokenKind.NewLine)
                 _index++;
@@ -106,45 +106,49 @@ internal sealed partial class Parser
         }
 
         var shownName = name == null ? "This function" : $"Function '{name.Name}'";
-        if (Current.Kind == TokenKind.End)
+        switch (bodyEnd.Reason)
         {
-            _diagnostics.Add(new Diagnostic(keyword.Position, $"{shownName} has no {FunctionDefinition.EndKeyword}"));
-            isComplete = false;
-        }
-        else if (IsFunctionStart())
-        {
-            var message = $"{shownName} has no {FunctionDefinition.EndKeyword} before this one. Functions can't be defined inside each other";
-            _diagnostics.Add(new Diagnostic(Current.Position, message));
-            isComplete = false;
-        }
-        else
-        {
-            _index++;
+            case FunctionBodyEndReason.EndLine:
+                _index++;
+                break;
+            case FunctionBodyEndReason.NextFunction:
+                var message = $"{shownName} has no {FunctionDefinition.EndKeyword} before this one. Functions can't be defined inside each other";
+                _diagnostics.Add(new Diagnostic(Current.Position, message));
+                isComplete = false;
+                break;
+            case FunctionBodyEndReason.EndOfScript:
+                _diagnostics.Add(new Diagnostic(keyword.Position, $"{shownName} has no {FunctionDefinition.EndKeyword}"));
+                isComplete = false;
+                break;
+            default:
+                throw new InvalidOperationException($"No diagnostic for a body ending at {bodyEnd.Reason}");
         }
 
         return name == null ? null : new FunctionDefinition(keyword.Position, name, firstLine.Inputs, firstLine.Outputs, body, isComplete);
     }
 
     /// <summary>
-    /// The token the body of the Function at <paramref name="keyword"/> ends at: its <c>end</c>, the next Function's
-    /// keyword, or the end of the Script. Indentation is only style, so the body ends at the first <c>end</c> line. A
-    /// Function can't be defined inside another, so a <c>function</c> line before it ends this one, to be read as the
-    /// next Function. It parses nothing, so the editor can find bodies with it on each key press.
+    /// Where and why the body of the Function at <paramref name="keyword"/> ends. Indentation is only style, so the
+    /// body ends at the first <c>end</c> line. A Function can't be defined inside another, so a <c>function</c> line
+    /// before it ends this one, to be read as the next Function. It parses nothing, so the editor can find bodies with
+    /// it on each key press.
     /// </summary>
-    public static int FindBodyEnd(List<Token> tokens, int keyword)
+    public static FunctionBodyEnd FindBodyEnd(List<Token> tokens, int keyword)
     {
         var index = FindLineEnd(tokens, keyword);
         while (tokens[index].Kind != TokenKind.End)
         {
             if (tokens[index].Kind == TokenKind.NewLine)
                 index++;
-            else if (IsFunctionStart(tokens, index) || IsEndLine(tokens, index))
-                return index;
+            else if (IsFunctionStart(tokens, index))
+                return new FunctionBodyEnd(index, FunctionBodyEndReason.NextFunction);
+            else if (IsEndLine(tokens, index))
+                return new FunctionBodyEnd(index, FunctionBodyEndReason.EndLine);
             else
                 index = FindLineEnd(tokens, index);
         }
 
-        return index;
+        return new FunctionBodyEnd(index, FunctionBodyEndReason.EndOfScript);
     }
 
     /// <summary>
