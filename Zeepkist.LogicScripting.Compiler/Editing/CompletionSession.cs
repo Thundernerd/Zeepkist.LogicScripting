@@ -14,24 +14,16 @@ public sealed class CompletionSession
     /// </summary>
     public const int MaxRows = 8;
 
-    private readonly Func<string, PlacedBlock> _findPlacedBlock;
-    private readonly Func<string, string> _findLibrary;
+    private readonly EditorLookups _lookups;
     private CaretContext _context;
     private IReadOnlyList<DefinedName> _definedNames = [];
     private bool _opensWithoutPrefix;
     private bool _openRequested;
     private CompletionKind? _accepted;
 
-    /// <param name="findPlacedBlock">
-    /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type.
-    /// </param>
-    /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a Library's Function its outputs.
-    /// </param>
-    public CompletionSession(Func<string, PlacedBlock> findPlacedBlock = null, Func<string, string> findLibrary = null)
+    public CompletionSession(EditorLookups lookups = null)
     {
-        _findPlacedBlock = findPlacedBlock;
-        _findLibrary = findLibrary;
+        _lookups = lookups ?? EditorLookups.None;
     }
 
     public bool IsOpen { get; private set; }
@@ -107,10 +99,10 @@ public sealed class CompletionSession
         {
             var wordStart = _context?.Word.Start;
             if (opening || _context == null || _context.Text != snapshot.Text)
-                _definedNames = DefinedNames.Read(snapshot.Text, _findPlacedBlock);
+                _definedNames = DefinedNames.Read(snapshot.Text, _lookups);
 
             _context = CaretContext.At(snapshot.Text, snapshot.Caret);
-            Items = Completion.GetItems(_context, _definedNames, _findPlacedBlock, _findLibrary);
+            Items = Completion.GetItems(_context, _definedNames, _lookups);
             Selected = 0;
             FirstRow = 0;
             if (IsOpen && wordStart != _context.Word.Start)

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
@@ -72,22 +71,18 @@ public sealed class HoverInfo
     /// <param name="text"></param>
     /// <param name="index"></param>
     /// <param name="errors">The editor's error underlines for the same text.</param>
-    /// <param name="findPlacedBlock">
-    /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type, so
-    /// its inputs can be named.
-    /// </param>
-    /// <param name="findLibrary">
-    /// A Library's text by its name, or null when there's none; it gives a Library's Function its inputs, so they can be
-    /// named.
+    /// <param name="lookups">
+    /// The level gives a Placed Block Reference its type, and the Libraries give a Library's Function its inputs, so
+    /// they can be named.
     /// </param>
     public static HoverInfo At(
         string text,
         int index,
         IReadOnlyList<ErrorUnderline> errors = null,
-        Func<string, PlacedBlock> findPlacedBlock = null,
-        Func<string, string> findLibrary = null)
+        EditorLookups lookups = null)
     {
         text ??= string.Empty;
+        lookups ??= EditorLookups.None;
         var underlines = (errors ?? []).Where(e => e.Covers(index)).ToList();
         var messages = underlines.Select(e => e.Message).ToList();
 
@@ -103,9 +98,9 @@ public sealed class HoverInfo
             if (BlockManifest.TryGetFunction(token.Text, out var type))
                 function = BlockReference.GetEntry(type);
             else if (tokens[name + 1].Kind == TokenKind.Colon)
-                argument = FindArgument(text, token, findPlacedBlock, findLibrary);
+                argument = FindArgument(text, token, lookups);
             else
-                definitionLine = FindDefinition(text, tokens, token, findPlacedBlock, out definition);
+                definitionLine = FindDefinition(text, tokens, token, lookups, out definition);
         }
 
         var info = new HoverInfo(messages, function, argument, definitionLine, definition);
@@ -120,13 +115,9 @@ public sealed class HoverInfo
     /// Only the innermost call around the name is asked, so a name in a call without help isn't taken for an
     /// argument of the call outside it.
     /// </summary>
-    private static ReferenceRow FindArgument(
-        string text,
-        Token token,
-        Func<string, PlacedBlock> findPlacedBlock,
-        Func<string, string> findLibrary)
+    private static ReferenceRow FindArgument(string text, Token token, EditorLookups lookups)
     {
-        var help = CallHelp.At(text, token.Span.Start, findPlacedBlock, findLibrary);
+        var help = CallHelp.At(text, token.Span.Start, lookups);
         if (help == null || help.EnclosingCalls[0] != help.OpenParen || help.Active < 0)
             return null;
 
@@ -138,11 +129,11 @@ public sealed class HoverInfo
         string text,
         List<Token> tokens,
         Token token,
-        Func<string, PlacedBlock> findPlacedBlock,
+        EditorLookups lookups,
         out string definition)
     {
         definition = null;
-        if (DefinitionJump.Find(text, tokens, token, findPlacedBlock) is not { } jump)
+        if (DefinitionJump.Find(text, tokens, token, lookups) is not { } jump)
             return 0;
 
         var lineStarts = ScriptText.GetLineStarts(text);

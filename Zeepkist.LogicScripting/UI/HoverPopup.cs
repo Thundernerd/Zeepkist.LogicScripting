@@ -107,7 +107,7 @@ internal sealed partial class HoverPopup
             return _info;
 
         _found = (text, errors, index);
-        _info = index is { } at ? HoverInfo.At(text, at, errors, _assist.FindPlacedBlock, _assist.Libraries.FindText) : null;
+        _info = index is { } at ? HoverInfo.At(text, at, errors, _assist.Lookups) : null;
         return _info;
     }
 

@@ -30,7 +30,7 @@ internal sealed partial class ScriptEditor
             return _jump;
 
         _jumpFound = (Text, index);
-        _jump = index is { } at ? DefinitionJump.At(Text, at, _assist.FindPlacedBlock) : null;
+        _jump = index is { } at ? DefinitionJump.At(Text, at, _assist.Lookups) : null;
         return _jump;
     }
 

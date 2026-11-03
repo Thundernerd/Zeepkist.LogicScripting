@@ -252,7 +252,7 @@ public class CallHelpTests
     [Fact]
     public void Session_ForALibrarysFunction_ItsInputs()
     {
-        var session = new CallHelpSession(findLibrary: Library(TwoInputLibrary));
+        var session = new CallHelpSession(new EditorLookups(findLibrary: Library(TwoInputLibrary)));
 
         session.Update(Snapshot("x = timing.edge(1, |"), focused: true);
 
@@ -262,7 +262,7 @@ public class CallHelpTests
     [Fact]
     public void Session_Dismissed_InACallToALibrarysFunction_StaysHiddenWhileTheCaretIsInIt()
     {
-        var session = new CallHelpSession(findLibrary: Library(TwoInputLibrary));
+        var session = new CallHelpSession(new EditorLookups(findLibrary: Library(TwoInputLibrary)));
         session.Update(Snapshot("x = timing.edge(|"), focused: true);
         session.Dismiss();
 
@@ -387,7 +387,7 @@ public class CallHelpTests
     private static CallHelp At(string marked, Func<string, PlacedBlock> findPlacedBlock = null, Func<string, string> findLibrary = null)
     {
         var snapshot = Snapshot(marked);
-        return CallHelp.At(snapshot.Text, snapshot.Caret, findPlacedBlock, findLibrary);
+        return CallHelp.At(snapshot.Text, snapshot.Caret, new EditorLookups(findPlacedBlock, findLibrary));
     }
 
     /// <summary>

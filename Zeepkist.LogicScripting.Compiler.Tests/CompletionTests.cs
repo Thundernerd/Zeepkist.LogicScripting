@@ -403,7 +403,7 @@ public class CompletionTests
     public void Accept_ALibrarysFunctionsInput_AddsItsColon()
     {
         var context = At("x = timing.edge(1, |");
-        var item = Completion.GetItems(context, findLibrary: Library(TwoInputLibrary)).First(i => i.Label == "b:");
+        var item = Completion.GetItems(context, lookups: Library(TwoInputLibrary)).First(i => i.Label == "b:");
 
         Assert.Equal("x = timing.edge(1, b: |", Format(Completion.Accept(context, item)));
     }
@@ -562,7 +562,7 @@ public class CompletionTests
             ["L"] = new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId)
         };
         var context = At("lamp_1 = placed(\"L\")\nlamp_1(1, |");
-        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, uid => level.GetValueOrDefault(uid)))
+        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)))
             .Where(i => i.Kind == CompletionKind.Argument)
             .Select(i => i.Label);
 
@@ -577,7 +577,7 @@ public class CompletionTests
             ["L"] = new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId)
         };
         var context = At("lamp_1 = placed(\"L\")\nlamp_1 = logic(1, 2)\nlamp_1(|");
-        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, uid => level.GetValueOrDefault(uid)))
+        var labels = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)))
             .Where(i => i.Kind == CompletionKind.Argument)
             .Select(i => i.Label);
 
@@ -636,7 +636,7 @@ public class CompletionTests
         var placed = string.Format(call, "T");
         var context = At($"t = {placed}\nx = t.|");
 
-        Assert.Empty(Completion.GetItems(context, DefinedNames.Read(context.Text, RejectedPlacedCalls.Level.GetValueOrDefault)));
+        Assert.Empty(Completion.GetItems(context, DefinedNames.Read(context.Text, Level(RejectedPlacedCalls.Level))));
         Assert.Empty(Labels($"x = {placed}.|", RejectedPlacedCalls.Level.GetValueOrDefault));
     }
 
@@ -645,7 +645,7 @@ public class CompletionTests
     public void Items_NoNamedArguments_InACallToAPlacedCallTheCompilerRejects(string call)
     {
         var context = At($"l = {string.Format(call, "L")}\nl(|");
-        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, RejectedPlacedCalls.Level.GetValueOrDefault));
+        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(RejectedPlacedCalls.Level)));
 
         Assert.DoesNotContain(items, i => i.Kind == CompletionKind.Argument);
     }
@@ -730,12 +730,12 @@ public class CompletionTests
             ["D"] = new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId)
         };
         var context = At("t = placed(\"T\")\nd = placed(\"D\")\nx = t.|");
-        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, uid => level.GetValueOrDefault(uid)));
+        var items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)));
 
         Assert.Equal(expected, items.Select(i => i.Label));
 
         context = At("t = placed(\"T\")\nd = placed(\"D\")\nx = d.|");
-        items = Completion.GetItems(context, DefinedNames.Read(context.Text, uid => level.GetValueOrDefault(uid)));
+        items = Completion.GetItems(context, DefinedNames.Read(context.Text, Level(level)));
         Assert.Equal(["distance", "x", "y", "z"], items.Select(i => i.Label));
     }
 
@@ -975,7 +975,7 @@ public class CompletionTests
     public void Accept_ALibrarysFunction_OpensItsQualifiedCall(string text, string expected)
     {
         var context = At(text);
-        var item = Completion.GetItems(context, findLibrary: Library(TwoFunctionLibrary)).First(i => i.Label == "edge");
+        var item = Completion.GetItems(context, lookups: Library(TwoFunctionLibrary)).First(i => i.Label == "edge");
 
         Assert.Equal(expected, Format(Completion.Accept(context, item)));
     }
@@ -1158,25 +1158,25 @@ public class CompletionTests
     /// <summary>
     /// With the names the text itself defines.
     /// </summary>
-    private static IReadOnlyList<CompletionItem> Names(string text, Func<string, string> findLibrary = null)
+    private static IReadOnlyList<CompletionItem> Names(string text, EditorLookups lookups = null)
     {
         var context = At(text);
-        return Completion.GetItems(context, DefinedNames.Read(context.Text), findLibrary: findLibrary);
+        return Completion.GetItems(context, DefinedNames.Read(context.Text), lookups);
     }
 
-    private static List<CompletionItem> Arguments(string text, Func<string, string> findLibrary = null)
+    private static List<CompletionItem> Arguments(string text, EditorLookups lookups = null)
     {
-        return Names(text, findLibrary).Where(i => i.Kind == CompletionKind.Argument).ToList();
+        return Names(text, lookups).Where(i => i.Kind == CompletionKind.Argument).ToList();
     }
 
-    private static List<string> NameLabels(string text, Func<string, string> findLibrary = null)
+    private static List<string> NameLabels(string text, EditorLookups lookups = null)
     {
-        return Names(text, findLibrary).Select(i => i.Label).ToList();
+        return Names(text, lookups).Select(i => i.Label).ToList();
     }
 
     private static List<string> Labels(string text, Func<string, PlacedBlock> findPlacedBlock = null)
     {
-        return Completion.GetItems(At(text), findPlacedBlock: findPlacedBlock).Select(i => i.Label).ToList();
+        return Completion.GetItems(At(text), lookups: new EditorLookups(findPlacedBlock)).Select(i => i.Label).ToList();
     }
 
     /// <summary>
@@ -1194,12 +1194,17 @@ public class CompletionTests
     /// </summary>
     private const string TwoFunctionLibrary = "function pulse(a, ticks) -> b\n  b = delay(a, ticks: ticks)\nend\n" + EdgeLibrary;
 
+    private static EditorLookups Level(IReadOnlyDictionary<string, PlacedBlock> level)
+    {
+        return new EditorLookups(uid => level.GetValueOrDefault(uid));
+    }
+
     /// <summary>
     /// A lookup with one Library, <c>timing</c>.
     /// </summary>
-    private static Func<string, string> Library(string text)
+    private static EditorLookups Library(string text)
     {
-        return name => name == "timing" ? text : null;
+        return new EditorLookups(findLibrary: name => name == "timing" ? text : null);
     }
 
     private static CaretContext At(string marked)

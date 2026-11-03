@@ -85,7 +85,7 @@ public class CompletionSessionTests
     [Fact]
     public void TypingAPlacedBlockReferencesParenthesis_OpensWithItsInputs()
     {
-        var session = new CompletionSession(uid => uid == "L" ? new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId) : null);
+        var session = new CompletionSession(new EditorLookups(uid => uid == "L" ? new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId) : null));
         const string Text = "lamp_1 = placed(\"L\")\nlamp_1(";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
@@ -109,7 +109,7 @@ public class CompletionSessionTests
     [Fact]
     public void TypingADotAfterAPlacedCall_OpensWithTheOutputsOfTheBlockInTheLevel()
     {
-        var session = new CompletionSession(uid => uid == "D" ? new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId) : null);
+        var session = new CompletionSession(new EditorLookups(uid => uid == "D" ? new PlacedBlock(BlockManifest.DistanceSensor.DefaultStyle.BlockId) : null));
         const string Text = "x = placed(\"D\").";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
@@ -121,7 +121,7 @@ public class CompletionSessionTests
     [Fact]
     public void TypingADotAfterALibraryFunctionsCall_OpensWithItsOutputs()
     {
-        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null);
+        var session = new CompletionSession(new EditorLookups(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null));
         const string Text = "x = timing.edge(1).";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
@@ -133,7 +133,7 @@ public class CompletionSessionTests
     [Fact]
     public void TypingADotAfterALibrarysName_OpensWithItsFunctions()
     {
-        var session = new CompletionSession(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null);
+        var session = new CompletionSession(new EditorLookups(findLibrary: name => name == "timing" ? "function edge(a) -> lo, hi\n  lo = a\n  hi = !a\nend" : null));
         const string Text = "x = timing.";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true, typedSeparator: true);
@@ -404,7 +404,7 @@ public class CompletionSessionTests
     [Fact]
     public void Items_DefinedNames_WithThePlacedBlocksTypeFromTheLevel()
     {
-        var session = new CompletionSession(uid => uid == "L" ? new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId) : null);
+        var session = new CompletionSession(new EditorLookups(uid => uid == "L" ? new PlacedBlock(BlockManifest.Lamp.DefaultStyle.BlockId) : null));
         const string Text = "lamp_1 = placed(\"L\")\nlamp_1(intensity: la";
 
         session.Update(new TextSnapshot(Text, Text.Length), typedName: true, whileTyping: true, focused: true);
@@ -417,7 +417,7 @@ public class CompletionSessionTests
     public void Opening_ReadsThePlacedBlocksTypeAgain()
     {
         PlacedBlock lamp = null;
-        var session = new CompletionSession(_ => lamp);
+        var session = new CompletionSession(new EditorLookups(_ => lamp));
         const string Text = "lamp_1 = placed(\"L\")\nx = la";
         session.Request();
         session.Update(new TextSnapshot(Text, Text.Length), typedName: false, whileTyping: true, focused: true);

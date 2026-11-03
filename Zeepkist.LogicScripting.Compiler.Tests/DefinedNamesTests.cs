@@ -242,7 +242,7 @@ public class DefinedNamesTests
 
     private static IReadOnlyList<DefinedName> Read(string text)
     {
-        return DefinedNames.Read(text, uid => _level.GetValueOrDefault(uid));
+        return DefinedNames.Read(text, new EditorLookups(uid => _level.GetValueOrDefault(uid)));
     }
 
     /// <summary>

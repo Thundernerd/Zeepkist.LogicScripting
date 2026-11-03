@@ -3,6 +3,7 @@ using System.Linq;
 using BepInEx.Configuration;
 using TNRD.Zeepkist.LogicScripting.Blocks;
 using TNRD.Zeepkist.LogicScripting.Compiler;
+using TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 using TNRD.Zeepkist.LogicScripting.Compiler.Storage;
 using ZeepSDK.Utilities;
 
@@ -15,7 +16,6 @@ internal sealed class EditorAssist
 {
     private readonly ConfigEntry<bool> _completionWhileTyping;
     private readonly StartupCheck _startupCheck;
-    private readonly Func<string, PlacedBlock> _findPlacedBlock;
 
     public EditorAssist(ConfigEntry<bool> completionWhileTyping, LibraryList libraries, StartupCheck startupCheck)
         : this(completionWhileTyping, libraries, startupCheck, null)
@@ -31,8 +31,8 @@ internal sealed class EditorAssist
     {
         _completionWhileTyping = completionWhileTyping;
         _startupCheck = startupCheck;
-        _findPlacedBlock = findPlacedBlock ?? FindInLevel;
         Libraries = libraries;
+        Lookups = new EditorLookups(findPlacedBlock ?? FindInLevel, name => Libraries.FindText(name));
     }
 
     /// <summary>
@@ -47,13 +47,10 @@ internal sealed class EditorAssist
     public bool CompletionWhileTyping => _completionWhileTyping.Value;
 
     /// <summary>
-    /// The block in the open level with a UID; null outside the editor, when there's none, when its style is turned off
-    /// for this game version, or in a Library's editor, since the compiler rejects a reference to it.
+    /// The block in the open level by its UID, none outside the editor or when its style is turned off for this game
+    /// version, and the Libraries' text by name.
     /// </summary>
-    public PlacedBlock FindPlacedBlock(string uid)
-    {
-        return _findPlacedBlock(uid);
-    }
+    public EditorLookups Lookups { get; }
 
     /// <summary>
     /// The same help for a Library's editor, which finds no placed blocks: the compiler rejects every placed(...) in a
