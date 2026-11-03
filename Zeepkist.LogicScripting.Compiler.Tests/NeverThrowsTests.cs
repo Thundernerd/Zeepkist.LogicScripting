@@ -61,7 +61,7 @@ public class NeverThrowsTests
         ["OTHER"] = new PlacedBlock(1)
     };
 
-    private static readonly EditorLookups _lookups = new(uid => _level.GetValueOrDefault(uid));
+    private static readonly EditorLookups _lookups = new(uid => _level.GetValueOrDefault(uid), _libraries.GetValueOrDefault);
 
     private static readonly string[] _tokens =
     [
@@ -380,7 +380,7 @@ public class NeverThrowsTests
     private static void Complete(TextSnapshot snapshot, IReadOnlyList<DefinedName> definedNames)
     {
         var context = CaretContext.At(snapshot.Text, snapshot.Caret);
-        var items = Completion.GetItems(context, definedNames);
+        var items = Completion.GetItems(context, definedNames, _lookups);
         if (items.Count > 0)
             Completion.Accept(context, items[0]);
 
