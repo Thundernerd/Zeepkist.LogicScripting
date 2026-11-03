@@ -259,6 +259,18 @@ public class CallHelpTests
     }
 
     [Fact]
+    public void Session_Dismissed_InACallToALibrarysFunction_StaysHiddenWhileTheCaretIsInIt()
+    {
+        var session = new CallHelpSession(findLibrary: Library(TwoInputLibrary));
+        session.Update(Snapshot("x = timing.edge(|"), focused: true);
+        session.Dismiss();
+
+        session.Update(Snapshot("x = timing.edge(1, |"), focused: true);
+
+        Assert.Null(session.Help);
+    }
+
+    [Fact]
     public void OpenParen_IsTheCallsParenthesis()
     {
         Assert.Equal(9, At("x = logic(a, |").OpenParen);
