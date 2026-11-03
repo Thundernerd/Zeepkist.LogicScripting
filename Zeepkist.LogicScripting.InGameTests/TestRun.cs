@@ -61,6 +61,8 @@ internal sealed class TestRun : IDisposable
     /// </summary>
     public IEnumerator Run()
     {
+        _results.Display = Display();
+        _logger.LogInfo($"{Marker} display {_results.Display}");
         List<Scenario> scenarios = [];
         Exception error = null;
         try
@@ -177,8 +179,6 @@ internal sealed class TestRun : IDisposable
     {
         // BepInEx flushes its log file every couple of seconds, and the copies it skipped are logged before plugins load
         yield return new WaitForSecondsRealtime(3);
-        _results.Display = Display();
-        _logger.LogInfo($"{Marker} display {_results.Display}");
         var buildCheck = BuildCheck.Run(_folder);
         Step(buildCheck);
         _walkFailed = !buildCheck.Passed;
@@ -346,12 +346,12 @@ internal sealed class TestRun : IDisposable
     }
 
     /// <summary>
-    /// The monitor is the one the game's window is on, or the desktop's size without one.
+    /// The screen is the monitor the game's window is on, or the desktop's size without one.
     /// </summary>
     private static string Display()
     {
-        var monitor = Screen.currentResolution;
-        return $"{Screen.width}×{Screen.height} px, {Screen.fullScreenMode}, on a {monitor.width}×{monitor.height} px monitor";
+        var screen = Screen.currentResolution;
+        return $"{Screen.width}×{Screen.height} px, {Screen.fullScreenMode}, screen {screen.width}×{screen.height} px";
     }
 
     private void Step(RunStep step)
