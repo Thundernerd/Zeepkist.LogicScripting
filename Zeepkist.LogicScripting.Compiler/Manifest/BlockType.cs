@@ -15,8 +15,6 @@ public sealed class BlockType
     /// </summary>
     public const string StyleName = "style";
 
-    private const string InputDetail = "input";
-
     private IReadOnlyList<BlockArgument> _arguments;
 
     public BlockType(
@@ -235,7 +233,7 @@ public sealed class BlockType
 
     private List<BlockArgument> CreateArguments()
     {
-        List<BlockArgument> arguments = [.. Inputs.Select(i => new BlockArgument(i.Name, BlockArgumentKind.Input, InputDetail))];
+        List<BlockArgument> arguments = [.. Inputs.Select(i => new BlockArgument(i.Name, BlockArgumentKind.Input, BlockArgument.InputDetail))];
         arguments.AddRange(Settings.Select(BlockArgument.ForSetting));
         if (HasStyles)
             arguments.Add(new BlockArgument(StyleName, BlockArgumentKind.Style, string.Join(", ", Styles.Select(s => s.Name))));

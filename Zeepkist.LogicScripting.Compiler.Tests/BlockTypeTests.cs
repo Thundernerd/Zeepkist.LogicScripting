@@ -45,6 +45,18 @@ public class BlockTypeTests
     }
 
     [Fact]
+    public void Arguments_LabelSettingsAndStyleWithAColon()
+    {
+        Assert.Equal(["a", "b", "mode:", "style:", "hide:"], _styled.Arguments.Select(a => a.Label));
+    }
+
+    [Fact]
+    public void FindClosestName_PrefersStyle_WhenAsCloseToHide()
+    {
+        Assert.Equal("style", _styled.FindClosestName("hyle"));
+    }
+
+    [Fact]
     public void Arguments_LeaveOutStyle_WhenTheTypeHasOneStyle()
     {
         Assert.DoesNotContain(BlockManifest.Logic.Arguments, a => a.Kind == BlockArgumentKind.Style);

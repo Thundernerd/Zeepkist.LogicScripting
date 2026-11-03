@@ -1,10 +1,12 @@
 namespace TNRD.Zeepkist.LogicScripting.Compiler.Manifest;
 
 /// <summary>
-/// One argument a Block Function takes, as call help and completion list it.
+/// One argument a Block Function takes, from <see cref="BlockType.Arguments"/>.
 /// </summary>
 public sealed class BlockArgument
 {
+    internal const string InputDetail = "input";
+
     public BlockArgument(string name, BlockArgumentKind kind, string detail, BlockSetting setting = null)
     {
         Name = name;
@@ -17,7 +19,7 @@ public sealed class BlockArgument
     public BlockArgumentKind Kind { get; }
 
     /// <summary>
-    /// What it accepts, as the Reference tab describes it.
+    /// What it accepts, as the Reference tab describes it, or <c>input</c>.
     /// </summary>
     public string Detail { get; }
 
@@ -27,6 +29,11 @@ public sealed class BlockArgument
     public BlockSetting Setting { get; }
 
     public bool IsInput => Kind == BlockArgumentKind.Input;
+
+    /// <summary>
+    /// The name, with a colon unless it is an input.
+    /// </summary>
+    public string Label => IsInput ? Name : $"{Name}:";
 
     public static BlockArgument ForSetting(BlockSetting setting)
     {

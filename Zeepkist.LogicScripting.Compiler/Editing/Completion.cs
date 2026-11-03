@@ -12,7 +12,6 @@ namespace TNRD.Zeepkist.LogicScripting.Compiler.Editing;
 /// </summary>
 public static class Completion
 {
-    private const string InputDetail = "input";
     private const string OutputDetail = "output";
 
     private static readonly IReadOnlyList<CompletionItem> _expressionItems = CreateExpressionItems();
@@ -271,12 +270,12 @@ public static class Completion
         return inputs
             .Skip(context.PositionalArguments)
             .Where(i => !context.GivenArguments.Contains(i))
-            .Select(i => new CompletionItem($"{i}:", CompletionKind.Argument, InputDetail));
+            .Select(i => new CompletionItem($"{i}:", CompletionKind.Argument, BlockArgument.InputDetail));
     }
 
     private static CompletionItem ArgumentItem(BlockArgument argument)
     {
-        return new CompletionItem($"{argument.Name}:", CompletionKind.Argument, argument.Detail);
+        return new CompletionItem(argument.Label, CompletionKind.Argument, argument.Detail);
     }
 
     private static bool IsColonNext(string text, int index)
@@ -318,7 +317,7 @@ public static class Completion
         foreach (var name in definedNames)
         {
             if (IsVisible(context, name) && offered.Add(name.Name))
-                yield return new CompletionItem(name.Name, CompletionKind.Name, name.IsInput ? InputDetail : name.Value?.Type?.Function ?? string.Empty);
+                yield return new CompletionItem(name.Name, CompletionKind.Name, name.IsInput ? BlockArgument.InputDetail : name.Value?.Type?.Function ?? string.Empty);
         }
     }
 
@@ -339,9 +338,7 @@ public static class Completion
     /// </summary>
     private static string DescribeArguments(BlockType type)
     {
-        var names = type.Arguments
-            .Where(a => a.Setting != BlockSetting.Hide)
-            .Select(a => a.IsInput ? a.Name : $"{a.Name}:");
+        var names = type.Arguments.Where(a => a.Setting != BlockSetting.Hide).Select(a => a.Label);
         return $"({string.Join(", ", names)})";
     }
 }

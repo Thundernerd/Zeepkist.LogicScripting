@@ -130,7 +130,7 @@ public sealed class CallHelp
 
     private static CallHelpItem InputItem(string name)
     {
-        return new CallHelpItem(name, true, "input");
+        return new CallHelpItem(name, true, BlockArgument.InputDetail);
     }
 
     private static int FindActive(string text, OpenCall call, int caret, List<CallHelpItem> items)
