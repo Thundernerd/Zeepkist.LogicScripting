@@ -113,9 +113,10 @@ internal sealed partial class ScriptWindow
         public bool ShowsReference => _window._showReference;
 
         /// <summary>
-        /// The text in the Reference tab's filter.
+        /// The Unity frame the Reference tab was last drawn in, which it isn't while the Placed blocks tab shows or the
+        /// Blocks side is collapsed.
         /// </summary>
-        public string ReferenceFilter => _window._referencePanel.Filter;
+        public int ReferenceDrawnFrame => _window._referenceDrawnFrame;
 
         /// <summary>
         /// Whether a size or position asked for waits for the window to be drawn.
@@ -271,8 +272,8 @@ internal sealed partial class ScriptWindow
 
         /// <summary>
         /// What a Scenario can change that the window keeps into the next one: its size and position, the shown tabs,
-        /// the Reference tab's filter and the warnings the tests turn on. A window that was never drawn has no rect, for the one it first opens at. The
-        /// styles the tests turn off aren't in it, as none are at the start of a run.
+        /// the Reference tab's filter and the warnings the tests turn on. A window that was never drawn has no rect, for
+        /// the one it first opens at. The styles the tests turn off aren't in it, as none are at the start of a run.
         /// </summary>
         public KeptState RememberKeptState()
         {
@@ -328,16 +329,12 @@ internal sealed partial class ScriptWindow
         }
 
         /// <summary>
-        /// Replaces the text in the Reference tab's filter, as typing it would, so only the categories with a match show,
-        /// open. Returns false, changing nothing, when the Reference tab isn't shown.
+        /// Replaces the text in the Reference tab's filter, as typing it would, so only the headings with a match show,
+        /// open.
         /// </summary>
-        public bool SetReferenceFilter(string filter)
+        public void SetReferenceFilter(string filter)
         {
-            if (!_window._showReference)
-                return false;
-
             _window._referencePanel.SetFilter(filter);
-            return true;
         }
 
         /// <summary>

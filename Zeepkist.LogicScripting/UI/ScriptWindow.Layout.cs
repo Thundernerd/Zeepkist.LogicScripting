@@ -47,6 +47,11 @@ internal sealed partial class ScriptWindow
     private bool _showReference;
 
     /// <summary>
+    /// For the in-game tests, which check the tab is on screen before typing into its filter.
+    /// </summary>
+    private int _referenceDrawnFrame = -1;
+
+    /// <summary>
     /// The storage warning as the frame began, which its minimum height counts, and the Script or Library it's for. The
     /// center shows it while that's still the one selected: one selected while drawing, such as by clicking it in the
     /// list, shows its warning from the next frame, at any height.
@@ -611,6 +616,7 @@ internal sealed partial class ScriptWindow
         // A scope per tab, so their scroll areas don't share one id, and with it one scroll position
         if (_showReference)
         {
+            _referenceDrawnFrame = Time.frameCount;
             gui.PushId(ReferenceTab);
             var spacing = gui.Style.Layout.Spacing;
             var filter = content.WithPadding(spacing).TakeTop(gui.GetRowHeight(), out _);

@@ -86,7 +86,7 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `expect-tab scripts\|libraries` | Which tab the Scripts side shows. |
 | `show-blocks-tab placed\|reference` | Shows the Blocks side's Placed blocks or Reference tab, as clicking it does. |
 | `expect-blocks-tab placed\|reference` | Which tab the Blocks side shows. |
-| `set-reference-filter [<text>]` | Replaces the text in the Reference tab's filter, as typing it does, so only the headings with a match show, open. With no text it clears the filter. Fails when the Reference tab isn't shown: add `show-blocks-tab reference` first. |
+| `set-reference-filter [<text>]` | Replaces the text in the Reference tab's filter, as typing it does, so only the headings with a match show, open. With no text it clears the filter. Fails when the Reference tab isn't drawn, with the Placed blocks tab shown or the Blocks side collapsed: add `show-blocks-tab reference` first. |
 | `open-new` | Opens New's name prompt on the shown tab, as clicking New Script or New Library does. |
 | `open-rename <name>` | Opens the rename prompt for a Script or Library on the shown tab, as Rename in its context menu does. Fails when there's none by that name. |
 | `open-delete <name>` | Opens the delete prompt for a Script or Library on the shown tab, as Delete in its context menu does, leaving it open. Fails when there's none by that name. |
