@@ -102,6 +102,8 @@ The new group replaces the old one, at the same spot.
     Click a heading to collapse it, and the window remembers which ones are collapsed.
     Type in the filter to search: only headings with a match show, and they show open.
 
+    ![The Reference tab filtered to math, showing its inputs, outputs and the values of op](docs/images/reference-tab.png)
+
 The « and » buttons fold the Scripts and Blocks sides away, and ▼ folds the error panel.
 The window remembers its place and size, these panels, which Scripts tab is shown and what's collapsed.
 
