@@ -118,6 +118,7 @@ internal sealed partial class ScriptWindow
             StoreRect(window.Rect);
             _windowLayout = new WindowLayout(
                 Time.frameCount,
+                minSize.x,
                 minSize.y,
                 ImWindow.GetResizeHandleRect(gui, window.Rect),
                 gui.IsControlActive(resizeHandleId),

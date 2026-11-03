@@ -1,28 +1,33 @@
 using System;
 using System.Collections;
+using Imui.Core;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
 /// Drags the window's resize handle as a player's mouse does: the mouse moves onto it, presses, moves by an even part
-/// of the drag each frame and lets go. Every frame from the press runs the checks of <see cref="ExpectEditorInViewStep"/>
-/// and checks the window is no shorter than its minimum, failing with the first frame that's wrong.
+/// of the drag each frame, down or up, or right or left when <see cref="Sideways"/>, and lets go. Every frame from the
+/// press runs the checks of <see cref="ExpectEditorInViewStep"/> and checks the window is no smaller than its minimum,
+/// failing with the first frame that's wrong.
 /// </summary>
 internal sealed class DragWindowEdgeStep : ScenarioStep
 {
-    public DragWindowEdgeStep(int pixels, int frames)
+    public DragWindowEdgeStep(int pixels, int frames, bool sideways)
     {
         Pixels = pixels;
         Frames = frames;
+        Sideways = sideways;
     }
 
     /// <summary>
-    /// How far the mouse moves down, or up when below 0.
+    /// How far the mouse moves down, or up when below 0, or right, or left, when <see cref="Sideways"/>.
     /// </summary>
     public int Pixels { get; }
 
     public int Frames { get; }
+
+    public bool Sideways { get; }
 
     public override IEnumerator Run(StepContext context)
     {
@@ -30,8 +35,8 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
             yield break;
 
         var window = context.Window;
-        var startHeight = window.WindowRect.H;
-        var shortest = startHeight;
+        var startSize = GetSize(window.WindowRect);
+        var smallest = startSize;
         var pressed = false;
         try
         {
@@ -58,7 +63,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                 if (!Check(context, frame))
                     yield break;
 
-                shortest = Mathf.Min(shortest, window.WindowRect.H);
+                smallest = Mathf.Min(smallest, GetSize(window.WindowRect));
                 if (frame == Frames)
                     break;
 
@@ -68,8 +73,10 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
                 }
 
-                // Imui counts pixels up the screen, as Unity does
-                if (!ImuiMouse.Drag(new Vector2(0, -GetMove(frame + 1))))
+                var move = GetMove(frame + 1);
+
+                // Imui counts pixels up the screen, as Unity does, so a move down is below 0
+                if (!ImuiMouse.Drag(Sideways ? new Vector2(move, 0) : new Vector2(0, -move)))
                 {
                     context.Fail($"frame {frame}: Imui has no backend to send the mouse to");
                     yield break;
@@ -99,11 +106,20 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
             yield break;
         }
 
-        var height = RectCheck.Pixels(window.WindowRect.H);
+        var (size, least) = Sideways ? ("wide", "narrowest") : ("tall", "shortest");
+        var minSize = Sideways ? window.WindowLayout.MinWidth : window.WindowLayout.MinHeight;
         context.Pass(
-            $"{Frames + 1} frames in view, from {RectCheck.Pixels(startHeight)} px tall to {height} px, {RectCheck.Pixels(shortest)} px at the shortest, its minimum {RectCheck.Pixels(window.WindowLayout.MinHeight)} px",
+            $"{Frames + 1} frames in view, from {RectCheck.Pixels(startSize)} px {size} to {RectCheck.Pixels(GetSize(window.WindowRect))} px, {RectCheck.Pixels(smallest)} px at the {least}, its minimum {RectCheck.Pixels(minSize)} px",
             null,
             null);
+    }
+
+    /// <summary>
+    /// The window's width when <see cref="Sideways"/>, otherwise its height.
+    /// </summary>
+    private float GetSize(ImRect rect)
+    {
+        return Sideways ? rect.W : rect.H;
     }
 
     /// <summary>
@@ -128,6 +144,13 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
         }
 
         var rect = window.WindowRect;
+        var minWidth = window.WindowLayout.MinWidth;
+        if (rect.W < minWidth - RectCheck.Tolerance)
+        {
+            context.Fail($"frame {frame}: the window is narrower than its minimum", $"{RectCheck.Pixels(minWidth)} px or more", $"{RectCheck.Pixels(rect.W)} px");
+            return false;
+        }
+
         var minHeight = window.WindowLayout.MinHeight;
         if (rect.H < minHeight - RectCheck.Tolerance)
         {
