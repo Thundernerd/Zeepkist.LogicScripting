@@ -445,6 +445,7 @@ public sealed class CaretContext
                 case TokenKind.OpenParen:
                     delayCalls.Push(i > 0
                         && tokens[i - 1].Kind == TokenKind.Name
+                        && !Lexer.IsAfterDot(tokens, i - 1)
                         && BlockManifest.TryGetFunction(tokens[i - 1].Text, out var type)
                         && type == BlockManifest.Delay);
                     break;
