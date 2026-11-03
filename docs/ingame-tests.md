@@ -33,9 +33,9 @@ Only one run can use the game at a time. A second run, say from another worktree
 | `--timeout <seconds>` | Stops the game and fails the run after this long. The default is 300. |
 | `-h`, `--help` | Prints the usage. |
 
-`ZEEPKIST_DIR` sets the game's install folder, when it isn't found in Steam's libraries. `STEAM` sets the command that starts the game, `steam` by default: `STEAM=true` tries a run whose game never starts.
+`ZEEPKIST_DIR` sets the game's install folder, when it isn't found in Steam's libraries. `STEAM` sets the command that starts the game, `steam` by default: `STEAM=true` makes a run whose game never starts.
 
-When the game hasn't started a minute after the launch, the run stops there and fails, with the reason Steam's log gives, such as `failed with AppError_19` when Steam has an update for the game to install first. Start the game from Steam once to let it update, and run again.
+When the game hasn't started a minute after the launch, the run stops there and fails, with the reason Steam's log gives, such as `failed with AppError_19` when Steam has an update for the game to install first. Start the game from Steam once to let it update, and run again. The run doesn't call off Steam's launch, so if Steam starts the game later anyway, close it.
 
 ### Exceptions
 

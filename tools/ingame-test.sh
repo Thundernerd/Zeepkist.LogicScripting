@@ -154,7 +154,24 @@ deployed=0
 timed_out=0
 interrupted=0
 passed=false
+# Steam starts the game's launcher within seconds, or not at all, such as when it has an update to install first
+start_timeout=60
+not_started=0
 launch_failure=""
+
+# Why Steam didn't start the game, such as "failed with AppError_19", from what its log says after this run's launch
+find_launch_failure() {
+    local steam_log
+    for steam_log in "$HOME/.local/share/Steam/logs/console_log.txt" "$HOME/.steam/steam/logs/console_log.txt"; do
+        [[ -f "$steam_log" ]] || continue
+        launch_failure="$(awk -v launch="'-zls-ingame-test' '$run_id'" '
+            index($0, launch) { found = 1; next }
+            found && /GameAction \[AppID '"$app_id"',.*LaunchApp failed/ { sub(/.*LaunchApp /, ""); sub(/ with ""\r?$/, ""); print; exit }
+        ' "$steam_log" || true)"
+        [[ -n "$launch_failure" ]] && log "Steam says its launch $launch_failure"
+        return 0
+    done
+}
 
 stop_game() {
     game_running || return 0
@@ -280,7 +297,6 @@ quit_exceptions() {
 # Copies what the run left in the game folder into the run folder, so an interrupted or failed run has results too
 collect() {
     [[ -d "$test_deploy/out" ]] && cp -a "$test_deploy/out/." "$run_dir/"
-    # The log is removed before the launch, so one that's there now is this run's
     ((launched)) && [[ -f "$game_log" ]] && cp "$game_log" "$run_dir/LogOutput.log"
 
     passed=false
@@ -331,7 +347,10 @@ collect() {
             echo "No results: the test plugin didn't write any. See LogOutput.log."
         else
             echo "No results, and the game wrote no log for this run: it didn't start, or BepInEx didn't load."
-            [[ -n "$launch_failure" ]] && echo "Steam says its launch $launch_failure."
+            ((not_started)) && echo "The game didn't start within $start_timeout seconds."
+            if [[ -n "$launch_failure" ]]; then
+                echo "Steam says its launch $launch_failure."
+            fi
         fi
     } >"$run_dir/results.md"
 }
@@ -493,25 +512,10 @@ launched=1
 "$steam" -applaunch "$app_id" -zls-ingame-test "$run_id" >/dev/null 2>&1 9>&- &
 disown
 
-# Why Steam didn't start the game, such as "failed with AppError_19", from what its log says after this run's launch
-find_launch_failure() {
-    local steam_log
-    for steam_log in "$HOME/.local/share/Steam/logs/console_log.txt" "$HOME/.steam/steam/logs/console_log.txt"; do
-        [[ -f "$steam_log" ]] || continue
-        launch_failure="$(awk -v launch="'-zls-ingame-test' '$run_id'" '
-            index($0, launch) { found = 1; next }
-            found && /GameAction \[AppID '"$app_id"',.*LaunchApp failed/ { sub(/.*LaunchApp /, ""); sub(/ with ""\r?$/, ""); print; exit }
-        ' "$steam_log")"
-        [[ -n "$launch_failure" ]] && log "Steam says its launch $launch_failure"
-        return 0
-    done
-}
-
 results="$test_deploy/out/results.json"
 deadline=$((SECONDS + timeout))
 started=0
-# Steam starts the game's launcher within seconds, or not at all, such as when it has an update to install first
-start_deadline=$((SECONDS + 60))
+start_deadline=$((SECONDS + start_timeout))
 while :; do
     if [[ -f "$results" ]] && [[ "$(jq -r '.Done' "$results" 2>/dev/null)" == true ]]; then
         break
@@ -522,12 +526,14 @@ while :; do
         log "The game quit before the run finished"
         break
     elif ((SECONDS > start_deadline)); then
-        log "The game didn't start within 60 seconds"
+        log "The game didn't start within $start_timeout seconds"
+        not_started=1
         find_launch_failure
         break
     fi
     if ((SECONDS > deadline)); then
         log "Timed out after $timeout seconds"
+        ((started)) || find_launch_failure
         timed_out=1
         break
     fi
@@ -545,7 +551,7 @@ stop_game
 
 restore
 echo
-grep -E '^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^Steam says|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
+grep -E '^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^The game didn.t start|^Steam says|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
 log "Results in $run_dir"
 if [[ "$passed" == true ]]; then
     log "Passed: $(jq -r '[.Steps[].Scenario | select(. != "")] | unique | join(", ")' "$run_dir/results.json")"
