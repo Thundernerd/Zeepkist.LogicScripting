@@ -7,7 +7,7 @@ The mod places the blocks and connects the wires for you.
 The result is normal logic blocks.
 Other players do not need the mod to play your level.
 
-![The Logic Script window with a countdown Script, and the blocks its Compile placed and wired in the level below it](docs/images/countdown-script-and-blocks.png)
+![The Logic Script window with a countdown Script, and the blocks its Compile placed and wired in the level below it](docs/images/countdown-script-and-blocks.webp)
 
 ```logic
 default hide: true
@@ -43,7 +43,7 @@ Modkist installs BepInEx and ZeepSDK.
    Click an error to go to its line.
 5. Click **Compile**, or press **Ctrl+Enter**.
 
-![A misspelled name underlined in red, with its message under the mouse and in the error list](docs/images/error-underline.png)
+![A misspelled name underlined in red, with its message under the mouse and in the error list](docs/images/error-underline.webp)
 
 Compile places the blocks where the editor places a new block, in front of the camera.
 Signals flow toward the right of the screen.
@@ -102,7 +102,7 @@ The new group replaces the old one, at the same spot.
     Click a heading to collapse it, and the window remembers which ones are collapsed.
     Type in the filter to search: only headings with a match show, and they show open.
 
-    ![The Reference tab filtered to math, showing its inputs, outputs and the values of op](docs/images/reference-tab.png)
+    ![The Reference tab filtered to math, showing its inputs, outputs and the values of op](docs/images/reference-tab.webp)
 
 The « and » buttons fold the Scripts and Blocks sides away, and ▼ folds the error panel.
 The window remembers its place and size, these panels, which Scripts tab is shown and what's collapsed.
@@ -130,7 +130,7 @@ Up / Down choose one, Enter or Tab writes it, and Escape closes the list.
 Ctrl+Space opens the list at any time.
 To stop it opening by itself, turn off **Completion while typing** in the mod's settings.
 
-![The completion list after p., listing the outputs of player_input](docs/images/completion-outputs.png)
+![The completion list after p., listing the outputs of player_input](docs/images/completion-outputs.webp)
 
 Inside a call's parentheses, a box above the line shows the call's inputs, in the order positional arguments fill them,
 and its settings, with the one you're writing highlighted and, for a setting, the values it takes.
@@ -138,7 +138,7 @@ It works for block functions, placed blocks, your own functions and a Library's,
 Inside a call nested in another, it shows the inner one.
 Escape hides it until the cursor leaves the call.
 
-![Call help above a math call, with b, the input being written, highlighted](docs/images/call-help.png)
+![Call help above a math call, with b, the input being written, highlighted](docs/images/call-help.webp)
 
 With neither the list nor the box showing, Escape leaves the Script editor, so the level editor's keys work again.
 A key pressed a split second after that Escape can be missed: press it again.
@@ -148,7 +148,7 @@ a block function's entry from the Reference tab, the line that defines a name,
 what a named argument's input or setting takes, or the message of a red underline.
 Moving the mouse or pressing a key hides it.
 
-![The mouse resting on left shows the line that defines it](docs/images/hover-definition.png)
+![The mouse resting on left shows the line that defines it](docs/images/hover-definition.webp)
 
 Ctrl+click (Cmd+click on macOS) a name your Script defines to jump to the line that defines it.
 While Ctrl is held, the name under the mouse is underlined when there's a definition to jump to.
@@ -403,7 +403,7 @@ function edge(x) -> rising
 end
 ```
 
-![The Libraries tab with a Library called timing, holding the functions edge and seconds](docs/images/library-tab.png)
+![The Libraries tab with a Library called timing, holding the functions edge and seconds](docs/images/library-tab.webp)
 
 Call its functions with the Library's name and a dot in front:
 
