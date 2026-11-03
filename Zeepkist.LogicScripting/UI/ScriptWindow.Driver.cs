@@ -61,6 +61,18 @@ internal sealed partial class ScriptWindow
         /// <inheritdoc cref="ScriptEditor.CallHelp"/>
         public CallHelp CallHelp => _window._edited?.Editor.CallHelp;
 
+        /// <inheritdoc cref="ScriptEditor.HoverRestingFrame"/>
+        public int HoverRestingFrame => _window._edited?.Editor.HoverRestingFrame ?? -1;
+
+        /// <inheritdoc cref="ScriptEditor.HoverLines"/>
+        public IReadOnlyList<string> HoverLines => _window._edited?.Editor.HoverLines;
+
+        /// <inheritdoc cref="ScriptEditor.FindDrawnCharacter"/>
+        public (ImRect Character, ImRect TextBounds, int Frame)? FindDrawnCharacter(int index)
+        {
+            return _window._edited?.Editor.FindDrawnCharacter(index);
+        }
+
         public bool IsFieldFocused => _window.AnyFieldFocused;
 
         /// <summary>

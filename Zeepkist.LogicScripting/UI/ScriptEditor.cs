@@ -27,6 +27,7 @@ internal sealed partial class ScriptEditor
     private IReadOnlyList<ErrorUnderline> _errors = [];
     private bool _focusRequested;
     private (TextSnapshot Before, TextSnapshot After)? _outdentedEnd;
+    private (int Frame, ImRect TextRect, ImRect TextBounds, ImTextDrawer Drawer)? _drawn;
 
     public ScriptEditor(string text, EditorAssist assist)
     {
@@ -62,6 +63,31 @@ internal sealed partial class ScriptEditor
 
     /// <inheritdoc cref="CallHelpPopup.Help"/>
     public CallHelp CallHelp => _callHelp.Help;
+
+    /// <inheritdoc cref="HoverPopup.RestingFrame"/>
+    public int HoverRestingFrame => _hover.RestingFrame;
+
+    /// <inheritdoc cref="HoverPopup.DrawnLines"/>
+    public IReadOnlyList<string> HoverLines => _hover.DrawnLines;
+
+    /// <summary>
+    /// Where the character at <paramref name="index"/> was drawn the last time the editor was, in Imui's pixels, with
+    /// the bounds of the text that showed and Unity's frame count then; null before the first <see cref="Draw"/>. A
+    /// line's end is as wide as a space, as the hover takes it.
+    /// </summary>
+    public (ImRect Character, ImRect TextBounds, int Frame)? FindDrawnCharacter(int index)
+    {
+        if (_drawn is not { } drawn)
+            return null;
+
+        var buffer = new ImTextEditBuffer(Text, null, 0);
+        index = Mathf.Clamp(index, 0, Text.Length);
+        var position = ImTextEdit.CaretToViewPosition(index, drawn.Drawer, drawn.TextRect, in _layout, in buffer);
+        var character = index == Text.Length || Text[index] == '\n' ? ' ' : Text[index];
+        var width = drawn.Drawer.GetCharacterAdvance(character, _layout.Size);
+        var rect = new ImRect(position.x, position.y - _layout.LineHeight, width, _layout.LineHeight);
+        return (rect, drawn.TextBounds, drawn.Frame);
+    }
 
     /// <summary>
     /// Spans are character indices into <see cref="Text"/>.
@@ -168,6 +194,7 @@ internal sealed partial class ScriptEditor
             completed = _completion.HandleMouse(gui);
         }
 
+        _drawn = (Time.frameCount, textRect, textBounds, gui.TextDrawer);
         DrawHover(gui, rect, textRect, textBounds, in buffer, hovered && !gui.IsReadOnly);
 
         var jump = FindJump(gui, textRect, textBounds, in buffer, hovered && !gui.IsReadOnly);
