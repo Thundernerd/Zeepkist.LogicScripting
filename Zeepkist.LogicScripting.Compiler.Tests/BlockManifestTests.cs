@@ -106,7 +106,7 @@ public class BlockManifestTests
     }
 
     [Fact]
-    public void NoName_IsNoBlockFunction()
+    public void NullName_IsNoBlockFunction()
     {
         Assert.False(BlockManifest.TryGetFunction(null, out _));
     }

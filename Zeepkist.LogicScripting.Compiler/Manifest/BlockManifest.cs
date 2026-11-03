@@ -405,7 +405,7 @@ public static class BlockManifest
     };
 
     /// <summary>
-    /// The Block Function with this name or alias.
+    /// The Block Function with this name or alias; none for a null name, such as a qualified call's callee.
     /// </summary>
     public static bool TryGetFunction(string name, out BlockType type)
     {
