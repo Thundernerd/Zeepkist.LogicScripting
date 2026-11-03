@@ -33,11 +33,12 @@ Modkist installs BepInEx and ZeepSDK.
 
 1. Open a level in the level editor.
 2. Press **F9** to open the Logic Script window.
-   You can also use the **Logic Script** menu in ZeepSDK's menu bar.
-   You can change the key in the mod's settings.
+   You can also choose **Open Script window** in the **Logic Script** menu of ZeepSDK's menu bar.
+   You can change the key, or set it to None, under **Toggle key** in the mod's settings.
 3. Click **New Script** and give it a name.
 4. Type your Script.
    The window checks it while you type and lists the errors under the text.
+   Click an error to go to its line.
 5. Click **Compile**, or press **Ctrl+Enter**.
 
 Compile places the blocks where the editor places a new block, in front of the camera.
@@ -72,7 +73,9 @@ The new group replaces the old one, at the same spot.
 - **Scripts**: two tabs. Switching between them leaves the editor as it is,
   and a dot marks the tab that holds what the editor shows.
   - **Scripts**: the Scripts in this level, and **New Script** pinned at the bottom of the tab.
-    Right-click a Script to rename it, select its blocks, or delete it.
+    Right-click a Script to rename it, select its blocks, or delete it, with or without its blocks.
+    A Script marked ● has changes you haven't compiled, ○ was never compiled,
+    and ! has blocks in the level but lost its text: compile it to store the text again.
     Under the list, when the level has any, are its **Orphaned Groups**:
     compiled blocks whose Script text the level no longer holds,
     for example because you deleted the block that holds the text.
@@ -83,38 +86,46 @@ The new group replaces the old one, at the same spot.
     See [Libraries](#libraries).
 
   The name and delete prompts, and what the last action did, show just above the New button, in view however long the list.
-  Hover a tab for its help. The window remembers which tab is shown and whether Orphaned Groups is collapsed.
+  Hover a tab for its help.
 - **Blocks**: two tabs.
   - **Placed blocks**: the blocks you placed by hand that the Script refers to.
-    Select blocks in the level and click **Insert selected** to add them to the Script.
-  - **Reference**: every block function, with its inputs, outputs and settings,
+    Click one to look at it in the level.
+    Select blocks in the level and click **Insert selected** to add a line for each at the caret.
+  - **Reference**: every block function and placed-only block, with its inputs, outputs and settings,
     under four headings, Inputs, Operators, Outputs and Movers, split the same way as the subfolders of the game's logic block folder.
     Under a fifth, Libraries, are your Libraries' functions, with their inputs and outputs.
     An input the function uses as a setting is marked `(setting)`.
     Click a heading to collapse it, and the window remembers which ones are collapsed.
     Type in the filter to search: only headings with a match show, and they show open.
 
+The « and » buttons fold the Scripts and Blocks sides away, and ▼ folds the error panel.
+The window remembers its place and size, these panels, which Scripts tab is shown and what's collapsed.
+
 The text editor knows the usual shortcuts:
-Ctrl+Z / Ctrl+Y to undo and redo, Ctrl+D to duplicate a line, Ctrl+Shift+K to delete a line,
-Ctrl+/ to comment a line out, Alt+Up / Alt+Down to move lines, and Tab / Shift+Tab to indent.
+Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) to undo and redo, Ctrl+D to duplicate lines, Ctrl+Shift+K to delete lines,
+Ctrl+/ to comment lines out or back in, Alt+Up / Alt+Down to move lines, Tab / Shift+Tab to indent,
+and Ctrl+Backspace / Ctrl+Delete to delete a word.
+On macOS, use Cmd for Ctrl and Option for Alt, except in Ctrl+Space.
 
 While you type a name, the editor lists the block functions, your Script's own functions and the defined names that match.
 It only lists names defined on an earlier line, except inside `delay(...)`, which can refer to any of them.
 Inside a function's body it lists only that function's inputs and the names its body defines. Outside a function it lists none of them.
 At the start of a line it also lists `function`, or inside a function's body, `end`.
 At the start of an argument it lists the call's inputs and settings by name first, leaving out those the call already has.
-A call to a placed block or to one of your functions lists only its inputs. After `default` it lists `hide:`.
+A call to a placed block, one of your functions or a Library's function lists only its inputs. After `default` it lists `hide:`.
 Starting an argument opens the list with the call's named arguments:
 typing the `(` of a call, or a comma or space before its next argument, or choosing a block function from the list.
 After a setting's `:` it lists the values the setting takes, such as the operators after `op:` or `true` and `false` after `hide:`.
 Typing the `:` or a space after it, or choosing the setting from the list, opens it. Number settings list nothing.
-After a Library's name and a `.` it lists the Library's functions, and typing the `.` opens it.
+After a name or a call and a `.` it lists that block's or function's outputs,
+and after a Library's name the Library's functions. Typing the `.` opens it.
 Up / Down choose one, Enter or Tab writes it, and Escape closes the list.
 Ctrl+Space opens the list at any time.
 To stop it opening by itself, turn off **Completion while typing** in the mod's settings.
 
 Inside a call's parentheses, a box above the line shows the call's inputs, in the order positional arguments fill them,
 and its settings, with the one you're writing highlighted and, for a setting, the values it takes.
+It works for block functions, placed blocks, your own functions and a Library's, like `timing.edge(`.
 Inside a call nested in another, it shows the inner one.
 Escape hides it until the cursor leaves the call.
 
@@ -211,7 +222,8 @@ roll = random(p.horn, min: 1, max: 6)
 
 A setting you leave out gets the value a block placed by hand has, which is usually 0 or off.
 So `random(press)` rolls between 0 and 0, and `generator()` has power 0.
-The one exception is `delay`, which needs `ticks:`: a Delay with 0 ticks breaks the level's logic.
+Two settings have no default: `delay` needs `ticks:`, because a Delay with 0 ticks breaks the level's logic,
+and `toggler` needs `targets:`.
 
 Some settings exist on many blocks:
 
@@ -367,7 +379,7 @@ The level doesn't need the mod to play them.
 ### Libraries
 
 A Library is a named set of functions you can call from any Script, in any level.
-Make one in the **Libraries** section of the window, under the Scripts,
+Make one with **New Library** in the window's **Libraries** tab,
 and write functions in it the same way as in a Script:
 
 ```logic
@@ -386,13 +398,15 @@ pressed = timing.edge(p.horn)
 power_display(pressed)
 ```
 
+- Pass the inputs in order or by name, as with your own functions: `timing.edge(x: p.horn)`.
 - A Library holds only functions.
   Inside it, call its own functions without the prefix, and other Libraries' with theirs.
 - A Library can't use `placed(...)`: a UID belongs to one level.
   Pass placed blocks in as inputs instead.
 - The window checks a Library while you type, like a Script.
   A Library has no Compile: compile a Script that calls it.
-- A Library's name uses letters, digits and `_`, and can't be a block function's.
+- A Library's name uses letters, digits and `_`, and doesn't start with a digit.
+  It can't be a block function's or a word like `end`, or another Library's in different case.
   Scripts write it exactly, so renaming a Library breaks the Scripts that call it by the old name.
 - The mod saves your Libraries in `libraries.json` in its storage folder, a second after your last change.
 - Changing a Library changes the blocks of every Script that calls it, the next time you compile that Script.
@@ -522,7 +536,7 @@ The editor's names end in "Logic Block", left out here.
 | `wheel_telemetry` | `player`; `mode`: `grounded`, `slipping`, `surface`, `physics_material` |
 | `passthrough` | `style`: `normal`, `skinny_1h`, `skinny_2h`, `skinny_3h` |
 | `power_display` | `style`: `normal`, `compact` |
-| `toggler` | `targets`: a list of 1 to 8 placed blocks, like `[wall_1, wall_2]` |
+| `toggler` | `targets` (required): a list of 1 to 8 placed blocks, like `[wall_1, wall_2]` |
 | `death`, `parking`, `state_changer`, `property_multiplier` | `player` (`all` or `1`–`4`) |
 | `force_giver` | `player` (`all` or `1`–`4`); `force_mode`: `acceleration`, `force`, `impulse`, `velocity_change`; `space`: `local`, `global`, `follow_velocity`, `local_rotation`, `global_rotation`; `particles`: `none`, `booster`, `slowster`, `feather`, `flying`, `fan` |
 
