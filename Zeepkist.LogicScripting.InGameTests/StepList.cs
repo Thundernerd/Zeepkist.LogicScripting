@@ -220,7 +220,7 @@ internal static class StepList
     }
 
     /// <summary>
-    /// <c>&lt;pixels&gt;</c>, below 0 to drag up, and optionally <c>over &lt;frames&gt;</c>, 1 when left out.
+    /// <c>&lt;pixels&gt;</c>, below 0 to drag up, or left when <paramref name="sideways"/>, and optionally <c>over &lt;frames&gt;</c>, 1 when left out.
     /// </summary>
     private static ScenarioStep DragWindowEdge(string step, string argument, bool sideways)
     {

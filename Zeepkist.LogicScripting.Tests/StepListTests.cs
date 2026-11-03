@@ -420,24 +420,16 @@ public class StepListTests
     }
 
     [Theory]
-    [InlineData("drag-window-edge 300", 300, 1)]
-    [InlineData("drag-window-edge -1000 over 10", -1000, 10)]
-    [InlineData("drag-window-edge +50  over  2", 50, 2)]
-    public void DragWindowEdge_ReadsThePixels_AndTheFrames(string line, int pixels, int frames)
+    [InlineData("drag-window-edge 300", 300, 1, false)]
+    [InlineData("drag-window-edge -1000 over 10", -1000, 10, false)]
+    [InlineData("drag-window-edge +50  over  2", 50, 2, false)]
+    [InlineData("drag-window-edge-sideways 300", 300, 1, true)]
+    [InlineData("drag-window-edge-sideways -1000 over 10", -1000, 10, true)]
+    public void DragWindowEdge_ReadsThePixels_TheFrames_AndTheDirection(string line, int pixels, int frames, bool sideways)
     {
         var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
 
-        Assert.Equal((pixels, frames, false), (step.Pixels, step.Frames, step.Sideways));
-    }
-
-    [Theory]
-    [InlineData("drag-window-edge-sideways 300", 300, 1)]
-    [InlineData("drag-window-edge-sideways -1000 over 10", -1000, 10)]
-    public void DragWindowEdgeSideways_ReadsThePixels_AndTheFrames(string line, int pixels, int frames)
-    {
-        var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
-
-        Assert.Equal((pixels, frames, true), (step.Pixels, step.Frames, step.Sideways));
+        Assert.Equal((pixels, frames, sideways), (step.Pixels, step.Frames, step.Sideways));
     }
 
     [Fact]

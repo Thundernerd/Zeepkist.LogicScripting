@@ -21,7 +21,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
     }
 
     /// <summary>
-    /// How far the mouse moves down, or up when below 0, or right and left when <see cref="Sideways"/>.
+    /// How far the mouse moves down, or up when below 0, or right, or left, when <see cref="Sideways"/>.
     /// </summary>
     public int Pixels { get; }
 
@@ -73,8 +73,9 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
                 }
 
-                // Imui counts pixels up the screen, as Unity does
                 var move = GetMove(frame + 1);
+
+                // Imui counts pixels up the screen, as Unity does, so a move down is below 0
                 if (!ImuiMouse.Drag(Sideways ? new Vector2(move, 0) : new Vector2(0, -move)))
                 {
                     context.Fail($"frame {frame}: Imui has no backend to send the mouse to");
