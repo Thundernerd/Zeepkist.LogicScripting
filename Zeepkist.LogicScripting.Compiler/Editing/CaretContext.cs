@@ -200,7 +200,7 @@ public sealed class CaretContext
         var statementStart = FindStatementStart(tokens, word, out var canReferAhead);
         var inCall = kind is CaretContextKind.Argument or CaretContextKind.ArgumentName;
         var calleeLibrary = inCall ? call.Library : null;
-        var callee = calleeLibrary != null ? call.LibraryFunction : inCall ? call.Callee : null;
+        var callee = inCall ? call.Function : null;
         var positionalArguments = 0;
         var isOutput = kind == CaretContextKind.Output;
         var dottedName = isOutput && !isDottedCall ? tokens[dotted].Text : null;

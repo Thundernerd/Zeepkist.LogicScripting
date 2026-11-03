@@ -31,12 +31,21 @@ internal sealed class OpenCall
     /// The Library named in a qualified call, <c>timing</c> in <c>timing.edge(x)</c>; null when the call isn't to a
     /// Library's Function, and for one the parser rejects.
     /// </summary>
-    public string Library => Lexer.FindLibraryName(_tokens, _paren - 1) is var library and >= 0 ? _tokens[library].Text : null;
+    public string Library
+    {
+        get
+        {
+            var library = Lexer.FindLibraryName(_tokens, _paren - 1);
+            return library >= 0 ? _tokens[library].Text : null;
+        }
+    }
 
     /// <summary>
-    /// The <see cref="Library"/>'s Function it calls, <c>edge</c> in <c>timing.edge(x)</c>; null when it doesn't call one.
+    /// The <see cref="Callee"/>, or for a call to a Library's Function, that Function's name without its
+    /// <see cref="Library"/>'s, <c>edge</c> in <c>timing.edge(x)</c>, which is always the Library's even when the Script
+    /// defines one by that name; null for a qualified call the parser rejects.
     /// </summary>
-    public string LibraryFunction => Library == null ? null : _tokens[_paren - 1].Text;
+    public string Function => Callee ?? (Library == null ? null : _tokens[_paren - 1].Text);
 
     /// <summary>
     /// Where its opening parenthesis is in the text, which tells one call from another.

@@ -50,10 +50,9 @@ public sealed class CallHelp
     /// <summary>
     /// The innermost call around the caret whose function is a Block Function, one of the Script's own Functions with
     /// inputs and a first line the compiler accepts, or a Library's Function with inputs, or whose name is a Placed
-    /// Block Reference to a block with inputs; null when there's none, and inside a comment or string. A qualified call
-    /// is always to a Library's Function, even when the Script defines one by that name. A named argument is
-    /// active from its name on; any other argument gives the input after those the positional arguments before it give,
-    /// unless a named argument comes before it, which a positional one can't follow.
+    /// Block Reference to a block with inputs; null when there's none, and inside a comment or string. A named argument
+    /// is active from its name on; any other argument gives the input after those the positional arguments before it
+    /// give, unless a named argument comes before it, which a positional one can't follow.
     /// </summary>
     /// <param name="text"></param>
     /// <param name="caret"></param>
@@ -83,7 +82,7 @@ public sealed class CallHelp
         var enclosingCalls = calls.Select(c => c.OpenParen).ToList();
         foreach (var call in calls)
         {
-            var callee = call.LibraryFunction ?? call.Callee;
+            var callee = call.Function;
             var items = call.Library != null
                 ? GetLibraryItems(call.Library, callee, findLibrary)
                 : GetItems(text, callee, call.OpenParen, functions, findPlacedBlock);
@@ -128,7 +127,7 @@ public sealed class CallHelp
 
     private static List<CallHelpItem> GetLibraryItems(string library, string function, Func<string, string> findLibrary)
     {
-        var definition = Completion.FindLibraryFunction(library, function, findLibrary);
+        var definition = LibraryFunctions.Find(library, function, findLibrary);
         return definition == null ? [] : definition.Inputs.Select(i => InputItem(i.Name)).ToList();
     }
 

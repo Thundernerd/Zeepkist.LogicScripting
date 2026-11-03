@@ -148,8 +148,7 @@ public static class Completion
     /// The named arguments the call doesn't have yet: a Block Function's inputs and Settings, a Function's or a
     /// Library's Function's inputs, or a Placed Block Reference's inputs, since its Settings can't be changed. Inputs
     /// its positional arguments give are left out, and a Function whose first line the compiler rejects has none. A
-    /// name defined twice is the first definition, which the compiler keeps. A qualified call is always to a Library's
-    /// Function, even when the Script defines one by that name.
+    /// name defined twice is the first definition, which the compiler keeps.
     /// </summary>
     private static IEnumerable<CompletionItem> GetArgumentItems(
         CaretContext context,
@@ -158,7 +157,7 @@ public static class Completion
     {
         if (context.CalleeLibrary != null)
         {
-            var libraryFunction = FindLibraryFunction(context.CalleeLibrary, context.Callee, findLibrary);
+            var libraryFunction = LibraryFunctions.Find(context.CalleeLibrary, context.Callee, findLibrary);
             return libraryFunction == null ? [] : GetInputItems(context, libraryFunction.Inputs.Select(i => i.Name));
         }
 
@@ -223,29 +222,9 @@ public static class Completion
     /// </summary>
     private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
     {
-        return GetCallableLibraryFunctions(library, findLibrary)
+        return LibraryFunctions.GetCallable(library, findLibrary)
             .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, DescribeInputs(f.Inputs.Select(i => i.Name))))
             .OrderBy(i => i.Label, StringComparer.Ordinal);
-    }
-
-    /// <summary>
-    /// The Library's Function by its name; null when the Library has none by that name, or an error.
-    /// </summary>
-    internal static FunctionDefinition FindLibraryFunction(string library, string name, Func<string, string> findLibrary)
-    {
-        return GetCallableLibraryFunctions(library, findLibrary).FirstOrDefault(f => f.Name.Name == name);
-    }
-
-    /// <summary>
-    /// None from a Library with an error, since the compiler rejects every call into it.
-    /// </summary>
-    private static IEnumerable<FunctionDefinition> GetCallableLibraryFunctions(string library, Func<string, string> findLibrary)
-    {
-        if (findLibrary == null)
-            return [];
-
-        var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
-        return hasErrors ? [] : functions.Select(f => f.Function);
     }
 
     private static IReadOnlyList<string> GetNameOutputs(CaretContext context, IReadOnlyList<DefinedName> definedNames)
@@ -287,7 +266,7 @@ public static class Completion
 
     private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
     {
-        var function = FindLibraryFunction(context.DottedLibrary, context.DottedCallee, findLibrary);
+        var function = LibraryFunctions.Find(context.DottedLibrary, context.DottedCallee, findLibrary);
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 
