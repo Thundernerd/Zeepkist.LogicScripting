@@ -106,15 +106,7 @@ public sealed class CallHelp
         Func<string, PlacedBlock> findPlacedBlock)
     {
         if (BlockManifest.TryGetFunction(callee, out var type))
-        {
-            var items = GetInputItems(type);
-            items.AddRange(type.Settings.Select(SettingItem));
-            if (type.HasStyles)
-                items.Add(new CallHelpItem(BlockType.StyleName, false, string.Join(", ", type.Styles.Select(s => s.Name))));
-
-            items.Add(SettingItem(BlockSetting.Hide));
-            return items;
-        }
+            return type.Arguments.Select(a => new CallHelpItem(a.Name, a.IsInput, a.Detail)).ToList();
 
         var function = functions.FirstOrDefault(f => f.Name != null && f.Name == callee);
         if (function != null)
@@ -138,12 +130,7 @@ public sealed class CallHelp
 
     private static CallHelpItem InputItem(string name)
     {
-        return new CallHelpItem(name, true, "input");
-    }
-
-    private static CallHelpItem SettingItem(BlockSetting setting)
-    {
-        return new CallHelpItem(setting.Name, false, BlockReference.DescribeValues(setting));
+        return new CallHelpItem(name, true, BlockArgument.InputDetail);
     }
 
     private static int FindActive(string text, OpenCall call, int caret, List<CallHelpItem> items)
