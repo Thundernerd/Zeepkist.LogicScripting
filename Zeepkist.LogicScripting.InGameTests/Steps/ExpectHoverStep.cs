@@ -1,13 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
-/// Passes when the hover box shows and a line of it, as it's drawn, contains the text, matching case. A row's name
-/// and value are one line, a space between.
+/// Passes when the hover box shows and its text, as it's drawn, contains the text, matching case. A row's name and
+/// value are one line, a space between, and the lines are separated by <c>|</c>.
 /// </summary>
 internal sealed class ExpectHoverStep : ScenarioStep
 {
@@ -40,9 +39,6 @@ internal sealed class ExpectHoverStep : ScenarioStep
             context.Fail(lines == null ? "the hover box doesn't show" : "the hover box doesn't show it", Text, actual);
     }
 
-    /// <summary>
-    /// Its lines, separated by <c>|</c>, or <see cref="NoHover"/>.
-    /// </summary>
     public static string Describe(IReadOnlyList<string> lines)
     {
         return lines == null ? NoHover : string.Join(" | ", lines);
@@ -50,6 +46,6 @@ internal sealed class ExpectHoverStep : ScenarioStep
 
     private bool Contains(IReadOnlyList<string> lines)
     {
-        return lines != null && lines.Any(l => l.IndexOf(Text, StringComparison.Ordinal) >= 0);
+        return lines != null && Describe(lines).IndexOf(Text, StringComparison.Ordinal) >= 0;
     }
 }

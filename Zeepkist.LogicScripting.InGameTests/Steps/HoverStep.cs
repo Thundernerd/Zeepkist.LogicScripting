@@ -46,9 +46,9 @@ internal sealed class HoverStep : ScenarioStep
         // A quarter of the way across, so the character is the one under the mouse and not the one before it
         var point = new Vector2(drawn.Character.X + (drawn.Character.W / 4), drawn.Character.Y + (drawn.Character.H / 2));
         var where = $"the mouse at x {RectCheck.Pixels(point.x)}, y {RectCheck.Pixels(point.y)}";
-        if (!drawn.Visible.Contains(point))
+        if (!drawn.TextBounds.Contains(point))
         {
-            context.Fail("it isn't in view in the editor", RectCheck.Describe(drawn.Visible), where);
+            context.Fail("it isn't in view in the editor", RectCheck.Describe(drawn.TextBounds), where);
             yield break;
         }
 

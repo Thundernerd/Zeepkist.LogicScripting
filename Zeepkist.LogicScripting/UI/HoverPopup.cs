@@ -43,16 +43,21 @@ internal sealed partial class HoverPopup
     public int DrawnFrame { get; private set; } = -1;
 
     /// <summary>
-    /// The text it drew the last time, a line each, with a row's name and value on one line, a space between.
+    /// The text it drew this frame, a line each, with a row's name and value on one line, a space between; null when it
+    /// didn't draw this frame.
     /// </summary>
     public IReadOnlyList<string> DrawnLines
     {
         get
         {
+            if (DrawnFrame != Time.frameCount)
+                return null;
+
             List<string> lines = [];
             float? top = null;
             foreach (var piece in _pieces)
             {
+                // A row's name and value are laid out from the same top, so only rounding can tell them apart
                 if (top is { } lineTop && Mathf.Abs(piece.Rect.Top - lineTop) < 0.5f)
                 {
                     lines[lines.Count - 1] += " " + piece.Text;

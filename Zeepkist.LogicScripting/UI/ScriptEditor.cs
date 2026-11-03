@@ -67,18 +67,15 @@ internal sealed partial class ScriptEditor
     /// <inheritdoc cref="HoverPopup.RestingFrame"/>
     public int HoverRestingFrame => _hover.RestingFrame;
 
-    /// <inheritdoc cref="HoverPopup.DrawnFrame"/>
-    public int HoverDrawnFrame => _hover.DrawnFrame;
-
     /// <inheritdoc cref="HoverPopup.DrawnLines"/>
     public IReadOnlyList<string> HoverLines => _hover.DrawnLines;
 
     /// <summary>
     /// Where the character at <paramref name="index"/> was drawn the last time the editor was, in Imui's pixels, with
-    /// the part of the text that showed and Unity's frame count then; null before the first <see cref="Draw"/>. A
+    /// the bounds of the text that showed and Unity's frame count then; null before the first <see cref="Draw"/>. A
     /// line's end is as wide as a space, as the hover takes it.
     /// </summary>
-    public (ImRect Character, ImRect Visible, int Frame)? FindDrawnCharacter(int index)
+    public (ImRect Character, ImRect TextBounds, int Frame)? FindDrawnCharacter(int index)
     {
         if (_drawn is not { } drawn)
             return null;
