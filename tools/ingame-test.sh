@@ -9,10 +9,12 @@
 #   --timeout    give up and kill the game after this many seconds (default 300)
 #   scenarios    run in the order given (default: the test plugin's Scenarios/smoke.zlstest)
 #
-# ZEEPKIST_DIR overrides where the game is installed. Results go to .ingame-test/<run id>/.
+# ZEEPKIST_DIR overrides where the game is installed, and STEAM the command that starts it (default steam). Results go
+# to .ingame-test/<run id>/.
 set -euo pipefail
 
 app_id=1440670
+steam="${STEAM:-steam}"
 mod_guid=Zeepkist.LogicScripting
 test_guid=Zeepkist.LogicScripting.InGameTests
 build=1
@@ -29,7 +31,7 @@ while (($#)); do
             shift
             ;;
         -h | --help)
-            sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         -*)
@@ -114,6 +116,7 @@ plugins="$bepinex/plugins"
 prefix="$(cd "$game/../.." && pwd)/compatdata/$app_id/pfx"
 [[ -d "$prefix" ]] || fail "No Proton prefix at $prefix, so the mod's data can't be backed up. Is $game in a Steam library?"
 game_data="$prefix/drive_c/users/steamuser/AppData/Roaming/Zeepkist"
+game_log="$bepinex/LogOutput.log"
 mod_data="$game_data/Mods/$mod_guid"
 # Where the player's own mod data waits while the game runs without it, so a run killed outright leaves it findable
 set_aside_data="$game_data/zls-ingame-test-mod-data"
@@ -151,6 +154,7 @@ deployed=0
 timed_out=0
 interrupted=0
 passed=false
+launch_failure=""
 
 stop_game() {
     game_running || return 0
@@ -276,7 +280,8 @@ quit_exceptions() {
 # Copies what the run left in the game folder into the run folder, so an interrupted or failed run has results too
 collect() {
     [[ -d "$test_deploy/out" ]] && cp -a "$test_deploy/out/." "$run_dir/"
-    ((launched)) && cp "$bepinex/LogOutput.log" "$run_dir/LogOutput.log"
+    # The log is removed before the launch, so one that's there now is this run's
+    ((launched)) && [[ -f "$game_log" ]] && cp "$game_log" "$run_dir/LogOutput.log"
 
     passed=false
     if [[ -f "$run_dir/results.json" ]]; then
@@ -322,8 +327,11 @@ collect() {
             quit_exceptions
             echo
             jq -r '.Screenshots[] | "- ![\(.)](\(.))"' "$run_dir/results.json"
-        else
+        elif [[ -f "$run_dir/LogOutput.log" ]]; then
             echo "No results: the test plugin didn't write any. See LogOutput.log."
+        else
+            echo "No results, and the game wrote no log for this run: it didn't start, or BepInEx didn't load."
+            [[ -n "$launch_failure" ]] && echo "Steam says its launch $launch_failure."
         fi
     } >"$run_dir/results.md"
 }
@@ -477,15 +485,33 @@ for scenario in "${scenarios[@]}"; do
 done
 jq -n --arg runId "$run_id" '{runId: $runId, scenarios: $ARGS.positional}' --args "${scenario_files[@]}" >"$test_deploy/run.json"
 
+# BepInEx writes a new log as the game starts, so whatever log is there afterwards is this run's
+rm -f "$game_log"
 log "Starting the game"
 launched=1
 # Closing the lock for it too, as a Steam process can outlive this script
-steam -applaunch "$app_id" -zls-ingame-test "$run_id" >/dev/null 2>&1 9>&- &
+"$steam" -applaunch "$app_id" -zls-ingame-test "$run_id" >/dev/null 2>&1 9>&- &
 disown
+
+# Why Steam didn't start the game, such as "failed with AppError_19", from what its log says after this run's launch
+find_launch_failure() {
+    local steam_log
+    for steam_log in "$HOME/.local/share/Steam/logs/console_log.txt" "$HOME/.steam/steam/logs/console_log.txt"; do
+        [[ -f "$steam_log" ]] || continue
+        launch_failure="$(awk -v launch="'-zls-ingame-test' '$run_id'" '
+            index($0, launch) { found = 1; next }
+            found && /GameAction \[AppID '"$app_id"',.*LaunchApp failed/ { sub(/.*LaunchApp /, ""); sub(/ with ""\r?$/, ""); print; exit }
+        ' "$steam_log")"
+        [[ -n "$launch_failure" ]] && log "Steam says its launch $launch_failure"
+        return 0
+    done
+}
 
 results="$test_deploy/out/results.json"
 deadline=$((SECONDS + timeout))
 started=0
+# Steam starts the game's launcher within seconds, or not at all, such as when it has an update to install first
+start_deadline=$((SECONDS + 60))
 while :; do
     if [[ -f "$results" ]] && [[ "$(jq -r '.Done' "$results" 2>/dev/null)" == true ]]; then
         break
@@ -494,6 +520,10 @@ while :; do
         started=1
     elif ((started)); then
         log "The game quit before the run finished"
+        break
+    elif ((SECONDS > start_deadline)); then
+        log "The game didn't start within 60 seconds"
+        find_launch_failure
         break
     fi
     if ((SECONDS > deadline)); then
@@ -515,7 +545,7 @@ stop_game
 
 restore
 echo
-grep -E '^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
+grep -E '^- (PASS|FAIL)|^  - |^## |^\*\*|^No results|^Steam says|^Exceptions logged|^- ([0-9]+× )?`|^None\.$|^Not read' "$run_dir/results.md" | sed 's/\*\*//g; s/`//g'
 log "Results in $run_dir"
 if [[ "$passed" == true ]]; then
     log "Passed: $(jq -r '[.Steps[].Scenario | select(. != "")] | unique | join(", ")' "$run_dir/results.json")"
