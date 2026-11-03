@@ -112,6 +112,7 @@ public class CallHelpTests
     [InlineData("x = logic(a, logic(1, 2), op: |", "op:")]
     [InlineData("x = logic(logic(1, |), 2)", "b")]
     [InlineData("x = logic(1, logic(|", "a")]
+    [InlineData("function f(a, b) -> c\nend\nx = f(1, |", "b")]
     public void Active_TheInputOrSettingTheArgumentAtTheCaretGives(string text, string active)
     {
         var help = At(text);
@@ -199,6 +200,18 @@ public class CallHelpTests
     public void NestedCalls_InACallToAFunctionWhoseFirstLineTheCompilerRejects_TheCallAroundIt()
     {
         Assert.Equal("logic", At("function f(a, a)\nend\nx = logic(1, f(|").Callee);
+    }
+
+    [Fact]
+    public void None_ForAQualifiedCall_EvenWhenTheScriptDefinesItsFunction()
+    {
+        Assert.Null(At("function f(a, b) -> c\nend\nx = timing.f(|"));
+    }
+
+    [Fact]
+    public void NestedCalls_InAQualifiedCall_TheCallAroundIt()
+    {
+        Assert.Equal("logic", At("function f(a, b) -> c\nend\nx = logic(timing.f(|").Callee);
     }
 
     [Fact]

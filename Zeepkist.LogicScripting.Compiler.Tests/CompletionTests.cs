@@ -336,12 +336,33 @@ public class CompletionTests
     [InlineData("function f(a, b)\nend\nf(1, |", new[] { "b:" })]
     [InlineData("function f(a, b)\nend\nf(b: 1, |", new[] { "a:" })]
     [InlineData("f(|\nfunction f(a, b)\nend", new[] { "a:", "b:" })]
+    [InlineData("function f(a, b) -> c\nend\nx = f(1, |", new[] { "b:" })]
+    [InlineData("function f(a, b) -> c\nend\nf(1, b: 2, |", new string[0])]
+    [InlineData("function f(a, b)\nend\nfunction g(x)\n    y = f(x, |\nend", new[] { "b:" })]
     public void Items_InACallToAFunction_ItsInputsItDoesntHaveYet(string text, string[] arguments)
     {
         var items = Completion.GetItems(At(text)).Where(i => i.Kind == CompletionKind.Argument).ToList();
 
         Assert.Equal(arguments, items.Select(i => i.Label));
         Assert.All(items, i => Assert.Equal("input", i.Detail));
+    }
+
+    [Theory]
+    [InlineData("function f(a, b) -> c\nend\nx = timing.f(|")]
+    [InlineData("function f(a, b) -> c\nend\nx = timing.f(1, |")]
+    [InlineData("x = timing.logic(|")]
+    public void Items_InAQualifiedCall_NoneOfTheScriptsFunctionsInputs(string text)
+    {
+        Assert.DoesNotContain(Completion.GetItems(At(text)), i => i.Kind == CompletionKind.Argument);
+    }
+
+    [Fact]
+    public void Accept_AFunctionsInput_AddsItsColon()
+    {
+        var context = At("function f(a, b) -> c\nend\nx = f(1, |");
+        var item = Completion.GetItems(context).First(i => i.Label == "b:");
+
+        Assert.Equal("function f(a, b) -> c\nend\nx = f(1, b: |", Format(Completion.Accept(context, item)));
     }
 
     [Fact]
@@ -1025,6 +1046,7 @@ public class CompletionTests
     [InlineData("default hide:\n|")]
     [InlineData("x = logic(a)\nop:\n|")]
     [InlineData("lamp_1 = placed(\"L\")\nlamp_1(red: |")]
+    [InlineData("x = timing.logic(a, op: |")]
     public void Expression_AfterTheColonOfAnInputOrPlacedBlocksOrAnythingElse(string text)
     {
         Assert.Equal(CaretContextKind.Expression, At(text).Kind);
