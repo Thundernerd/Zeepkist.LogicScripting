@@ -19,8 +19,8 @@ internal sealed class ExpectNoCompletionStep : ScenarioStep
 
         var items = context.Window.CompletionItems;
         if (items.Count == 0)
-            context.Pass("the list is closed", "(the list is closed)", "(the list is closed)");
+            context.Pass("the list is closed", CompletionRows.Closed, CompletionRows.Closed);
         else
-            context.Fail("the completion list is open", "(the list is closed)", string.Join(", ", items.Select(i => i.Label)));
+            context.Fail("the completion list is open", CompletionRows.Closed, string.Join(", ", items.Select(i => i.Label)));
     }
 }

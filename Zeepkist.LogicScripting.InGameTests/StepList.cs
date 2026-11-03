@@ -59,6 +59,7 @@ internal static class StepList
         ["drag-window-edge"] = DragWindowEdge,
         ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
         ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
+        ["expect-window-start-rect"] = (step, argument) => None(step, argument, new ExpectWindowStartRectStep()),
         ["library-read-failed"] = (step, argument) => new LibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
         ["startup-warning"] = (step, argument) => new StartupWarningStep(StepArgument.Choice(step, argument, _onOff)),
         ["expect-library-read-failed"] = (step, argument) => new ExpectLibraryReadFailedStep(StepArgument.Choice(step, argument, _onOff)),
@@ -76,7 +77,8 @@ internal static class StepList
         ["caret-at-end"] = (step, argument) => None(step, argument, new PlaceCaretStep(atEnd: true)),
         ["complete"] = (step, argument) => None(step, argument, new CompleteStep()),
         ["expect-completion"] = (step, argument) => ExpectCompletion(StepArgument.Text(step, argument, "a row's label, and optionally its detail")),
-        ["expect-completion-no-detail"] = ExpectCompletionNoDetail,
+        ["expect-completion-no-detail"] = (step, argument) => new ExpectCompletionStep(ReadLabel(step, argument), string.Empty),
+        ["expect-completion-missing"] = (step, argument) => new ExpectCompletionMissingStep(ReadLabel(step, argument)),
         ["expect-call-help"] = (step, argument) => new ExpectCallHelpStep(StepArgument.Text(step, argument, "the text to look for")),
         ["expect-call-help-active"] = (step, argument) => new ExpectCallHelpActiveStep(StepArgument.Text(step, argument, "the highlighted input's or Setting's label")),
         ["expect-call-help-no-active"] = (step, argument) => None(step, argument, new ExpectCallHelpActiveStep(null)),
@@ -125,16 +127,14 @@ internal static class StepList
     }
 
     /// <summary>
-    /// A label, which has no spaces. The detail can't be left empty on <c>expect-completion</c>'s line, as the line's
-    /// trailing spaces are taken off.
+    /// A completion row's label, which has no spaces. <c>expect-completion-no-detail</c> takes only the label, as the
+    /// detail can't be left empty on <c>expect-completion</c>'s line: the line's trailing spaces are taken off.
     /// </summary>
-    private static ScenarioStep ExpectCompletionNoDetail(string step, string argument)
+    private static string ReadLabel(string step, string argument)
     {
         var what = "a row's label";
         var label = StepArgument.Text(step, argument, what);
-        return label.IndexOf(' ') < 0
-            ? new ExpectCompletionStep(label, string.Empty)
-            : throw new ScenarioFormatException($"{step} takes {what}, with no spaces, not '{argument}'");
+        return label.IndexOf(' ') < 0 ? label : throw new ScenarioFormatException($"{step} takes {what}, with no spaces, not '{argument}'");
     }
 
     /// <summary>

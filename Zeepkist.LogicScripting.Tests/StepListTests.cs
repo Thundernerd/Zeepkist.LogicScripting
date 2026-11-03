@@ -41,6 +41,7 @@ public class StepListTests
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
+    [InlineData("expect-window-start-rect", typeof(ExpectWindowStartRectStep))]
     [InlineData("library-read-failed on", typeof(LibraryReadFailedStep))]
     [InlineData("library-read-failed off", typeof(LibraryReadFailedStep))]
     [InlineData("startup-warning on", typeof(StartupWarningStep))]
@@ -61,6 +62,7 @@ public class StepListTests
     [InlineData("complete", typeof(CompleteStep))]
     [InlineData("expect-completion t", typeof(ExpectCompletionStep))]
     [InlineData("expect-completion-no-detail function", typeof(ExpectCompletionStep))]
+    [InlineData("expect-completion-missing op:", typeof(ExpectCompletionMissingStep))]
     [InlineData("expect-call-help logic(", typeof(ExpectCallHelpStep))]
     [InlineData("expect-call-help-active op:", typeof(ExpectCallHelpActiveStep))]
     [InlineData("expect-call-help-no-active", typeof(ExpectCallHelpActiveStep))]
@@ -127,12 +129,22 @@ public class StepListTests
     [Theory]
     [InlineData("expect-completion-no-detail", "takes a row's label")]
     [InlineData("expect-completion-no-detail f (a, a)", "with no spaces")]
-    public void ExpectCompletionNoDetail_TakesOneLabel(string line, string message)
+    [InlineData("expect-completion-missing", "takes a row's label")]
+    [InlineData("expect-completion-missing a b", "with no spaces")]
+    public void TheLabelOnlyCompletionSteps_TakeOneLabel(string line, string message)
     {
         var scenario = ScenarioParser.Parse("steps", line, out var error);
 
         Assert.Null(scenario);
         Assert.Contains(message, error);
+    }
+
+    [Fact]
+    public void ExpectCompletionMissing_ReadsTheLabel()
+    {
+        var step = Assert.IsType<ExpectCompletionMissingStep>(Assert.Single(ScenarioParser.Parse("steps", "expect-completion-missing a:", out _).Steps));
+
+        Assert.Equal("a:", step.Label);
     }
 
     [Theory]
@@ -350,6 +362,7 @@ public class StepListTests
     [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
     [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
     [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
+    [InlineData("expect-window-start-rect now", "expect-window-start-rect takes nothing after it")]
     public void TheLayoutSteps_WithAWrongArgument_Fail(string line, string error)
     {
         ScenarioParser.Parse("steps", line, out var actual);

@@ -254,16 +254,21 @@ internal sealed partial class ScriptWindow
         public KeptState RememberKeptState()
         {
             return new KeptState(
-                _window._state.Width > 0 && _window._state.Height > 0 ? WindowRect : null,
+                DrawnWindowRect,
                 _window._state.ShowLibraries,
                 _window._showLibraryReadFailed,
                 _window._showStartupWarning);
         }
 
         /// <summary>
+        /// The window's rect as Imui last drew it, or null when it was never drawn.
+        /// </summary>
+        public ImRect? DrawnWindowRect => _window._state.Width > 0 && _window._state.Height > 0 ? WindowRect : null;
+
+        /// <summary>
         /// Puts back what <see cref="RememberKeptState"/> remembered, and turns back on the styles
         /// <see cref="TurnOffStyle"/> turned off. A closed window takes the size and position when it next opens. With no
-        /// rect remembered, it gets the size it first opens at, in the middle of the screen, as it first opens.
+        /// rect remembered the window was never drawn, so it still opens at its first size and position.
         /// </summary>
         public void PutBackKeptState(KeptState state)
         {
@@ -272,11 +277,6 @@ internal sealed partial class ScriptWindow
             {
                 SetWindowSize(rect.W, rect.H);
                 _window._requestedRect.MoveTo(new Vector2(rect.X, rect.Top));
-            }
-            else
-            {
-                SetWindowSize(DefaultWidth, DefaultHeight);
-                CenterWindow();
             }
 
             ShowTab(state.ShowLibraries);
@@ -322,6 +322,9 @@ internal sealed partial class ScriptWindow
         {
             _window._edited.Editor.RequestCompletion();
         }
+
+        /// <inheritdoc cref="ScriptEditor.IsCompletionRequestPending"/>
+        public bool IsCompletionRequestPending => _window._edited?.Editor.IsCompletionRequestPending ?? false;
 
         /// <inheritdoc cref="ScriptEditor.HoldSentEscape"/>
         public void HoldSentEscape()

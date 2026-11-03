@@ -47,6 +47,9 @@ internal sealed class CompletionPopup
 
     public bool IsOpen => _session.IsOpen;
 
+    /// <inheritdoc cref="CompletionSession.IsRequestPending"/>
+    public bool IsRequestPending => _session.IsRequestPending;
+
     /// <summary>
     /// The list's rows; empty while it's closed.
     /// </summary>

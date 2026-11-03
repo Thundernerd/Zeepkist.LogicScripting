@@ -32,18 +32,13 @@ internal sealed class ExpectCompletionStep : ScenarioStep
 
         yield return context.WaitUntil(() => context.Window.CompletionItems.Any(Matches), WaitSeconds);
 
-        var expected = Detail == null ? Label : Detail.Length == 0 ? $"{Label} (no detail)" : Describe(Label, Detail);
+        var expected = Detail == null ? Label : Detail.Length == 0 ? $"{Label} (no detail)" : CompletionRows.Describe(Label, Detail);
         var items = context.Window.CompletionItems;
-        var actual = items.Count == 0 ? "(the list is closed)" : string.Join(", ", items.Select(i => Describe(i.Label, i.Detail)));
+        var actual = CompletionRows.Describe(items);
         if (items.Any(Matches))
             context.Pass(actual, expected, actual);
         else
             context.Fail("the completion list has no such row", expected, actual);
-    }
-
-    private static string Describe(string label, string detail)
-    {
-        return detail.Length == 0 ? label : $"{label} ({detail})";
     }
 
     private bool Matches(CompletionItem item)
