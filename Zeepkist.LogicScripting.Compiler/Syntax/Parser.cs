@@ -462,9 +462,23 @@ internal sealed partial class Parser
         }
     }
 
+    /// <summary>
+    /// Whether the line from <paramref name="index"/> starts a definition or a Function, or is a Function's
+    /// <c>end</c>.
+    /// </summary>
+    public static bool IsStatementStart(List<Token> tokens, int index)
+    {
+        return IsDefinitionStart(tokens, index) || IsFunctionStart(tokens, index) || IsEndLine(tokens, index);
+    }
+
     private bool IsDefinitionStart()
     {
-        return Current.Kind == TokenKind.Name && Peek(1).Kind == TokenKind.Equals;
+        return IsDefinitionStart(_tokens, _index);
+    }
+
+    private static bool IsDefinitionStart(List<Token> tokens, int index)
+    {
+        return tokens[index].Kind == TokenKind.Name && tokens[index + 1].Kind == TokenKind.Equals;
     }
 
     private bool IsFunctionStart()
@@ -555,7 +569,7 @@ internal sealed partial class Parser
             return;
 
         _index++;
-        if (IsDefinitionStart() || IsFunctionStart() || IsEndLine())
+        if (IsStatementStart(_tokens, _index))
             return;
 
         SkipLine();

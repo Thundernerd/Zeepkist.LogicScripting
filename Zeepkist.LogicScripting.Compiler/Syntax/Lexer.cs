@@ -175,20 +175,12 @@ internal static class Lexer
     }
 
     /// <summary>
-    /// A line that starts a definition or a Function, or is a Function's <c>end</c>.
+    /// A line that starts a definition or a Function, or is a Function's <c>end</c>, read the way the parser reads
+    /// it.
     /// </summary>
     internal static bool IsStatementStart(List<Token> tokens, int index)
     {
-        if (index == 0 || index + 1 >= tokens.Count || tokens[index - 1].Kind != TokenKind.NewLine || tokens[index].Kind != TokenKind.Name)
-            return false;
-
-        var next = tokens[index + 1].Kind;
-        return tokens[index].Text switch
-        {
-            FunctionDefinition.Keyword => next == TokenKind.Name,
-            FunctionDefinition.EndKeyword => next is TokenKind.NewLine or TokenKind.End,
-            _ => next == TokenKind.Equals
-        };
+        return index > 0 && tokens[index - 1].Kind == TokenKind.NewLine && Parser.IsStatementStart(tokens, index);
     }
 
     private static int SkipDigits(string text, int index)
