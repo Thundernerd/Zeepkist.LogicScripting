@@ -128,7 +128,8 @@ internal sealed partial class Parser
     /// <summary>
     /// Where and why the body of the Function at <paramref name="keyword"/> ends. Indentation is only style, so the
     /// body ends at the first <c>end</c> line. A Function can't be defined inside another, so a <c>function</c> line
-    /// before it ends this one, to be read as the next Function. It parses nothing, so the editor can find bodies with it on each key press.
+    /// before it ends this one, to be read as the next Function. It parses nothing, so the editor can find bodies with
+    /// it on each key press.
     /// </summary>
     public static FunctionBodyEnd FindBodyEnd(List<Token> tokens, int keyword)
     {
