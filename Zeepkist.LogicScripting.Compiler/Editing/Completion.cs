@@ -52,7 +52,7 @@ public static class Completion
                 .Concat(Match(context, GetExpressionItems(context, definedNames)))
                 .ToList(),
             CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames, findLibrary)),
-            CaretContextKind.DefaultSetting => Match(context, [ArgumentItem(BlockSetting.Hide)]),
+            CaretContextKind.DefaultSetting => Match(context, [ArgumentItem(BlockArgument.ForSetting(BlockSetting.Hide))]),
             CaretContextKind.SettingValue => Match(context, GetValueItems(context), sort: false),
             CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames, findPlacedBlock, findLibrary), sort: false),
             _ => []
@@ -163,12 +163,8 @@ public static class Completion
 
         if (BlockManifest.TryGetFunction(context.Callee, out var type))
         {
-            var items = GetInputItems(context, type.Inputs.Select(i => i.Name))
-                .Concat(type.Settings.Where(s => !IsGiven(s.Name)).Select(ArgumentItem));
-            if (type.HasStyles && !IsGiven(BlockType.StyleName))
-                items = items.Append(new CompletionItem($"{BlockType.StyleName}:", CompletionKind.Argument, string.Join(", ", type.Styles.Select(s => s.Name))));
-
-            return IsGiven(BlockSetting.Hide.Name) ? items : items.Append(ArgumentItem(BlockSetting.Hide));
+            return GetInputItems(context, type.Inputs.Select(i => i.Name))
+                .Concat(type.Arguments.Where(a => !a.IsInput && !context.GivenArguments.Contains(a.Name)).Select(ArgumentItem));
         }
 
         var function = context.Functions.FirstOrDefault(f => f.Name != null && f.Name == context.Callee);
@@ -177,11 +173,6 @@ public static class Completion
 
         var placed = definedNames.FirstOrDefault(n => n.Name == context.Callee && IsVisible(context, n));
         return placed?.Value is { IsPlaced: true } value ? GetInputItems(context, value.Type.Inputs.Select(i => i.Name)) : [];
-
-        bool IsGiven(string name)
-        {
-            return context.GivenArguments.Contains(name);
-        }
     }
 
     private static IEnumerable<CompletionItem> GetValueItems(CaretContext context)
@@ -283,9 +274,9 @@ public static class Completion
             .Select(i => new CompletionItem($"{i}:", CompletionKind.Argument, InputDetail));
     }
 
-    private static CompletionItem ArgumentItem(BlockSetting setting)
+    private static CompletionItem ArgumentItem(BlockArgument argument)
     {
-        return new CompletionItem($"{setting.Name}:", CompletionKind.Argument, BlockReference.DescribeValues(setting));
+        return new CompletionItem($"{argument.Name}:", CompletionKind.Argument, argument.Detail);
     }
 
     private static bool IsColonNext(string text, int index)
@@ -348,10 +339,9 @@ public static class Completion
     /// </summary>
     private static string DescribeArguments(BlockType type)
     {
-        var names = type.Inputs.Select(i => i.Name).Concat(type.Settings.Select(s => $"{s.Name}:"));
-        if (type.HasStyles)
-            names = names.Append($"{BlockType.StyleName}:");
-
+        var names = type.Arguments
+            .Where(a => a.Setting != BlockSetting.Hide)
+            .Select(a => a.IsInput ? a.Name : $"{a.Name}:");
         return $"({string.Join(", ", names)})";
     }
 }

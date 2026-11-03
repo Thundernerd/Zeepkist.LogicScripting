@@ -57,19 +57,7 @@ public static class BlockReference
 
     private static List<ReferenceRow> DescribeSettings(BlockType type)
     {
-        var settings = type.Settings.Select(DescribeSetting).ToList();
-        if (type.HasStyles)
-            settings.Add(new ReferenceRow(BlockType.StyleName, string.Join(", ", type.Styles.Select(s => s.Name))));
-
-        if (!type.IsPlacedOnly)
-            settings.Add(DescribeSetting(BlockSetting.Hide));
-
-        return settings;
-    }
-
-    private static ReferenceRow DescribeSetting(BlockSetting setting)
-    {
-        return new ReferenceRow(setting.Name, DescribeValues(setting));
+        return type.Arguments.Where(a => !a.IsInput).Select(a => new ReferenceRow(a.Name, a.Detail)).ToList();
     }
 
     /// <summary>

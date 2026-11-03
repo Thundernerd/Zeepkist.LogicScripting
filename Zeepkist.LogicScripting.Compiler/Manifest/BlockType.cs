@@ -15,6 +15,10 @@ public sealed class BlockType
     /// </summary>
     public const string StyleName = "style";
 
+    private const string InputDetail = "input";
+
+    private IReadOnlyList<BlockArgument> _arguments;
+
     public BlockType(
         string function,
         BlockCategory category,
@@ -94,6 +98,14 @@ public sealed class BlockType
     /// Two of <see cref="Settings"/> whose minimum must not be above the maximum, or null.
     /// </summary>
     public BlockRange Range { get; }
+
+    /// <summary>
+    /// The inputs, in <see cref="Inputs"/> order, then the Settings, then <c>style:</c> when the type
+    /// <see cref="HasStyles"/>, then <c>hide:</c>, unless the type <see cref="IsPlacedOnly"/>. Built on first use, not
+    /// in the constructor: describing a Setting reads <see cref="BlockReference"/>, whose static data reads
+    /// <see cref="BlockManifest.All"/>, which isn't built yet while <see cref="BlockManifest"/> builds its types.
+    /// </summary>
+    public IReadOnlyList<BlockArgument> Arguments => _arguments ??= CreateArguments();
 
     public int IndexOfInput(string name)
     {
@@ -192,7 +204,7 @@ public sealed class BlockType
     {
         string closest = null;
         var closestDistance = int.MaxValue;
-        foreach (var candidate in GetArgumentNames())
+        foreach (var candidate in Arguments.Select(a => a.Name))
         {
             var distance = GetEditDistance(name, candidate);
             if (distance <= 2 && distance < Math.Min(name.Length, candidate.Length) && distance < closestDistance)
@@ -221,16 +233,17 @@ public sealed class BlockType
         return ordered.ToArray();
     }
 
-    private IEnumerable<string> GetArgumentNames()
+    private List<BlockArgument> CreateArguments()
     {
-        var names = Inputs.Select(i => i.Name).Concat(Settings.Select(s => s.Name));
-        if (!IsPlacedOnly)
-            names = names.Append(BlockSetting.Hide.Name);
-
+        List<BlockArgument> arguments = [.. Inputs.Select(i => new BlockArgument(i.Name, BlockArgumentKind.Input, InputDetail))];
+        arguments.AddRange(Settings.Select(BlockArgument.ForSetting));
         if (HasStyles)
-            names = names.Append(StyleName);
+            arguments.Add(new BlockArgument(StyleName, BlockArgumentKind.Style, string.Join(", ", Styles.Select(s => s.Name))));
 
-        return names;
+        if (!IsPlacedOnly)
+            arguments.Add(BlockArgument.ForSetting(BlockSetting.Hide));
+
+        return arguments;
     }
 
     private static int GetEditDistance(string a, string b)
