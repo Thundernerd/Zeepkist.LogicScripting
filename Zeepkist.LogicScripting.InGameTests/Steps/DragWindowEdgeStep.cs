@@ -1,31 +1,32 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Imui.Core;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
 /// <summary>
-/// Drags the window's resize handle as a player's mouse does: the mouse moves onto it, presses, moves by an even part
-/// of the drag each frame, down or up, or right or left when <see cref="Sideways"/>, and lets go. Every frame from the
-/// press runs the checks of <see cref="ExpectEditorInViewStep"/> and checks the window is no smaller than its minimum,
-/// failing with the first frame that's wrong.
+/// Drags the window's resize handle as a player's mouse does: the mouse moves onto it, presses, makes each of
+/// <see cref="Moves"/> in turn, by an even part of it each frame, down or up, or right or left when
+/// <see cref="Sideways"/>, and lets go. Every frame from the press runs the checks of
+/// <see cref="ExpectEditorInViewStep"/> and checks the window is no smaller than its minimum, failing with the first
+/// frame that's wrong.
 /// </summary>
 internal sealed class DragWindowEdgeStep : ScenarioStep
 {
-    public DragWindowEdgeStep(int pixels, int frames, bool sideways)
+    public DragWindowEdgeStep(IReadOnlyList<DragMove> moves, bool sideways)
     {
-        Pixels = pixels;
-        Frames = frames;
+        Moves = moves;
         Sideways = sideways;
     }
 
     /// <summary>
-    /// How far the mouse moves down, or up when below 0, or right, or left, when <see cref="Sideways"/>.
+    /// The moves the mouse makes in one press, one after the other: each down, or up when below 0, or right, or left,
+    /// when <see cref="Sideways"/>.
     /// </summary>
-    public int Pixels { get; }
-
-    public int Frames { get; }
+    public IReadOnlyList<DragMove> Moves { get; }
 
     public bool Sideways { get; }
 
@@ -35,6 +36,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
             yield break;
 
         var window = context.Window;
+        var frameMoves = GetFrameMoves();
         var startSize = GetSize(window.WindowRect);
         var smallest = startSize;
         var pressed = false;
@@ -64,7 +66,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
 
                 smallest = Mathf.Min(smallest, GetSize(window.WindowRect));
-                if (frame == Frames)
+                if (frame == frameMoves.Count)
                     break;
 
                 if (!window.WindowLayout.IsResizing)
@@ -73,7 +75,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
                 }
 
-                var move = GetMove(frame + 1);
+                var move = frameMoves[frame];
 
                 // Imui counts pixels up the screen, as Unity does, so a move down is below 0
                 if (!ImuiMouse.Drag(Sideways ? new Vector2(move, 0) : new Vector2(0, -move)))
@@ -109,7 +111,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
         var (size, least) = Sideways ? ("wide", "narrowest") : ("tall", "shortest");
         var minSize = Sideways ? window.WindowLayout.MinWidth : window.WindowLayout.MinHeight;
         context.Pass(
-            $"{Frames + 1} frames in view, from {RectCheck.Pixels(startSize)} px {size} to {RectCheck.Pixels(GetSize(window.WindowRect))} px, {RectCheck.Pixels(smallest)} px at the {least}, its minimum {RectCheck.Pixels(minSize)} px",
+            $"{frameMoves.Count + 1} frames in view, from {RectCheck.Pixels(startSize)} px {size} to {RectCheck.Pixels(GetSize(window.WindowRect))} px, {RectCheck.Pixels(smallest)} px at the {least}, its minimum {RectCheck.Pixels(minSize)} px",
             null,
             null);
     }
@@ -123,11 +125,15 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
     }
 
     /// <summary>
-    /// The part of the drag the mouse moves in <paramref name="frame"/>, from 1, in whole pixels that add up to all of it.
+    /// How far the mouse moves in each frame after the press: every move's frames in turn, each in whole pixels that
+    /// add up to all of its move.
     /// </summary>
-    private float GetMove(int frame)
+    private List<float> GetFrameMoves()
     {
-        return Mathf.Round((float)Pixels * frame / Frames) - Mathf.Round((float)Pixels * (frame - 1) / Frames);
+        return Moves
+            .SelectMany(move => Enumerable.Range(1, move.Frames)
+                .Select(frame => Mathf.Round((float)move.Pixels * frame / move.Frames) - Mathf.Round((float)move.Pixels * (frame - 1) / move.Frames)))
+            .ToList();
     }
 
     /// <summary>
