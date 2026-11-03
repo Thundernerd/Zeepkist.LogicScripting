@@ -85,7 +85,7 @@ public static class ScriptHighlighter
         for (var i = 0; i + 3 < tokens.Count; i++)
         {
             if (tokens[i].Kind == TokenKind.Name
-                && (i == 0 || tokens[i - 1].Kind != TokenKind.Dot)
+                && !Lexer.IsAfterDot(tokens, i)
                 && tokens[i + 1].Kind == TokenKind.Dot
                 && tokens[i + 2].Kind == TokenKind.Name
                 && tokens[i + 3].Kind == TokenKind.OpenParen

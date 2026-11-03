@@ -409,7 +409,8 @@ public static class BlockManifest
     /// </summary>
     public static bool TryGetFunction(string name, out BlockType type)
     {
-        return _functions.TryGetValue(name, out type) || Aliases.TryGetValue(name, out type);
+        type = null;
+        return name != null && (_functions.TryGetValue(name, out type) || Aliases.TryGetValue(name, out type));
     }
 
     public static bool TryGetPlacedOnly(string name, out BlockType type)

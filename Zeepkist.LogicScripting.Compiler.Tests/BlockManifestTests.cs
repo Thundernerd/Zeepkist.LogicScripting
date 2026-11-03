@@ -106,6 +106,12 @@ public class BlockManifestTests
     }
 
     [Fact]
+    public void NoName_IsNoBlockFunction()
+    {
+        Assert.False(BlockManifest.TryGetFunction(null, out _));
+    }
+
+    [Fact]
     public void Aliases_AreReservedLikeBlockFunctions()
     {
         var result = ScriptCompiler.Compile("mux = 1", 0);

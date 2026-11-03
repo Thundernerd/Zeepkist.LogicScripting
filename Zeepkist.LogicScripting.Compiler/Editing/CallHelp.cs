@@ -74,7 +74,7 @@ public sealed class CallHelp
         var enclosingCalls = calls.Select(c => c.OpenParen).ToList();
         foreach (var call in calls)
         {
-            var items = call.IsQualified ? [] : GetItems(text, call.Callee, call.OpenParen, functions, findPlacedBlock);
+            var items = GetItems(text, call.Callee, call.OpenParen, functions, findPlacedBlock);
             if (items.Count > 0)
                 return new CallHelp(call.Callee, call.OpenParen, items, FindActive(text, call, caret, items), enclosingCalls);
         }
