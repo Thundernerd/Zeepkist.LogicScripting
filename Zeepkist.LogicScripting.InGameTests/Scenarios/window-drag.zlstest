@@ -1,6 +1,6 @@
 # Dragging the window's edge up past its minimum, with the storage warning showing, keeps the editor and the error
-# panel's header in view in every frame of the drag, and the window comes back at the size and place it was left at,
-# after closing it and after test mode.
+# panel's header in view in every frame of the drag, also when it comes back in the same press, and the window comes
+# back at the size and place it was left at, after closing it and after test mode.
 open-window
 
 # Never compiled, so it shows the storage warning
@@ -13,6 +13,16 @@ expect-editor-in-view
 # From 640 px, far past the minimum, a hundred pixels a frame
 drag-window-edge -1000 over 10
 screenshot dragged
+
+# In one press, coming back from past the minimum grows the window again by however far the mouse comes back: as far
+# as a second press from the minimum does
+drag-window-edge 200 over 2
+remember-window-rect
+drag-window-edge -1000 over 10 then 200 over 2
+expect-window-rect
+
+# Back at the minimum, for the rest
+drag-window-edge -1000 over 10
 remember-window-rect
 
 close-window

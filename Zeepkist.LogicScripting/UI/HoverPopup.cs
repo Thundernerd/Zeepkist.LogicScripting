@@ -33,6 +33,46 @@ internal sealed partial class HoverPopup
     }
 
     /// <summary>
+    /// Unity's frame count the last time <see cref="IsResting"/> found the mouse resting on the editor; -1 before.
+    /// </summary>
+    public int RestingFrame { get; private set; } = -1;
+
+    /// <summary>
+    /// Unity's frame count the last time it was drawn; -1 before.
+    /// </summary>
+    public int DrawnFrame { get; private set; } = -1;
+
+    /// <summary>
+    /// The text it drew this frame, a line each, with a row's name and value on one line, a space between; null when it
+    /// didn't draw this frame.
+    /// </summary>
+    public IReadOnlyList<string> DrawnLines
+    {
+        get
+        {
+            if (DrawnFrame != Time.frameCount)
+                return null;
+
+            List<string> lines = [];
+            float? top = null;
+            foreach (var piece in _pieces)
+            {
+                // A row's name and value are laid out from the same top, so only rounding can tell them apart
+                if (top is { } lineTop && Mathf.Abs(piece.Rect.Top - lineTop) < 0.5f)
+                {
+                    lines[lines.Count - 1] += " " + piece.Text;
+                    continue;
+                }
+
+                lines.Add(piece.Text);
+                top = piece.Rect.Top;
+            }
+
+            return lines;
+        }
+    }
+
+    /// <summary>
     /// Call every frame: whether the mouse has rested on the editor long enough since it last moved or scrolled, with
     /// no key or button pressed since.
     /// </summary>
@@ -48,7 +88,11 @@ internal sealed partial class HoverPopup
         }
 
         _keyPressed |= Input.anyKeyDown;
-        return hovered && !_keyPressed && time - _restStart >= RestSeconds;
+        var resting = hovered && !_keyPressed && time - _restStart >= RestSeconds;
+        if (resting)
+            RestingFrame = Time.frameCount;
+
+        return resting;
     }
 
     /// <summary>
@@ -63,7 +107,7 @@ internal sealed partial class HoverPopup
             return _info;
 
         _found = (text, errors, index);
-        _info = index is { } at ? HoverInfo.At(text, at, errors, _assist.FindPlacedBlock) : null;
+        _info = index is { } at ? HoverInfo.At(text, at, errors, _assist.FindPlacedBlock, _assist.Libraries.FindText) : null;
         return _info;
     }
 
@@ -88,6 +132,7 @@ internal sealed partial class HoverPopup
         var y = PopupPlacement.Choose(below, linePosition.y, height, (editor.Y, editor.Top), (window.Y, window.Top)) ?? linePosition.y;
         var rect = ImRectUtility.Clamp(window, new ImRect(linePosition.x - padding.Left, y, width, height));
 
+        DrawnFrame = Time.frameCount;
         gui.BeginPopup();
         gui.Box(rect, in gui.Style.Menu.Box);
         var line = new ImTextSettings(gui.Style.Layout.TextSize, 0, 0);

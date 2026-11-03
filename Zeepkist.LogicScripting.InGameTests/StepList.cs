@@ -85,6 +85,9 @@ internal static class StepList
         ["expect-call-help-no-active"] = (step, argument) => None(step, argument, new ExpectCallHelpActiveStep(null)),
         ["expect-no-completion"] = (step, argument) => None(step, argument, new ExpectNoCompletionStep()),
         ["expect-no-call-help"] = (step, argument) => None(step, argument, new ExpectNoCallHelpStep()),
+        ["hover"] = (step, argument) => new HoverStep(StepArgument.Text(step, argument, "the text to move the mouse onto")),
+        ["expect-hover"] = (step, argument) => new ExpectHoverStep(StepArgument.Text(step, argument, "the text to look for")),
+        ["expect-no-hover"] = (step, argument) => None(step, argument, new ExpectNoHoverStep()),
         ["press"] = (step, argument) => new PressStep(StepArgument.Keys(step, argument, KeysStep.MaxKeysPerFrame)),
         ["type"] = (step, argument) => new TypeStep(StepArgument.Text(step, argument, "the text to type")),
         ["place-block"] = PlaceBlock,
@@ -220,18 +223,45 @@ internal static class StepList
     }
 
     /// <summary>
-    /// <c>&lt;pixels&gt;</c>, below 0 to drag up, or left when <paramref name="sideways"/>, and optionally <c>over &lt;frames&gt;</c>, 1 when left out.
+    /// <c>&lt;pixels&gt;</c>, below 0 to drag up, or left when <paramref name="sideways"/>, and optionally <c>over &lt;frames&gt;</c>, 1 when left out,
+    /// with <c>then</c> before each move after the first, all in one press.
     /// </summary>
     private static ScenarioStep DragWindowEdge(string step, string argument, bool sideways)
     {
-        var what = sideways
-            ? "the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>'"
-            : "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'";
+        var direction = sideways ? "right, below 0 for left" : "down, below 0 for up";
+        var what = $"the pixels to drag the window's edge {direction}, and optionally 'over <frames>', with 'then' before each move after the first";
         var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        var moves = new List<DragMove>();
+        var start = 0;
+        // Each move ends at the next 'then', or at the end of the words
+        for (var end = 0; end <= words.Length; end++)
+        {
+            if (end < words.Length && words[end] != "then")
+                continue;
+
+            if (!TryReadDragMove(words, start, end - start, out var move))
+                throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
+
+            moves.Add(move);
+            start = end + 1;
+        }
+
+        return new DragWindowEdgeStep(moves, sideways);
+    }
+
+    /// <summary>
+    /// Reads <c>&lt;pixels&gt; [over &lt;frames&gt;]</c> from the <paramref name="count"/> words at <paramref name="start"/>.
+    /// </summary>
+    private static bool TryReadDragMove(string[] words, int start, int count, out DragMove move)
+    {
+        move = default;
         var frames = 1;
-        var read = int.TryParse(words[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) && pixels != 0
-            && (words.Length == 1 || (words.Length == 3 && words[1] == "over" && StepArgument.TryPositive(words[2], out frames)));
-        return read ? new DragWindowEdgeStep(pixels, frames, sideways) : throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
+        if (count == 0 || !int.TryParse(words[start], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) || pixels == 0
+            || !(count == 1 || (count == 3 && words[start + 1] == "over" && StepArgument.TryPositive(words[start + 2], out frames))))
+            return false;
+
+        move = new DragMove(pixels, frames);
+        return true;
     }
 
     private static ScenarioStep None(string step, string argument, ScenarioStep created)

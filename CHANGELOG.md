@@ -52,6 +52,7 @@ All notable changes to Logic Scripting are listed here.
   Typing the `.` opens the list, and choosing a function opens its call, `timing.edge(`.
   When your Script also defines a name like the Library's, the list shows that name's outputs first, then the Library's functions,
   since a call after the `.` is always to the Library. A Library with an error lists none.
+  Inside a call to one, like `timing.edge(1, `, it lists the function's inputs by name, and the box above the line shows them.
 - The Reference tab lists your Libraries' functions under a Libraries heading, as `timing.edge`,
   with their inputs and outputs. An input the function uses as a setting is marked `(setting)`.
 - In the Script editor, Enter after a Function's first line indents the body, and typing `end` lines it up with that first line.

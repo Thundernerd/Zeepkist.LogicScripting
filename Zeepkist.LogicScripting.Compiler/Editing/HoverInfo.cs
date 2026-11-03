@@ -76,11 +76,16 @@ public sealed class HoverInfo
     /// The block in the level with a UID, or null when there's none; it gives a Placed Block Reference its type, so
     /// its inputs can be named.
     /// </param>
+    /// <param name="findLibrary">
+    /// A Library's text by its name, or null when there's none; it gives a Library's Function its inputs, so they can be
+    /// named.
+    /// </param>
     public static HoverInfo At(
         string text,
         int index,
         IReadOnlyList<ErrorUnderline> errors = null,
-        Func<string, PlacedBlock> findPlacedBlock = null)
+        Func<string, PlacedBlock> findPlacedBlock = null,
+        Func<string, string> findLibrary = null)
     {
         text ??= string.Empty;
         var underlines = (errors ?? []).Where(e => e.Covers(index)).ToList();
@@ -98,7 +103,7 @@ public sealed class HoverInfo
             if (BlockManifest.TryGetFunction(token.Text, out var type))
                 function = BlockReference.GetEntry(type);
             else if (tokens[name + 1].Kind == TokenKind.Colon)
-                argument = FindArgument(text, token, findPlacedBlock);
+                argument = FindArgument(text, token, findPlacedBlock, findLibrary);
             else
                 definitionLine = FindDefinition(text, tokens, token, findPlacedBlock, out definition);
         }
@@ -115,9 +120,13 @@ public sealed class HoverInfo
     /// Only the innermost call around the name is asked, so a name in a call without help isn't taken for an
     /// argument of the call outside it.
     /// </summary>
-    private static ReferenceRow FindArgument(string text, Token token, Func<string, PlacedBlock> findPlacedBlock)
+    private static ReferenceRow FindArgument(
+        string text,
+        Token token,
+        Func<string, PlacedBlock> findPlacedBlock,
+        Func<string, string> findLibrary)
     {
-        var help = CallHelp.At(text, token.Span.Start, findPlacedBlock);
+        var help = CallHelp.At(text, token.Span.Start, findPlacedBlock, findLibrary);
         if (help == null || help.EnclosingCalls[0] != help.OpenParen || help.Active < 0)
             return null;
 

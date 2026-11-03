@@ -33,7 +33,7 @@ public static class Completion
     /// </param>
     /// <param name="findLibrary">
     /// A Library's text by its name, or null when there's none; it gives a Library's name before a dot its Functions,
-    /// and a Library's Function before a dot its outputs.
+    /// a Library's Function before a dot its outputs, and a call to a Library's Function its inputs.
     /// </param>
     public static IReadOnlyList<CompletionItem> GetItems(
         CaretContext context,
@@ -48,10 +48,10 @@ public static class Completion
         return context.Kind switch
         {
             CaretContextKind.Expression => Match(context, GetExpressionItems(context, definedNames)),
-            CaretContextKind.Argument => Match(context, GetArgumentItems(context, definedNames))
+            CaretContextKind.Argument => Match(context, GetArgumentItems(context, definedNames, findLibrary))
                 .Concat(Match(context, GetExpressionItems(context, definedNames)))
                 .ToList(),
-            CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames)),
+            CaretContextKind.ArgumentName => Match(context, GetArgumentItems(context, definedNames, findLibrary)),
             CaretContextKind.DefaultSetting => Match(context, [ArgumentItem(BlockSetting.Hide)]),
             CaretContextKind.SettingValue => Match(context, GetValueItems(context), sort: false),
             CaretContextKind.Output => Match(context, GetOutputItems(context, definedNames, findPlacedBlock, findLibrary), sort: false),
@@ -145,13 +145,22 @@ public static class Completion
     }
 
     /// <summary>
-    /// The named arguments the call doesn't have yet: a Block Function's inputs and Settings, a Function's inputs, or
-    /// a Placed Block Reference's inputs, since its Settings can't be changed. Inputs its positional arguments give are
-    /// left out, and a Function whose first line the compiler rejects has none. A name defined twice is the first
-    /// definition, which the compiler keeps.
+    /// The named arguments the call doesn't have yet: a Block Function's inputs and Settings, a Function's or a
+    /// Library's Function's inputs, or a Placed Block Reference's inputs, since its Settings can't be changed. Inputs
+    /// its positional arguments give are left out, and a Function whose first line the compiler rejects has none. A
+    /// name defined twice is the first definition, which the compiler keeps.
     /// </summary>
-    private static IEnumerable<CompletionItem> GetArgumentItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
+    private static IEnumerable<CompletionItem> GetArgumentItems(
+        CaretContext context,
+        IReadOnlyList<DefinedName> definedNames,
+        Func<string, string> findLibrary)
     {
+        if (context.CalleeLibrary != null)
+        {
+            var libraryFunction = LibraryFunctions.Find(context.CalleeLibrary, context.Callee, findLibrary);
+            return libraryFunction == null ? [] : GetInputItems(context, libraryFunction.Inputs.Select(i => i.Name));
+        }
+
         if (BlockManifest.TryGetFunction(context.Callee, out var type))
         {
             var items = GetInputItems(context, type.Inputs.Select(i => i.Name))
@@ -213,21 +222,9 @@ public static class Completion
     /// </summary>
     private static IEnumerable<CompletionItem> GetLibraryFunctionItems(string library, Func<string, string> findLibrary)
     {
-        return GetCallableLibraryFunctions(library, findLibrary)
+        return LibraryFunctions.GetCallable(library, findLibrary)
             .Select(f => new CompletionItem(f.Name.Name, CompletionKind.Function, DescribeInputs(f.Inputs.Select(i => i.Name))))
             .OrderBy(i => i.Label, StringComparer.Ordinal);
-    }
-
-    /// <summary>
-    /// None from a Library with an error, since the compiler rejects every call into it.
-    /// </summary>
-    private static IEnumerable<FunctionDefinition> GetCallableLibraryFunctions(string library, Func<string, string> findLibrary)
-    {
-        if (findLibrary == null)
-            return [];
-
-        var functions = GraphBuilder.DescribeLibrary(library, findLibrary, out var hasErrors);
-        return hasErrors ? [] : functions.Select(f => f.Function);
     }
 
     private static IReadOnlyList<string> GetNameOutputs(CaretContext context, IReadOnlyList<DefinedName> definedNames)
@@ -269,8 +266,7 @@ public static class Completion
 
     private static IReadOnlyList<string> GetLibraryOutputs(CaretContext context, Func<string, string> findLibrary)
     {
-        var function = GetCallableLibraryFunctions(context.DottedLibrary, findLibrary)
-            .FirstOrDefault(f => f.Name.Name == context.DottedCallee);
+        var function = LibraryFunctions.Find(context.DottedLibrary, context.DottedCallee, findLibrary);
         return function == null ? [] : function.Outputs.Select(o => o.Name).ToList();
     }
 
