@@ -225,22 +225,22 @@ internal static class StepList
     /// </summary>
     private static ScenarioStep DragWindowEdge(string step, string argument, bool sideways)
     {
-        var what = sideways
-            ? "the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', with 'then' before each move after the first"
-            : "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', with 'then' before each move after the first";
+        var direction = sideways ? "right, below 0 for left" : "down, below 0 for up";
+        var what = $"the pixels to drag the window's edge {direction}, and optionally 'over <frames>', with 'then' before each move after the first";
         var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
         var moves = new List<DragMove>();
         var start = 0;
-        for (var then = 0; then <= words.Length; then++)
+        // Each move ends at the next 'then', or at the end of the words
+        for (var end = 0; end <= words.Length; end++)
         {
-            if (then < words.Length && words[then] != "then")
+            if (end < words.Length && words[end] != "then")
                 continue;
 
-            if (!TryReadDragMove(words, start, then - start, out var move))
+            if (!TryReadDragMove(words, start, end - start, out var move))
                 throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
 
             moves.Add(move);
-            start = then + 1;
+            start = end + 1;
         }
 
         return new DragWindowEdgeStep(moves, sideways);

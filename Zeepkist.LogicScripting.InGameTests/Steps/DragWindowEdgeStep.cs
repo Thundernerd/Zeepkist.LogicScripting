@@ -36,7 +36,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
             yield break;
 
         var window = context.Window;
-        var steps = GetSteps();
+        var frameMoves = GetFrameMoves();
         var startSize = GetSize(window.WindowRect);
         var smallest = startSize;
         var pressed = false;
@@ -66,7 +66,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
 
                 smallest = Mathf.Min(smallest, GetSize(window.WindowRect));
-                if (frame == steps.Count)
+                if (frame == frameMoves.Count)
                     break;
 
                 if (!window.WindowLayout.IsResizing)
@@ -75,7 +75,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
                     yield break;
                 }
 
-                var move = steps[frame];
+                var move = frameMoves[frame];
 
                 // Imui counts pixels up the screen, as Unity does, so a move down is below 0
                 if (!ImuiMouse.Drag(Sideways ? new Vector2(move, 0) : new Vector2(0, -move)))
@@ -111,7 +111,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
         var (size, least) = Sideways ? ("wide", "narrowest") : ("tall", "shortest");
         var minSize = Sideways ? window.WindowLayout.MinWidth : window.WindowLayout.MinHeight;
         context.Pass(
-            $"{steps.Count + 1} frames in view, from {RectCheck.Pixels(startSize)} px {size} to {RectCheck.Pixels(GetSize(window.WindowRect))} px, {RectCheck.Pixels(smallest)} px at the {least}, its minimum {RectCheck.Pixels(minSize)} px",
+            $"{frameMoves.Count + 1} frames in view, from {RectCheck.Pixels(startSize)} px {size} to {RectCheck.Pixels(GetSize(window.WindowRect))} px, {RectCheck.Pixels(smallest)} px at the {least}, its minimum {RectCheck.Pixels(minSize)} px",
             null,
             null);
     }
@@ -128,7 +128,7 @@ internal sealed class DragWindowEdgeStep : ScenarioStep
     /// How far the mouse moves in each frame after the press: every move's frames in turn, each in whole pixels that
     /// add up to all of its move.
     /// </summary>
-    private List<float> GetSteps()
+    private List<float> GetFrameMoves()
     {
         return Moves
             .SelectMany(move => Enumerable.Range(1, move.Frames)
