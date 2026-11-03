@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TNRD.Zeepkist.LogicScripting.UI;
-using UnityEngine;
 
 namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
 
@@ -25,19 +24,9 @@ internal sealed class ExpectReferenceHeadingsStep : ScenarioStep
         if (!context.RequireOpenWindow())
             yield break;
 
-        yield return context.WaitForWindowDrawn();
+        yield return context.WaitForReferenceTabDrawn();
         if (context.Failed)
             yield break;
-
-        var drawn = context.Window.ReferenceDrawnFrame;
-        if (drawn != Time.frameCount)
-        {
-            context.Fail(
-                "the Reference tab wasn't drawn: add show-blocks-tab reference first, with the Blocks side shown",
-                $"Unity frame {Time.frameCount}",
-                $"Unity frame {drawn}");
-            yield break;
-        }
 
         var expected = Describe(Headings);
         var actual = Describe(context.Window.ReferenceHeadings);

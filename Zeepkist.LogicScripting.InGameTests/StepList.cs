@@ -182,7 +182,7 @@ internal static class StepList
             headings.Add(new ReferenceHeading(name, open));
         }
 
-        return new ExpectReferenceHeadingsStep((IReadOnlyList<UI.ReferenceHeading>)headings);
+        return new ExpectReferenceHeadingsStep(headings);
     }
 
     /// <summary>

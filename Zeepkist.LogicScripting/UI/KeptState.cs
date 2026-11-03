@@ -38,9 +38,6 @@ internal readonly struct KeptState
     /// </summary>
     public bool ShowReference { get; }
 
-    /// <summary>
-    /// The text in the Reference tab's filter.
-    /// </summary>
     public string ReferenceFilter { get; }
 
     public bool ShowLibraryReadFailed { get; }
