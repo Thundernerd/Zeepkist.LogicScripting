@@ -1,0 +1,43 @@
+using System.Collections;
+using System.Collections.Generic;
+using TNRD.Zeepkist.LogicScripting.UI;
+
+namespace TNRD.Zeepkist.LogicScripting.InGameTests.Steps;
+
+/// <summary>
+/// Passes when the Reference tab draws exactly these headings, in this order, each open or closed as given.
+/// </summary>
+internal sealed class ExpectReferenceHeadingsStep : ScenarioStep
+{
+    public ExpectReferenceHeadingsStep(IReadOnlyList<ReferenceHeading> headings)
+    {
+        Headings = headings;
+    }
+
+    /// <summary>
+    /// Empty for none, as when nothing matches the filter.
+    /// </summary>
+    public IReadOnlyList<ReferenceHeading> Headings { get; }
+
+    public override IEnumerator Run(StepContext context)
+    {
+        if (!context.RequireOpenWindow())
+            yield break;
+
+        yield return context.WaitForReferenceTabDrawn();
+        if (context.Failed)
+            yield break;
+
+        var expected = Describe(Headings);
+        var actual = Describe(context.Window.ReferenceHeadings);
+        if (expected == actual)
+            context.Pass($"the Reference tab draws {actual}", expected, actual);
+        else
+            context.Fail($"the Reference tab draws {actual} instead", expected, actual);
+    }
+
+    private static string Describe(IReadOnlyList<ReferenceHeading> headings)
+    {
+        return headings.Count == 0 ? StepList.NoHeadings : ReferenceHeading.Describe(headings);
+    }
+}

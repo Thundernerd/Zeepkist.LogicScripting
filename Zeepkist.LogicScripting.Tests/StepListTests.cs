@@ -22,6 +22,11 @@ public class StepListTests
     [InlineData("open-delete Lights", typeof(OpenDeleteStep))]
     [InlineData("show-tab libraries", typeof(ShowTabStep))]
     [InlineData("expect-tab scripts", typeof(ExpectTabStep))]
+    [InlineData("show-blocks-tab reference", typeof(ShowBlocksTabStep))]
+    [InlineData("expect-blocks-tab placed", typeof(ExpectBlocksTabStep))]
+    [InlineData("set-reference-filter delay", typeof(SetReferenceFilterStep))]
+    [InlineData("set-reference-filter", typeof(SetReferenceFilterStep))]
+    [InlineData("expect-reference-headings Inputs Libraries", typeof(ExpectReferenceHeadingsStep))]
     [InlineData("open-new", typeof(OpenNewStep))]
     [InlineData("open-rename Lights", typeof(OpenRenameStep))]
     [InlineData("type-name Lights", typeof(TypeNameStep))]
@@ -300,6 +305,61 @@ public class StepListTests
     }
 
     [Theory]
+    [InlineData("show-blocks-tab placed", false)]
+    [InlineData("show-blocks-tab reference", true)]
+    public void ShowBlocksTab_ReadsTheTab(string line, bool reference)
+    {
+        var step = Assert.IsType<ShowBlocksTabStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(reference, step.Reference);
+    }
+
+    [Theory]
+    [InlineData("expect-blocks-tab placed", false)]
+    [InlineData("expect-blocks-tab reference", true)]
+    public void ExpectBlocksTab_ReadsTheTab(string line, bool reference)
+    {
+        var step = Assert.IsType<ExpectBlocksTabStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(reference, step.Reference);
+    }
+
+    [Theory]
+    [InlineData("set-reference-filter delay", "delay")]
+    [InlineData("set-reference-filter timing.edge x", "timing.edge x")]
+    [InlineData("set-reference-filter", "")]
+    public void SetReferenceFilter_TakesTheRestOfTheLine_OrNothingToClearIt(string line, string text)
+    {
+        var step = Assert.IsType<SetReferenceFilterStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(text, step.Text);
+    }
+
+    [Theory]
+    [InlineData("expect-reference-headings Libraries", "Libraries")]
+    [InlineData("expect-reference-headings Inputs:closed  Libraries", "Inputs:closed Libraries")]
+    [InlineData("expect-reference-headings none", "")]
+    public void ExpectReferenceHeadings_ReadsEachHeadingAndWhetherItsOpen(string line, string headings)
+    {
+        var step = Assert.IsType<ExpectReferenceHeadingsStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal(headings, ReferenceHeading.Describe(step.Headings));
+    }
+
+    [Theory]
+    [InlineData("expect-reference-headings", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none")]
+    [InlineData("expect-reference-headings Inputs:open", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not 'Inputs:open'")]
+    [InlineData("expect-reference-headings none Inputs", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not 'none'")]
+    [InlineData("expect-reference-headings :closed", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not ':closed'")]
+    [InlineData("expect-reference-headings none:closed", "expect-reference-headings takes the headings, such as Inputs Libraries:closed, or none, not 'none:closed'")]
+    public void ExpectReferenceHeadings_WithAWrongArgument_Fails(string line, string error)
+    {
+        ScenarioParser.Parse("steps", line, out var actual);
+
+        Assert.Equal($"line 1: {error}", actual);
+    }
+
+    [Theory]
     [InlineData("press-prompt ok", (int)PromptButton.Ok)]
     [InlineData("press-prompt cancel", (int)PromptButton.Cancel)]
     [InlineData("press-prompt delete", (int)PromptButton.Delete)]
@@ -328,6 +388,10 @@ public class StepListTests
     [InlineData("show-tab blocks", "show-tab takes scripts or libraries, not 'blocks'")]
     [InlineData("expect-tab", "expect-tab takes scripts or libraries")]
     [InlineData("expect-tab blocks", "expect-tab takes scripts or libraries, not 'blocks'")]
+    [InlineData("show-blocks-tab", "show-blocks-tab takes placed or reference")]
+    [InlineData("show-blocks-tab libraries", "show-blocks-tab takes placed or reference, not 'libraries'")]
+    [InlineData("expect-blocks-tab", "expect-blocks-tab takes placed or reference")]
+    [InlineData("expect-blocks-tab libraries", "expect-blocks-tab takes placed or reference, not 'libraries'")]
     [InlineData("press-prompt yes", "press-prompt takes ok, cancel, delete or keep-blocks, not 'yes'")]
     [InlineData("expect-prompt open", "expect-prompt takes none, new, rename or delete, not 'open'")]
     [InlineData("set-window-height 0", "set-window-height takes a whole number of pixels above 0, not '0'")]

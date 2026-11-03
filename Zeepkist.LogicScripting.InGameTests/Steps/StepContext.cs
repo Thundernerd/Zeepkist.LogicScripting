@@ -180,6 +180,26 @@ internal sealed class StepContext
     }
 
     /// <summary>
+    /// Waits for the window to be drawn, as <see cref="WaitForWindowDrawn"/> does, and fails the step when that frame
+    /// didn't draw the Reference tab: with the Placed blocks tab shown or the Blocks side collapsed.
+    /// </summary>
+    public IEnumerator WaitForReferenceTabDrawn()
+    {
+        yield return WaitForWindowDrawn();
+        if (Failed)
+            yield break;
+
+        var drawn = Window.ReferenceDrawnFrame;
+        if (drawn != Time.frameCount)
+        {
+            Fail(
+                "the Reference tab wasn't drawn: add show-blocks-tab reference first, with the Blocks side shown",
+                $"Unity frame {Time.frameCount}",
+                $"Unity frame {drawn}");
+        }
+    }
+
+    /// <summary>
     /// For a step that checks the window is drawn at <paramref name="expected"/>, so its result has both rects.
     /// </summary>
     public IEnumerator ExpectWindowRect(ImRect expected, string passDetail, string failDetail)
