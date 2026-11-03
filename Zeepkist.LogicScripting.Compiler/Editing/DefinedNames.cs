@@ -109,7 +109,8 @@ public static class DefinedNames
             {
                 FunctionBodyEndReason.EndLine => tokens[j].Span.End,
                 FunctionBodyEndReason.NextFunction => tokens[j - 1].Span.Start,
-                _ => tokens[j].Span.Start
+                FunctionBodyEndReason.EndOfScript => tokens[j].Span.Start,
+                _ => throw new InvalidOperationException($"No body span for a body ending at {end.Reason}")
             };
             var body = new TextSpan(bodyStart, Math.Max(0, bodyEnd - bodyStart));
             var inputNames = inputs.Select(t => t.Text).ToList();

@@ -120,6 +120,8 @@ internal sealed partial class Parser
                 _diagnostics.Add(new Diagnostic(keyword.Position, $"{shownName} has no {FunctionDefinition.EndKeyword}"));
                 isComplete = false;
                 break;
+            default:
+                throw new InvalidOperationException($"No diagnostic for a body ending at {bodyEnd.Reason}");
         }
 
         return name == null ? null : new FunctionDefinition(keyword.Position, name, firstLine.Inputs, firstLine.Outputs, body, isComplete);
