@@ -463,10 +463,11 @@ internal sealed partial class Parser
     }
 
     /// <summary>
-    /// Whether the line from <paramref name="index"/> starts a definition or a Function, or is a Function's
-    /// <c>end</c>.
+    /// Whether a line read from <paramref name="index"/> starts a definition or a Function, or is a Function's
+    /// <c>end</c>. It doesn't check that a line starts there. Each check reads the token after a name, which is
+    /// always there, since the tokens end with <see cref="TokenKind.End"/>.
     /// </summary>
-    public static bool IsStatementStart(List<Token> tokens, int index)
+    public static bool StartsStatement(List<Token> tokens, int index)
     {
         return IsDefinitionStart(tokens, index) || IsFunctionStart(tokens, index) || IsEndLine(tokens, index);
     }
@@ -569,7 +570,7 @@ internal sealed partial class Parser
             return;
 
         _index++;
-        if (IsStatementStart(_tokens, _index))
+        if (StartsStatement(_tokens, _index))
             return;
 
         SkipLine();

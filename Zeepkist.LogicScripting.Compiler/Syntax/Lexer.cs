@@ -180,7 +180,7 @@ internal static class Lexer
     /// </summary>
     internal static bool IsStatementStart(List<Token> tokens, int index)
     {
-        return index > 0 && tokens[index - 1].Kind == TokenKind.NewLine && Parser.IsStatementStart(tokens, index);
+        return index > 0 && tokens[index - 1].Kind == TokenKind.NewLine && Parser.StartsStatement(tokens, index);
     }
 
     private static int SkipDigits(string text, int index)
