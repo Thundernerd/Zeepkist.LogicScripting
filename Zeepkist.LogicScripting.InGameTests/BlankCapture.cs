@@ -4,8 +4,8 @@ namespace TNRD.Zeepkist.LogicScripting.InGameTests;
 
 /// <summary>
 /// A screenshot where every pixel is the same color, such as the transparent one a game started without a monitor
-/// saves, shows nothing a run could check. It reads the capture's raw texture data, a pixel after the other, and gives
-/// the first pixel's bytes in their order, such as <c>#00000000</c>.
+/// saves, shows nothing a run could check. The color is the pixel's bytes in the capture's order, such as
+/// <c>#00000000</c>.
 /// </summary>
 internal static class BlankCapture
 {

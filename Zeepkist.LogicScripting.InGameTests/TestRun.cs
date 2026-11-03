@@ -81,7 +81,7 @@ internal sealed class TestRun : IDisposable
         {
             _logger.LogError(error);
             Step(RunStep.Fail("no errors", $"{error.GetType().Name}: {error.Message}"));
-            yield return Screenshot("failure");
+            yield return _screenshots.Take("failure");
         }
         else if (scenarios.Count > 0 && !_walkFailed)
         {
@@ -201,7 +201,7 @@ internal sealed class TestRun : IDisposable
         if (_walkFailed)
             yield break;
 
-        yield return Screenshot("editor");
+        yield return _screenshots.Take("editor");
         Step(RunStep.Pass("editor reached"));
     }
 
@@ -250,7 +250,7 @@ internal sealed class TestRun : IDisposable
         if (central == null)
         {
             WalkFailed("new level", "not in the level editor, where a new level starts from");
-            yield return Screenshot($"{scenario}-failure");
+            yield return _screenshots.Take($"{scenario}-failure");
             yield break;
         }
 
@@ -320,7 +320,7 @@ internal sealed class TestRun : IDisposable
             if (Time.realtimeSinceStartup > giveUpAt)
             {
                 WalkFailed(what, $"not reached after {WaitSeconds} seconds");
-                yield return Screenshot(_walkScenario.Length > 0 ? $"{_walkScenario}-failure" : "failure");
+                yield return _screenshots.Take(_walkScenario.Length > 0 ? $"{_walkScenario}-failure" : "failure");
                 yield break;
             }
 
@@ -338,11 +338,6 @@ internal sealed class TestRun : IDisposable
     {
         _walkFailed = true;
         Step(RunStep.Fail(what, detail));
-    }
-
-    private IEnumerator Screenshot(string name)
-    {
-        return _screenshots.Take(name);
     }
 
     /// <summary>

@@ -27,9 +27,6 @@ internal sealed class RunResults
     public List<RunStep> Steps { get; } = [];
     public List<string> Screenshots { get; } = [];
 
-    /// <summary>
-    /// Each blank screenshot's file, with the color its every pixel is.
-    /// </summary>
     public Dictionary<string, string> BlankScreenshots { get; } = [];
 
     /// <summary>
@@ -47,13 +44,18 @@ internal sealed class RunResults
 
     public string ScreenshotPath(string name)
     {
-        Screenshots.Add(name + ".png");
-        return Path.Combine(_folder, name + ".png");
+        Screenshots.Add(FileName(name));
+        return Path.Combine(_folder, FileName(name));
     }
 
     public void MarkBlank(string name, string color)
     {
-        BlankScreenshots[name + ".png"] = color;
+        BlankScreenshots[FileName(name)] = color;
+    }
+
+    private static string FileName(string screenshot)
+    {
+        return screenshot + ".png";
     }
 
     public void Add(RunStep step)

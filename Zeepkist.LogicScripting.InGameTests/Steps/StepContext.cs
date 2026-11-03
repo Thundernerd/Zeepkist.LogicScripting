@@ -139,9 +139,6 @@ internal sealed class StepContext
         return _screenshots.Take($"{Scenario}-{name}", cover);
     }
 
-    /// <summary>
-    /// The color of every pixel of the last screenshot when they were all the same, or null.
-    /// </summary>
     public string LastBlankColor => _screenshots.LastBlankColor;
 
     /// <summary>
