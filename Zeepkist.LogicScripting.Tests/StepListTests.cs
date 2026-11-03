@@ -39,6 +39,7 @@ public class StepListTests
     [InlineData("expect-window-width screen", typeof(ExpectWindowWidthStep))]
     [InlineData("expect-window-centered", typeof(ExpectWindowCenteredStep))]
     [InlineData("drag-window-edge -400 over 8", typeof(DragWindowEdgeStep))]
+    [InlineData("drag-window-edge-sideways -400 over 8", typeof(DragWindowEdgeStep))]
     [InlineData("remember-window-rect", typeof(RememberWindowRectStep))]
     [InlineData("expect-window-rect", typeof(ExpectWindowRectStep))]
     [InlineData("expect-window-start-rect", typeof(ExpectWindowStartRectStep))]
@@ -360,6 +361,10 @@ public class StepListTests
     [InlineData("drag-window-edge -400 over 0", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over 0'")]
     [InlineData("drag-window-edge -400 in 8", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 in 8'")]
     [InlineData("drag-window-edge -400 over", "drag-window-edge takes the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>', not '-400 over'")]
+    [InlineData("drag-window-edge-sideways", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>'")]
+    [InlineData("drag-window-edge-sideways 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not '0'")]
+    [InlineData("drag-window-edge-sideways left", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not 'left'")]
+    [InlineData("drag-window-edge-sideways -400 over 0", "drag-window-edge-sideways takes the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>', not '-400 over 0'")]
     [InlineData("remember-window-rect now", "remember-window-rect takes nothing after it")]
     [InlineData("expect-window-rect now", "expect-window-rect takes nothing after it")]
     [InlineData("expect-window-start-rect now", "expect-window-start-rect takes nothing after it")]
@@ -422,7 +427,17 @@ public class StepListTests
     {
         var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
 
-        Assert.Equal((pixels, frames), (step.Pixels, step.Frames));
+        Assert.Equal((pixels, frames, false), (step.Pixels, step.Frames, step.Sideways));
+    }
+
+    [Theory]
+    [InlineData("drag-window-edge-sideways 300", 300, 1)]
+    [InlineData("drag-window-edge-sideways -1000 over 10", -1000, 10)]
+    public void DragWindowEdgeSideways_ReadsThePixels_AndTheFrames(string line, int pixels, int frames)
+    {
+        var step = Assert.IsType<DragWindowEdgeStep>(Assert.Single(ScenarioParser.Parse("steps", line, out _).Steps));
+
+        Assert.Equal((pixels, frames, true), (step.Pixels, step.Frames, step.Sideways));
     }
 
     [Fact]

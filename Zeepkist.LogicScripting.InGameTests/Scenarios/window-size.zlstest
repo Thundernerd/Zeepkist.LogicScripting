@@ -22,6 +22,13 @@ screenshot bigger
 set-window-height 700
 expect-window-size 1400 700
 
+# Dragging the edge left, far past the minimum width, holds the window at it, with the editor in view each frame
+drag-window-edge-sideways -2000 over 10
+expect-window-size 360 700
+screenshot dragged-narrowest
+drag-window-edge-sideways 300 over 3
+expect-window-size 660 700
+
 # The width stays between the window's minimum, which fits the editor with both sides collapsed, and the screen's width
 set-window-size 1 700
 expect-window-size 360 700

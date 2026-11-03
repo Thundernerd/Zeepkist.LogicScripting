@@ -3,14 +3,15 @@ using Imui.Core;
 namespace TNRD.Zeepkist.LogicScripting.UI;
 
 /// <summary>
-/// The window's minimum height, Imui's resize handle and the part of the screen it keeps to, the last frame it drew
+/// The window's minimum width and height, Imui's resize handle and the part of the screen it keeps to, the last frame it drew
 /// them.
 /// </summary>
 internal readonly struct WindowLayout
 {
-    public WindowLayout(int frame, float minHeight, ImRect resizeHandle, bool isResizing, ImRect safeScreen)
+    public WindowLayout(int frame, float minWidth, float minHeight, ImRect resizeHandle, bool isResizing, ImRect safeScreen)
     {
         Frame = frame;
+        MinWidth = minWidth;
         MinHeight = minHeight;
         ResizeHandle = resizeHandle;
         IsResizing = isResizing;
@@ -21,6 +22,8 @@ internal readonly struct WindowLayout
     /// Unity's frame count when it was drawn.
     /// </summary>
     public int Frame { get; }
+
+    public float MinWidth { get; }
 
     public float MinHeight { get; }
 

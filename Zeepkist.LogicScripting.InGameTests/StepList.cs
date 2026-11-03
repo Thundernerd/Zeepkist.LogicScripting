@@ -56,7 +56,8 @@ internal static class StepList
         ["expect-window-size"] = (step, argument) => new ExpectWindowSizeStep(StepArgument.Size(step, argument)),
         ["expect-window-width"] = (step, argument) => new ExpectWindowWidthStep(StepArgument.PixelsOrScreen(step, argument)),
         ["expect-window-centered"] = (step, argument) => None(step, argument, new ExpectWindowCenteredStep()),
-        ["drag-window-edge"] = DragWindowEdge,
+        ["drag-window-edge"] = (step, argument) => DragWindowEdge(step, argument, false),
+        ["drag-window-edge-sideways"] = (step, argument) => DragWindowEdge(step, argument, true),
         ["remember-window-rect"] = (step, argument) => None(step, argument, new RememberWindowRectStep()),
         ["expect-window-rect"] = (step, argument) => None(step, argument, new ExpectWindowRectStep()),
         ["expect-window-start-rect"] = (step, argument) => None(step, argument, new ExpectWindowStartRectStep()),
@@ -221,14 +222,16 @@ internal static class StepList
     /// <summary>
     /// <c>&lt;pixels&gt;</c>, below 0 to drag up, and optionally <c>over &lt;frames&gt;</c>, 1 when left out.
     /// </summary>
-    private static ScenarioStep DragWindowEdge(string step, string argument)
+    private static ScenarioStep DragWindowEdge(string step, string argument, bool sideways)
     {
-        var what = "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'";
+        var what = sideways
+            ? "the pixels to drag the window's edge right, below 0 for left, and optionally 'over <frames>'"
+            : "the pixels to drag the window's edge down, below 0 for up, and optionally 'over <frames>'";
         var words = StepArgument.Text(step, argument, what).Split([' '], StringSplitOptions.RemoveEmptyEntries);
         var frames = 1;
         var read = int.TryParse(words[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pixels) && pixels != 0
             && (words.Length == 1 || (words.Length == 3 && words[1] == "over" && StepArgument.TryPositive(words[2], out frames)));
-        return read ? new DragWindowEdgeStep(pixels, frames) : throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
+        return read ? new DragWindowEdgeStep(pixels, frames, sideways) : throw new ScenarioFormatException($"{step} takes {what}, not '{argument}'");
     }
 
     private static ScenarioStep None(string step, string argument, ScenarioStep created)
