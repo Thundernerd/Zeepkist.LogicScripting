@@ -167,6 +167,14 @@ internal static class Lexer
     }
 
     /// <summary>
+    /// Whether the token is written right after a dot: an output, or a Library's Function in a qualified call.
+    /// </summary>
+    internal static bool IsAfterDot(List<Token> tokens, int index)
+    {
+        return index > 0 && tokens[index - 1].Kind == TokenKind.Dot;
+    }
+
+    /// <summary>
     /// A line that starts a definition or a Function, or is a Function's <c>end</c>.
     /// </summary>
     internal static bool IsStatementStart(List<Token> tokens, int index)

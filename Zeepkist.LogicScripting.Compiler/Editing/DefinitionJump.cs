@@ -56,7 +56,7 @@ public sealed class DefinitionJump
     internal static int FindName(List<Token> tokens, int index)
     {
         var name = tokens.FindIndex(t => t.Kind == TokenKind.Name && t.Span.Start <= index && index < t.Span.End);
-        return name > 0 && tokens[name - 1].Kind is TokenKind.Dot or TokenKind.Colon ? -1 : name;
+        return Lexer.IsAfterDot(tokens, name) || (name > 0 && tokens[name - 1].Kind == TokenKind.Colon) ? -1 : name;
     }
 
     /// <summary>

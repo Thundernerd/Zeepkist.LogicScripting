@@ -405,11 +405,12 @@ public static class BlockManifest
     };
 
     /// <summary>
-    /// The Block Function with this name or alias.
+    /// The Block Function with this name or alias; none for a null name, such as a qualified call's callee.
     /// </summary>
     public static bool TryGetFunction(string name, out BlockType type)
     {
-        return _functions.TryGetValue(name, out type) || Aliases.TryGetValue(name, out type);
+        type = null;
+        return name != null && (_functions.TryGetValue(name, out type) || Aliases.TryGetValue(name, out type));
     }
 
     public static bool TryGetPlacedOnly(string name, out BlockType type)

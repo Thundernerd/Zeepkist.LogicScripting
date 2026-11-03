@@ -152,9 +152,6 @@ public static class Completion
     /// </summary>
     private static IEnumerable<CompletionItem> GetArgumentItems(CaretContext context, IReadOnlyList<DefinedName> definedNames)
     {
-        if (context.IsCalleeQualified)
-            return [];
-
         if (BlockManifest.TryGetFunction(context.Callee, out var type))
         {
             var items = GetInputItems(context, type.Inputs.Select(i => i.Name))

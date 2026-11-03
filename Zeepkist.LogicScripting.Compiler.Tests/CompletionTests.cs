@@ -152,6 +152,7 @@ public class CompletionTests
     [InlineData("x = logic(1, delay(2), |\na = 1")]
     [InlineData("a = logic(\n    1,\n    |")]
     [InlineData("a = logic(\n    |\nb = 1")]
+    [InlineData("x = timing.delay(|\na = 1")]
     public void Items_NoNamesDefinedAtOrBelowTheCaret(string text)
     {
         Assert.DoesNotContain("a", NameLabels(text));

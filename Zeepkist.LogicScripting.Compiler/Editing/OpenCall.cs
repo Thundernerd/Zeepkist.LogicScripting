@@ -20,13 +20,12 @@ internal sealed class OpenCall
         _paren = paren;
     }
 
-    public string Callee => _tokens[_paren - 1].Text;
-
     /// <summary>
-    /// Whether a dot comes before the <see cref="Callee"/>: a Library's Function, <c>timing.edge(x)</c>, or a call the
-    /// parser rejects, and never a Block Function, one of the Script's own Functions or a Placed Block Reference.
+    /// The Block Function, Script's own Function or Placed Block Reference it calls, as written; null when a dot comes
+    /// before its name, since then it's a Library's Function, <c>timing.edge(x)</c>, or a call the parser rejects, even
+    /// when the Script defines that name.
     /// </summary>
-    public bool IsQualified => _paren >= 2 && _tokens[_paren - 2].Kind == TokenKind.Dot;
+    public string Callee => Lexer.IsAfterDot(_tokens, _paren - 1) ? null : _tokens[_paren - 1].Text;
 
     /// <summary>
     /// Where its opening parenthesis is in the text, which tells one call from another.

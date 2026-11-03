@@ -26,7 +26,6 @@ public sealed class CaretContext
         string dottedLibrary,
         string dottedMode,
         string dottedUid,
-        bool isCalleeQualified,
         bool isCallNext,
         string settingName,
         IReadOnlyList<string> settingValues,
@@ -47,7 +46,6 @@ public sealed class CaretContext
         DottedLibrary = dottedLibrary;
         DottedMode = dottedMode;
         DottedUid = dottedUid;
-        IsCalleeQualified = isCalleeQualified;
         IsCallNext = isCallNext;
         SettingName = settingName;
         SettingValues = settingValues;
@@ -87,15 +85,10 @@ public sealed class CaretContext
     /// <summary>
     /// The function or name called by the call whose argument the word is, for <see cref="CaretContextKind.Argument"/>
     /// and <see cref="CaretContextKind.ArgumentName"/>, or whose Setting the word is the value of, for
-    /// <see cref="CaretContextKind.SettingValue"/>; null otherwise, and after <c>default</c>.
+    /// <see cref="CaretContextKind.SettingValue"/>; null otherwise, after <c>default</c>, and in a qualified call, whose
+    /// Function is a Library's.
     /// </summary>
     public string Callee { get; }
-
-    /// <summary>
-    /// Whether a dot comes before the <see cref="Callee"/>'s name, so it's none of the Script's, even when the Script
-    /// defines a Function by that name.
-    /// </summary>
-    public bool IsCalleeQualified { get; }
 
     /// <summary>
     /// The name before the dot whose output the word is, for <see cref="CaretContextKind.Output"/>; null otherwise, and
@@ -235,7 +228,6 @@ public sealed class CaretContext
             dottedLibrary,
             dottedMode,
             dottedUid,
-            inCall && call.IsQualified,
             IsOpenParenNext(tokens, word),
             settingName,
             settingValues,
@@ -306,7 +298,7 @@ public sealed class CaretContext
         if (name < 0 || tokens[name].Kind != TokenKind.Name)
             return -1;
 
-        if (name < 1 || tokens[name - 1].Kind != TokenKind.Dot)
+        if (!Lexer.IsAfterDot(tokens, name))
             return name;
 
         if (!isCall || !tokens[name].IsDirectlyAfter(tokens[name - 1]) || !IsLibraryName(tokens, name - 2)
@@ -322,7 +314,7 @@ public sealed class CaretContext
     /// </summary>
     private static bool IsLibraryName(List<Token> tokens, int index)
     {
-        return index >= 0 && tokens[index].Kind == TokenKind.Name && (index == 0 || tokens[index - 1].Kind != TokenKind.Dot);
+        return index >= 0 && tokens[index].Kind == TokenKind.Name && !Lexer.IsAfterDot(tokens, index);
     }
 
     /// <summary>
@@ -424,7 +416,7 @@ public sealed class CaretContext
         }
 
         var call = OpenCall.FindStartedAt(tokens, tokens[colon - 1].Span.Start);
-        if (call == null || call.IsQualified || !BlockManifest.TryGetFunction(call.Callee, out var type))
+        if (call == null || !BlockManifest.TryGetFunction(call.Callee, out var type))
             return null;
 
         callee = call.Callee;
@@ -453,6 +445,7 @@ public sealed class CaretContext
                 case TokenKind.OpenParen:
                     delayCalls.Push(i > 0
                         && tokens[i - 1].Kind == TokenKind.Name
+                        && !Lexer.IsAfterDot(tokens, i - 1)
                         && BlockManifest.TryGetFunction(tokens[i - 1].Text, out var type)
                         && type == BlockManifest.Delay);
                     break;
