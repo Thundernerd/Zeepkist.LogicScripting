@@ -7,6 +7,8 @@ The mod places the blocks and connects the wires for you.
 The result is normal logic blocks.
 Other players do not need the mod to play your level.
 
+![The Logic Script window with a countdown Script, and the blocks its Compile placed and wired in the level below it](docs/images/countdown-script-and-blocks.png)
+
 ```logic
 default hide: true
 
@@ -40,6 +42,8 @@ Modkist installs BepInEx and ZeepSDK.
    The window checks it while you type and lists the errors under the text.
    Click an error to go to its line.
 5. Click **Compile**, or press **Ctrl+Enter**.
+
+![A misspelled name underlined in red, with its message under the mouse and in the error list](docs/images/error-underline.png)
 
 Compile places the blocks where the editor places a new block, in front of the camera.
 Signals flow toward the right of the screen.
@@ -105,7 +109,8 @@ The text editor knows the usual shortcuts:
 Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) to undo and redo, Ctrl+D to duplicate lines, Ctrl+Shift+K to delete lines,
 Ctrl+/ to comment lines out or back in, Alt+Up / Alt+Down to move lines, Tab / Shift+Tab to indent,
 and Ctrl+Backspace / Ctrl+Delete to delete a word.
-On macOS, use Cmd for Ctrl and Option for Alt, except in Ctrl+Space.
+On macOS, use Cmd for Ctrl and Option for Alt, except in Ctrl+Space,
+and delete a word with Option+Backspace / Option+Delete.
 
 While you type a name, the editor lists the block functions, your Script's own functions and the defined names that match.
 It only lists names defined on an earlier line, except inside `delay(...)`, which can refer to any of them.
@@ -123,11 +128,15 @@ Up / Down choose one, Enter or Tab writes it, and Escape closes the list.
 Ctrl+Space opens the list at any time.
 To stop it opening by itself, turn off **Completion while typing** in the mod's settings.
 
+![The completion list after p., listing the outputs of player_input](docs/images/completion-outputs.png)
+
 Inside a call's parentheses, a box above the line shows the call's inputs, in the order positional arguments fill them,
 and its settings, with the one you're writing highlighted and, for a setting, the values it takes.
 It works for block functions, placed blocks, your own functions and a Library's, like `timing.edge(`.
 Inside a call nested in another, it shows the inner one.
 Escape hides it until the cursor leaves the call.
+
+![Call help above a math call, with b, the input being written, highlighted](docs/images/call-help.png)
 
 With neither the list nor the box showing, Escape leaves the Script editor, so the level editor's keys work again.
 A key pressed a split second after that Escape can be missed: press it again.
@@ -136,6 +145,8 @@ Rest the mouse on the text for half a second to see what's under it:
 a block function's entry from the Reference tab, the line that defines a name,
 what a named argument's input or setting takes, or the message of a red underline.
 Moving the mouse or pressing a key hides it.
+
+![The mouse resting on left shows the line that defines it](docs/images/hover-definition.png)
 
 Ctrl+click (Cmd+click on macOS) a name your Script defines to jump to the line that defines it.
 While Ctrl is held, the name under the mouse is underlined when there's a definition to jump to.
@@ -390,6 +401,8 @@ function edge(x) -> rising
 end
 ```
 
+![The Libraries tab with a Library called timing, holding the functions edge and seconds](docs/images/library-tab.png)
+
 Call its functions with the Library's name and a dot in front:
 
 ```logic
@@ -406,7 +419,7 @@ power_display(pressed)
 - The window checks a Library while you type, like a Script.
   A Library has no Compile: compile a Script that calls it.
 - A Library's name uses letters, digits and `_`, and doesn't start with a digit.
-  It can't be a block function's or a word like `end`, or another Library's in different case.
+  It can't be a block function's or a word like `end`, or match another Library's, whatever the case.
   Scripts write it exactly, so renaming a Library breaks the Scripts that call it by the old name.
 - The mod saves your Libraries in `libraries.json` in its storage folder, a second after your last change.
 - Changing a Library changes the blocks of every Script that calls it, the next time you compile that Script.
