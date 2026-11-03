@@ -167,6 +167,7 @@ public class CallHelpTests
     [InlineData("x = trigger(|")]
     [InlineData("x = nothing(|")]
     [InlineData("x = logic(\ny = |")]
+    [InlineData("x = logic(1,\nfunction |")]
     [InlineData("a = logic(1, 2)\na(|")]
     [InlineData("a = placed(\"UNKNOWN\")\na(|")]
     [InlineData("a = placed(\"OTHER\")\na(|")]

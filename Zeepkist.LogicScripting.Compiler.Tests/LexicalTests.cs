@@ -52,6 +52,16 @@ public class LexicalTests
     }
 
     [Fact]
+    public void UnclosedBracket_IsNotJoinedOntoAFunctionLineWithoutAName()
+    {
+        var result = ScriptCompiler.Compile("x = logic(1,\nfunction (a))\nend", 0);
+
+        Assert.Equal(
+            ["1:10: '(' isn't closed", "2:10: Expected the function's name, found '('"],
+            result.Errors.Select(e => e.ToString()));
+    }
+
+    [Fact]
     public void NewLineOutsideBrackets_EndsTheStatement()
     {
         var result = ScriptCompiler.Compile("x = 1 &\n2", 0);
