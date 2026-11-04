@@ -61,8 +61,6 @@ internal sealed class TestRun : IDisposable
     /// </summary>
     public IEnumerator Run()
     {
-        _results.Display = Display();
-        _logger.LogInfo($"{Marker} display {_results.Display}");
         List<Scenario> scenarios = [];
         Exception error = null;
         try
@@ -195,6 +193,10 @@ internal sealed class TestRun : IDisposable
         PlayerManager.Instance.modPanelHasAlreadyBeenDisplayed = true;
         PlayerManager.Instance.epilepsyPanelHasAlreadyBeenDisplayed = true;
         startScreen.LoadNextLevel();
+
+        // The game has put its saved resolution in place by now, which it starts without
+        _results.Display = Display();
+        _logger.LogInfo($"{Marker} display {_results.Display}");
         Step(RunStep.Pass("start screen"));
 
         yield return EnterEditor();
