@@ -27,6 +27,13 @@ internal sealed class RunResults
     public List<RunStep> Steps { get; } = [];
     public List<string> Screenshots { get; } = [];
 
+    public Dictionary<string, string> BlankScreenshots { get; } = [];
+
+    /// <summary>
+    /// The game's resolution and window mode, so a run at an unexpected size stands out.
+    /// </summary>
+    public string Display { get; set; } = "";
+
     /// <summary>
     /// Written with the next step, rather than each time the game logs one.
     /// </summary>
@@ -37,8 +44,18 @@ internal sealed class RunResults
 
     public string ScreenshotPath(string name)
     {
-        Screenshots.Add(name + ".png");
-        return Path.Combine(_folder, name + ".png");
+        Screenshots.Add(FileName(name));
+        return Path.Combine(_folder, FileName(name));
+    }
+
+    public void MarkBlank(string name, string color)
+    {
+        BlankScreenshots[FileName(name)] = color;
+    }
+
+    private static string FileName(string screenshot)
+    {
+        return screenshot + ".png";
     }
 
     public void Add(RunStep step)

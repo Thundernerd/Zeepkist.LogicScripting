@@ -19,7 +19,7 @@ The script prints a summary and exits 0 only when every step of every Scenario p
 
 - `results.md`: each Scenario's steps, with what a failing check expected and found, the exceptions the game logged meanwhile, and the exceptions it logged as it quit
 - `results.json`: the same, for tools, without the exceptions at quit
-- the screenshots: `editor.png` once the walk reaches the editor, and `<scenario>-<name>.png` for a Scenario's own, including `<scenario>-failure.png` where one failed
+- the screenshots: `editor.png` once the walk reaches the editor, and `<scenario>-<name>.png` for a Scenario's own, including `<scenario>-failure.png` where one failed. `results.md` marks a blank one, where every pixel is the same color, and says what resolution and window mode the game ran at, so a run at an unexpected size, or one whose screenshots show nothing, stands out. A `screenshot` step fails on a blank one.
 - `LogOutput.log`: the game's BepInEx log, where the test plugin's lines start with `[ZLS-TEST]`. The script removes the game's log before it starts the game, so a run whose game wrote none has none, and its `results.md` says so.
 
 Only one run can use the game at a time. A second run, say from another worktree, waits until the first is done.
@@ -150,7 +150,8 @@ The test plugin's own Scenarios are in `Zeepkist.LogicScripting.InGameTests/Scen
 | `test-mode` | Starts test mode, as the editor's Test key does, and waits until the round starts and the soapbox can drive. Fails without a start block. |
 | `back-to-editor` | Quits test mode from the pause menu, and waits until the editor has loaded the level again. |
 | `wait <seconds>` | Waits, such as for the level to run a little before a screenshot. |
-| `screenshot <name>` | Saves a screenshot as `<scenario>-<name>.png`. The name takes letters, digits, `-` and `_`. |
+| `screenshot <name>` | Saves a screenshot as `<scenario>-<name>.png`. The name takes letters, digits, `-` and `_`. Fails when the screenshot is blank, every pixel the same color, such as the transparent one the game saves when it started without a monitor. |
+| `expect-blank-screenshot <name>` | Covers the frame in one color and saves the screenshot as `screenshot` does. It passes when the run finds the screenshot blank, so it checks that a blank one is caught. |
 | `expect-no-exceptions` | The game logged no exception since the Scenario started, or since the last `expect-no-exceptions`. It fails with the ones it logged. |
 | `log <text>` | Writes the text to the game's log. |
 

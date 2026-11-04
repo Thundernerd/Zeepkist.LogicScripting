@@ -30,6 +30,7 @@ internal sealed class TestRun : IDisposable
     private readonly RunRequest _request;
     private readonly string _folder;
     private readonly GameEvents _game = new();
+    private readonly Screenshots _screenshots;
 
     // Set once a step of the walk failed, which ends the run, unlike a failed step of a scenario
     private bool _walkFailed;
@@ -44,6 +45,7 @@ internal sealed class TestRun : IDisposable
         _exceptions = exceptions;
         _request = request;
         _folder = folder;
+        _screenshots = new Screenshots(results, logger);
         Application.logMessageReceived += OnLogMessage;
     }
 
@@ -77,7 +79,7 @@ internal sealed class TestRun : IDisposable
         {
             _logger.LogError(error);
             Step(RunStep.Fail("no errors", $"{error.GetType().Name}: {error.Message}"));
-            yield return Screenshot("failure");
+            yield return _screenshots.Take("failure");
         }
         else if (scenarios.Count > 0 && !_walkFailed)
         {
@@ -130,7 +132,7 @@ internal sealed class TestRun : IDisposable
                     yield break;
             }
 
-            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, Screenshot, () => startState.WindowRect);
+            var context = new StepContext(scenario.Name, driver, _game, _exceptions, _logger, _screenshots, () => startState.WindowRect);
             foreach (var step in scenario.Steps)
             {
                 context.Reset();
@@ -191,13 +193,17 @@ internal sealed class TestRun : IDisposable
         PlayerManager.Instance.modPanelHasAlreadyBeenDisplayed = true;
         PlayerManager.Instance.epilepsyPanelHasAlreadyBeenDisplayed = true;
         startScreen.LoadNextLevel();
+
+        // The game has put its saved resolution in place by now, which it starts without
+        _results.Display = Display();
+        _logger.LogInfo($"{Marker} display {_results.Display}");
         Step(RunStep.Pass("start screen"));
 
         yield return EnterEditor();
         if (_walkFailed)
             yield break;
 
-        yield return Screenshot("editor");
+        yield return _screenshots.Take("editor");
         Step(RunStep.Pass("editor reached"));
     }
 
@@ -246,7 +252,7 @@ internal sealed class TestRun : IDisposable
         if (central == null)
         {
             WalkFailed("new level", "not in the level editor, where a new level starts from");
-            yield return Screenshot($"{scenario}-failure");
+            yield return _screenshots.Take($"{scenario}-failure");
             yield break;
         }
 
@@ -316,7 +322,7 @@ internal sealed class TestRun : IDisposable
             if (Time.realtimeSinceStartup > giveUpAt)
             {
                 WalkFailed(what, $"not reached after {WaitSeconds} seconds");
-                yield return Screenshot(_walkScenario.Length > 0 ? $"{_walkScenario}-failure" : "failure");
+                yield return _screenshots.Take(_walkScenario.Length > 0 ? $"{_walkScenario}-failure" : "failure");
                 yield break;
             }
 
@@ -336,13 +342,13 @@ internal sealed class TestRun : IDisposable
         Step(RunStep.Fail(what, detail));
     }
 
-    private IEnumerator Screenshot(string name)
+    /// <summary>
+    /// The screen is the monitor the game's window is on, or the desktop's size without one.
+    /// </summary>
+    private static string Display()
     {
-        yield return new WaitForEndOfFrame();
-        var texture = ScreenCapture.CaptureScreenshotAsTexture();
-        File.WriteAllBytes(_results.ScreenshotPath(name), texture.EncodeToPNG());
-        Object.Destroy(texture);
-        _logger.LogInfo($"{Marker} screenshot {name}");
+        var screen = Screen.currentResolution;
+        return $"{Screen.width}×{Screen.height} px, {Screen.fullScreenMode}, screen {screen.width}×{screen.height} px";
     }
 
     private void Step(RunStep step)

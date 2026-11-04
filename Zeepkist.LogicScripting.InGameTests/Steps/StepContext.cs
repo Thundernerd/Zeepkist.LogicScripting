@@ -18,7 +18,7 @@ internal sealed class StepContext
     private const float ListDrawSeconds = 2;
     private const float WindowDrawSeconds = 2;
 
-    private readonly Func<string, IEnumerator> _screenshot;
+    private readonly Screenshots _screenshots;
     private readonly Func<ImRect?> _startWindowRect;
 
     public StepContext(
@@ -27,7 +27,7 @@ internal sealed class StepContext
         GameEvents game,
         ExceptionLog exceptions,
         ManualLogSource logger,
-        Func<string, IEnumerator> screenshot,
+        Screenshots screenshots,
         Func<ImRect?> startWindowRect)
     {
         Scenario = scenario;
@@ -35,7 +35,7 @@ internal sealed class StepContext
         Game = game;
         Exceptions = exceptions;
         Logger = logger;
-        _screenshot = screenshot;
+        _screenshots = screenshots;
         _startWindowRect = startWindowRect;
     }
 
@@ -134,10 +134,12 @@ internal sealed class StepContext
     /// <summary>
     /// Saved as <c>&lt;scenario&gt;-&lt;name&gt;.png</c> in the run's results.
     /// </summary>
-    public IEnumerator Screenshot(string name)
+    public IEnumerator Screenshot(string name, Color? cover = null)
     {
-        return _screenshot($"{Scenario}-{name}");
+        return _screenshots.Take($"{Scenario}-{name}", cover);
     }
+
+    public string LastBlankColor => _screenshots.LastBlankColor;
 
     /// <summary>
     /// Waits until <paramref name="condition"/> holds or <paramref name="seconds"/> pass, whichever is first, so the
